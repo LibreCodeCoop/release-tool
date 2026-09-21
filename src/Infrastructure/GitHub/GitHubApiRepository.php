@@ -11,7 +11,7 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\PullRequestInfo;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-final class GitHubApiRepository implements GitHubRepository
+final readonly class GitHubApiRepository implements GitHubRepository
 {
     private HttpClientInterface $client;
 
