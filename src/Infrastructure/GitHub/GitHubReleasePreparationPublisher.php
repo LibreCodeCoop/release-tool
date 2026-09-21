@@ -190,4 +190,85 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
 
         return null;
     }
+    private function refSha(string $repository, string $branch): string
+    {
+        $sha = $this->optionalRefSha($repository, $branch);
+        if ($sha === null) {
+            throw new DomainException(sprintf('GitHub branch does not exist: %s', $branch));
+        }
+
+        return $sha;
+    }
+
+    private function optionalRefSha(string $repository, string $branch): ?string
+    {
+        $response = $this->client->request(
+            'GET',
+            sprintf('/repos/%s/git/ref/heads/%s', $repository, $this->encodeRef($branch)),
+        );
+        $status = $response->getStatusCode();
+        if ($status === 404) {
+            return null;
+        }
+        $this->assertSuccess($status, 'read GitHub branch ref');
+
+        $data = $response->toArray(false);
+        $sha = $data['object']['sha'] ?? null;
+        if (!is_string($sha) || $sha === '') {
+            throw new DomainException(sprintf('GitHub returned an invalid ref for %s.', $branch));
+        }
+
+        return $sha;
+    }
+
+    /**
+     * @param array<string, mixed>|null $json
+     * @return array<string, mixed>
+     */
+    private function request(string $method, string $path, ?array $json = null): array
+    {
+        $response = $this->client->request(
+            $method,
+            $path,
+            $json === null ? [] : ['json' => $json],
+        );
+        $this->assertSuccess($response->getStatusCode(), $method . ' ' . $path);
+
+        $data = $response->toArray(false);
+        if (!is_array($data)) {
+            throw new DomainException(sprintf('Unexpected GitHub API response for %s %s.', $method, $path));
+        }
+
+        return $data;
+    }
+
+    private function assertSuccess(int $status, string $operation): void
+    {
+        if ($status < 200 || $status >= 300) {
+            throw new DomainException(sprintf('GitHub API failed to %s (%d).', $operation, $status));
+        }
+    }
+
+    private function encodeRef(string $branch): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', $branch)));
+    }
+
+    private function pullRequestBody(ReleasePreparation $preparation): string
+    {
+        return implode("\n", [
+            $preparation->prMarker,
+            '',
+            sprintf('ReleasePlan: `%s`', $preparation->releasePlanId),
+            sprintf('ReleasePreparation: `%s`', $preparation->id),
+            sprintf('Version: `%s`', $preparation->version),
+            sprintf('Channel: `%s`', $preparation->channel->value),
+            sprintf('Mode: `%s`', $preparation->mode->value),
+            sprintf('Planning base: `%s`', $preparation->planningBaseSha),
+            sprintf('Changelog SHA-256: `%s`', $preparation->changelogSha256),
+            '',
+            'This pull request was generated from a deterministic ReleasePreparation v1.',
+            'Review the exact file diff before merging.',
+        ]);
+    }
 }
