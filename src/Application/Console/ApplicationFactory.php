@@ -9,15 +9,21 @@ use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
 {
-    public const NAME = 'release-tool';
-    public const VERSION = '0.1.0-dev';
+    private const PACKAGED_VERSION = '@release_tool_version@';
 
     public static function create(): Application
     {
-        $application = new Application(self::NAME, self::VERSION);
+        $application = new Application('release-tool', self::version());
         $application->setAutoExit(false);
         $application->add(new ConfigValidateCommand());
 
         return $application;
+    }
+
+    public static function version(): string
+    {
+        return str_starts_with(self::PACKAGED_VERSION, '@')
+            ? '0.1.0-dev'
+            : self::PACKAGED_VERSION;
     }
 }
