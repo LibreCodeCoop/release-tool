@@ -15,6 +15,7 @@ final readonly class Version
         public ?ReleaseChannel $channel = null,
         public ?int $prereleaseNumber = null,
         public bool $development = false,
+        public ?int $developmentNumber = null,
     ) {
         if ($major < 0 || $minor < 0 || $patch < 0) {
             throw new InvalidArgumentException('Version numbers cannot be negative.');
@@ -28,17 +29,29 @@ final readonly class Version
         if ($development && $channel !== null) {
             throw new InvalidArgumentException('Development and prerelease suffixes cannot be combined.');
         }
+        if (!$development && $developmentNumber !== null) {
+            throw new InvalidArgumentException('Development number requires a development version.');
+        }
+        if ($developmentNumber !== null && $developmentNumber < 1) {
+            throw new InvalidArgumentException('Development number must be positive.');
+        }
     }
 
     public static function parse(string $value): self
     {
         $value = ltrim(trim($value), 'v');
-        if (!preg_match('/^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:(?<dev>-dev)|-(?<channel>alpha|beta|rc)\.(?<number>\d+))?$/', $value, $match)) {
+        if (!preg_match(
+            '/^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:(?<dev>-dev)(?:\.(?<dev_number>\d+))?|-(?<channel>alpha|beta|rc)\.(?<number>\d+))?$/',
+            $value,
+            $match,
+        )) {
             throw new InvalidArgumentException(sprintf('Invalid version: %s', $value));
         }
 
         $channel = ($match['channel'] ?? '') !== '' ? ReleaseChannel::from($match['channel']) : null;
         $number = ($match['number'] ?? '') !== '' ? (int) $match['number'] : null;
+        $development = ($match['dev'] ?? '') !== '';
+        $developmentNumber = ($match['dev_number'] ?? '') !== '' ? (int) $match['dev_number'] : null;
 
         return new self(
             (int) $match['major'],
@@ -46,7 +59,8 @@ final readonly class Version
             (int) $match['patch'],
             $channel,
             $number,
-            ($match['dev'] ?? '') !== '',
+            $development,
+            $developmentNumber,
         );
     }
 
@@ -70,6 +84,10 @@ final readonly class Version
             return $thisRank <=> $otherRank;
         }
 
+        if ($this->development && $other->development) {
+            return ($this->developmentNumber ?? 0) <=> ($other->developmentNumber ?? 0);
+        }
+
         return ($this->prereleaseNumber ?? 0) <=> ($other->prereleaseNumber ?? 0);
     }
 
@@ -77,7 +95,7 @@ final readonly class Version
     {
         $base = sprintf('%d.%d.%d', $this->major, $this->minor, $this->patch);
         if ($this->development) {
-            return $base . '-dev';
+            return $base . '-dev' . ($this->developmentNumber !== null ? '.' . $this->developmentNumber : '');
         }
         if ($this->channel !== null) {
             return sprintf('%s-%s.%d', $base, $this->channel->value, $this->prereleaseNumber);
