@@ -67,7 +67,7 @@ final class ReleasePlanCodec
             $this->string($previous, 'comparison_ref'),
             $this->string($data, 'current_version'),
             $this->string($data, 'proposed_version'),
-            isset($data['explicit_version_override']) && $data['explicit_version_override'] !== null
+            isset($data['explicit_version_override'])
                 ? $this->string($data, 'explicit_version_override')
                 : null,
             ReleaseChannel::from($this->string($data, 'channel')),
