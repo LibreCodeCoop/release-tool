@@ -191,6 +191,12 @@ if ($path === '/repos/Example/app/releases/101') {
     ]);
     return;
 }
+if ($path === '/repos/Example/app/commits/v1.0.0') {
+    echo json_encode([
+        'sha' => '__SHA__',
+    ]);
+    return;
+}
 if ($path === '/repos/Example/app/actions/workflows/appstore-build-publish.yml/runs') {
     echo json_encode([
         'workflow_runs' => [[

@@ -51,6 +51,21 @@ final readonly class GitHubPublicationRepository implements PublicationRepositor
         }
         $this->assertSuccess($response->getStatusCode(), 'read published release');
         $data = $response->toArray(false);
+        $tagName = (string) ($data['tag_name'] ?? '');
+        if ($tagName === '') {
+            throw new DomainException('GitHub Release does not contain a tag name.');
+        }
+
+        $commitResponse = $this->client->request(
+            'GET',
+            sprintf('/repos/%s/commits/%s', $repository, rawurlencode($tagName)),
+        );
+        $this->assertSuccess($commitResponse->getStatusCode(), 'resolve published release tag');
+        $commitData = $commitResponse->toArray(false);
+        $targetSha = (string) ($commitData['sha'] ?? '');
+        if (preg_match('/^[0-9a-f]{40}$/', $targetSha) !== 1) {
+            throw new DomainException('GitHub returned an invalid commit SHA for the published release tag.');
+        }
 
         $assets = [];
         foreach (($data['assets'] ?? []) as $item) {
@@ -74,8 +89,8 @@ final readonly class GitHubPublicationRepository implements PublicationRepositor
         return new PublishedRelease(
             (int) ($data['id'] ?? 0),
             (string) ($data['html_url'] ?? ''),
-            (string) ($data['tag_name'] ?? ''),
-            (string) ($data['target_commitish'] ?? ''),
+            $tagName,
+            $targetSha,
             (bool) ($data['draft'] ?? true),
             (bool) ($data['prerelease'] ?? false),
             isset($data['published_at']) && is_string($data['published_at']) ? $data['published_at'] : null,

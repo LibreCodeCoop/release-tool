@@ -34,6 +34,12 @@ final class GitHubPublicationRepositoryTest extends TestCase
                 ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
             }
 
+            if (str_contains($url, '/commits/v15.0.4')) {
+                return new MockResponse(json_encode([
+                    'sha' => self::SHA,
+                ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
+            }
+
             if (str_contains($url, '/actions/workflows/')) {
                 return new MockResponse(json_encode([
                     'workflow_runs' => [
@@ -75,6 +81,7 @@ final class GitHubPublicationRepositoryTest extends TestCase
         $release = $repository->release('LibreSign/libresign', 101);
         self::assertNotNull($release);
         self::assertFalse($release->draft);
+        self::assertSame(self::SHA, $release->targetSha);
         self::assertSame(str_repeat('b', 64), $release->assets[0]->sha256);
 
         $run = $repository->publisherRun(
