@@ -32,6 +32,8 @@ final readonly class ReleasePlanner implements ReleasePlanning
         private VersionTransitionPolicy $versionTransitions = new VersionTransitionPolicy(),
         private ConventionalTitleParser $titleParser = new ConventionalTitleParser(),
         private SecurityReleasePolicy $securityPolicy = new SecurityReleasePolicy(),
+        private ReleaseLineResolver $releaseLine = new ReleaseLineResolver(),
+        private MilestoneNamingPolicy $milestoneNaming = new MilestoneNamingPolicy(),
     ) {
     }
 
@@ -45,7 +47,7 @@ final readonly class ReleasePlanner implements ReleasePlanning
 
         $repository = $this->repositoryIdentity($config);
         $metadata = $this->metadataReader->read($config, $baseSha);
-        $nextcloudMajor = $this->nextcloudMajor($config, $input->branch, $metadata->nextcloudMin, $metadata->nextcloudMax);
+        $nextcloudMajor = $this->releaseLine->nextcloudMajor($config, $input->branch, $metadata->nextcloudMin, $metadata->nextcloudMax);
         $appMajor = $metadata->version->major;
 
         $previous = $this->git->previousRelease($baseSha, $config->tagPrefix, $config->initialRef);
@@ -84,7 +86,7 @@ final readonly class ReleasePlanner implements ReleasePlanning
             );
         }
 
-        $milestoneTitle = $this->milestoneTitle($config, $input->channel, $nextcloudMajor, $appMajor, $proposed);
+        $milestoneTitle = $this->milestoneNaming->title($config, $input->channel, $nextcloudMajor, $appMajor, $proposed);
         $milestone = null;
         foreach ($this->github->openMilestones($repository) as $candidate) {
             if ($candidate->title === $milestoneTitle) {
@@ -186,39 +188,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
         }
 
         return $repository;
-    }
-
-    private function nextcloudMajor(
-        ConsumerConfig $config,
-        string $branch,
-        int $minimum,
-        int $maximum,
-    ): int {
-        if ($branch === $config->mainBranch) {
-            if ($minimum !== $maximum) {
-                throw new DomainException('Main release line must identify one Nextcloud major for deterministic planning.');
-            }
-
-            return $minimum;
-        }
-
-        $pattern = '~' . str_replace('~', '\\~', $config->stablePattern) . '~';
-        if (preg_match($pattern, $branch, $match) !== 1 || !isset($match['nextcloud'])) {
-            throw new DomainException(sprintf('Branch does not match configured stable pattern: %s', $branch));
-        }
-
-        $major = (int) $match['nextcloud'];
-        if ($major < $minimum || $major > $maximum) {
-            throw new DomainException(sprintf(
-                'Branch %s maps to Nextcloud %d but app metadata supports %d..%d.',
-                $branch,
-                $major,
-                $minimum,
-                $maximum,
-            ));
-        }
-
-        return $major;
     }
 
     /**
@@ -374,22 +343,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $this->versionTransitions->validateOverride($current, $override, $input->channel);
 
         return $override;
-    }
-
-    private function milestoneTitle(
-        ConsumerConfig $config,
-        ReleaseChannel $channel,
-        int $nextcloudMajor,
-        int $appMajor,
-        Version $version,
-    ): string {
-        $template = $channel === ReleaseChannel::Final ? $config->patchMilestone : $config->rcMilestone;
-
-        return strtr($template, [
-            '{nextcloud}' => (string) $nextcloudMajor,
-            '{major}' => (string) $appMajor,
-            '{version}' => (string) $version,
-        ]);
     }
 
     /**

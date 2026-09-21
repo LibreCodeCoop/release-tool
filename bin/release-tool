@@ -5,12 +5,14 @@ declare(strict_types=1);
 
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
+use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubMilestoneRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseFinalizationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreparationPublisher;
 use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
@@ -35,6 +37,10 @@ exit(ApplicationFactory::create(
     new ReleaseFinalizer(
         $git,
         GitHubReleaseFinalizationRepository::fromEnvironment(),
+        new GitReleaseMetadataReader($git),
+    ),
+    new MilestoneTransitioner(
+        GitHubMilestoneRepository::fromEnvironment(),
         new GitReleaseMetadataReader($git),
     ),
 )->run());
