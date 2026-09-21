@@ -1,9 +1,27 @@
 {
   "output": "build/release-tool.phar",
   "main": "bin/release-tool",
-  "directories": ["src"],
-  "finder": [{"name": "*.php", "exclude": ["Tests", "tests"], "in": ["vendor"]}],
+  "alias": "release-tool.phar",
+  "chmod": "0755",
+  "directories": [
+    "src"
+  ],
+  "finder": [
+    {
+      "name": "*.php",
+      "exclude": [
+        "Tests",
+        "tests"
+      ],
+      "in": [
+        "vendor"
+      ]
+    }
+  ],
   "compression": "GZ",
+  "algorithm": "SHA256",
   "check-requirements": true,
-  "dump-autoload": true
+  "dump-autoload": true,
+  "timestamp": "2026-01-01T00:00:00+00:00",
+  "git-version": "release_tool_version"
 }
