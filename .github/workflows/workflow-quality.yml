@@ -8,7 +8,6 @@ on:
     branches: [main]
 permissions:
   contents: read
-  security-events: write
 jobs:
   actionlint:
     runs-on: ubuntu-latest
@@ -21,7 +20,8 @@ jobs:
         env:
           ACTIONLINT_VERSION: v1.7.12
         run: go install github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}
-      - run: actionlint
+      - name: Run actionlint
+        run: "$(go env GOPATH)/bin/actionlint"
   zizmor:
     runs-on: ubuntu-latest
     timeout-minutes: 10
