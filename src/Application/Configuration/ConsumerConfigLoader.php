@@ -11,9 +11,9 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ConsumerConfigLoader
 {
-    private const ROOT_KEYS = ['schema', 'repository', 'app', 'branches', 'version', 'history', 'changelog', 'milestones', 'authorization', 'package'];
-    private const PERMISSIONS = ['read', 'triage', 'write', 'maintain', 'admin'];
-    private const TEMPLATE_VALUES = ['nextcloud', 'major', 'version'];
+    private const array ROOT_KEYS = ['schema', 'repository', 'app', 'branches', 'version', 'history', 'changelog', 'milestones', 'authorization', 'package'];
+    private const array PERMISSIONS = ['read', 'triage', 'write', 'maintain', 'admin'];
+    private const array TEMPLATE_VALUES = ['nextcloud', 'major', 'version'];
 
     public function load(string $path): ConsumerConfig
     {
