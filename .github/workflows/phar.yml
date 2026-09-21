@@ -26,7 +26,12 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: vendor/bin/box validate
-      - run: composer build:phar
+      - name: Build first PHAR
+        run: composer build:phar && cp build/release-tool.phar build/release-tool.first.phar
+      - name: Build second PHAR
+        run: composer build:phar
+      - name: Verify reproducible build
+        run: test "$(sha256sum build/release-tool.first.phar | awk '{print $1}')" = "$(sha256sum build/release-tool.phar | awk '{print $1}')"
       - run: composer test:phar
       - name: SHA-256
         run: sha256sum build/release-tool.phar | tee build/release-tool.phar.sha256
