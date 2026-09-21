@@ -124,4 +124,70 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
 
         return $preparation->withPullRequest($number, $url);
     }
+    private function createTree(ReleasePreparation $preparation): string
+    {
+        $entries = array_map(
+            static function (FileChange $change): array {
+                if ($change->content === null) {
+                    throw new DomainException(sprintf(
+                        'ReleasePreparation file content is unavailable for apply: %s',
+                        $change->path,
+                    ));
+                }
+
+                return [
+                    'path' => $change->path,
+                    'mode' => '100644',
+                    'type' => 'blob',
+                    'content' => $change->content,
+                ];
+            },
+            $preparation->fileChanges,
+        );
+
+        $tree = $this->request(
+            'POST',
+            sprintf('/repos/%s/git/trees', $preparation->repository),
+            [
+                'base_tree' => $preparation->planningBaseSha,
+                'tree' => $entries,
+            ],
+        );
+        $sha = $tree['sha'] ?? null;
+        if (!is_string($sha) || $sha === '') {
+            throw new DomainException('GitHub did not return the generated release tree SHA.');
+        }
+
+        return $sha;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findPullRequest(ReleasePreparation $preparation): ?array
+    {
+        [$owner] = explode('/', $preparation->repository, 2);
+        $response = $this->client->request(
+            'GET',
+            sprintf('/repos/%s/pulls', $preparation->repository),
+            [
+                'query' => [
+                    'state' => 'open',
+                    'base' => $preparation->targetBranch,
+                    'head' => $owner . ':' . $preparation->generatedBranch,
+                    'per_page' => 10,
+                ],
+            ],
+        );
+        $this->assertSuccess($response->getStatusCode(), 'list release preparation pull requests');
+        $items = $response->toArray(false);
+
+        foreach ($items as $item) {
+            if (is_array($item)) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
 }
