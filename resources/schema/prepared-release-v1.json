@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LibreCodeCoop/release-tool/resources/schema/prepared-release-v1.json",
+  "title": "PreparedRelease v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","id","release_plan_id","release_preparation_id","repository","branch","release_pull_request","final_sha","version","tag_name","channel","mode","changelog","release_files","history_synchronization"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string"},
+    "release_plan_id": {"type": "string"},
+    "release_preparation_id": {"type": "string"},
+    "repository": {"type": "string"},
+    "branch": {"type": "string"},
+    "release_pull_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number","url"],
+      "properties": {"number":{"type":"integer"},"url":{"type":"string"}}
+    },
+    "final_sha": {"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "version": {"type":"string"},
+    "tag_name": {"type":"string"},
+    "channel": {"enum":["alpha","beta","rc","final"]},
+    "mode": {"enum":["normal","security"]},
+    "changelog": {
+      "type":"object",
+      "additionalProperties":false,
+      "required":["target","section","sha256"],
+      "properties":{"target":{"type":"string"},"section":{"type":"string"},"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}
+    },
+    "release_files": {
+      "type":"object",
+      "additionalProperties":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+    },
+    "history_synchronization": {
+      "type":"object",
+      "additionalProperties":false,
+      "required":["state","target_branch","target_path","generated_branch","pull_request"],
+      "properties":{
+        "state":{"enum":["not_required","planned","pull_request_open","already_synchronized","deferred_security"]},
+        "target_branch":{"type":"string"},
+        "target_path":{"type":"string"},
+        "generated_branch":{"type":["string","null"]},
+        "pull_request":{
+          "type":["object","null"],
+          "additionalProperties":false,
+          "required":["number","url"],
+          "properties":{"number":{"type":"integer"},"url":{"type":"string"}}
+        }
+      }
+    }
+  }
+}
