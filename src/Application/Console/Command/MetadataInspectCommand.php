@@ -41,19 +41,7 @@ final class MetadataInspectCommand extends Command
             $config = $this->configLoader->load((string) $input->getOption('config'));
             $this->contextValidator->validate($config, (string) $input->getOption('root'));
             $sha = $this->git->resolve((string) $input->getOption('ref'));
-            $metadata = $this->inspector->inspect(
-                $config,
-                $sha,
-                $this->git->readFile(
-                    $sha,
-                    str_replace('{major}', (string) $this->inspector->inspect(
-                        $config,
-                        $sha,
-                        $this->git->readFile($sha, str_replace('{major}', '0', $config->changelogPath)),
-                    )->major,
-                    $config->changelogPath,
-                ),
-            );
+            $metadata = $this->inspector->inspect($config, $sha);
         } catch (\Throwable $exception) {
             if ((bool) $input->getOption('json')) {
                 $output->writeln((string) json_encode([
