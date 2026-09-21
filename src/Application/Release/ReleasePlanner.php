@@ -22,16 +22,16 @@ use LibreCode\ReleaseTool\Domain\Version\Version;
 use LibreCode\ReleaseTool\Domain\Version\VersionPolicy;
 use LibreCode\ReleaseTool\Domain\Version\VersionTransitionPolicy;
 
-final class ReleasePlanner implements ReleasePlanning
+final readonly class ReleasePlanner implements ReleasePlanning
 {
     public function __construct(
-        private readonly GitRepository $git,
-        private readonly GitHubRepository $github,
-        private readonly ReleaseMetadataReader $metadataReader,
-        private readonly VersionPolicy $versionPolicy = new VersionPolicy(),
-        private readonly VersionTransitionPolicy $versionTransitions = new VersionTransitionPolicy(),
-        private readonly ConventionalTitleParser $titleParser = new ConventionalTitleParser(),
-        private readonly SecurityReleasePolicy $securityPolicy = new SecurityReleasePolicy(),
+        private GitRepository $git,
+        private GitHubRepository $github,
+        private ReleaseMetadataReader $metadataReader,
+        private VersionPolicy $versionPolicy = new VersionPolicy(),
+        private VersionTransitionPolicy $versionTransitions = new VersionTransitionPolicy(),
+        private ConventionalTitleParser $titleParser = new ConventionalTitleParser(),
+        private SecurityReleasePolicy $securityPolicy = new SecurityReleasePolicy(),
     ) {
     }
 
