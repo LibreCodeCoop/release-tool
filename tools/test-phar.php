@@ -26,7 +26,7 @@ $run = static function (array $arguments, ?string $cwd = null, array $env = []):
     return $process;
 };
 
-foreach ([['--version'], ['list', '--raw'], ['help'], ['metadata:inspect', '--help'], ['release:plan', '--help'], ['release:prepare', '--help']] as $arguments) {
+foreach ([['--version'], ['list', '--raw'], ['help'], ['metadata:inspect', '--help'], ['release:plan', '--help'], ['release:prepare', '--help'], ['release:finalize', '--help']] as $arguments) {
     $run([PHP_BINARY, $phar, ...$arguments]);
 }
 
