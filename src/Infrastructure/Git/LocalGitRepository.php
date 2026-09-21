@@ -11,9 +11,9 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\PreviousRelease;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 use Symfony\Component\Process\Process;
 
-final class LocalGitRepository implements GitRepository
+final readonly class LocalGitRepository implements GitRepository
 {
-    public function __construct(private readonly string $root)
+    public function __construct(private string $root)
     {
     }
 
