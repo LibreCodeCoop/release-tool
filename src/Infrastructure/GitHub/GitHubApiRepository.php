@@ -143,9 +143,6 @@ final class GitHubApiRepository implements GitHubRepository
             }
 
             $batch = $response->toArray(false);
-            if (!is_array($batch)) {
-                throw new DomainException(sprintf('Unexpected GitHub API response: %s.', $path));
-            }
 
             foreach ($batch as $item) {
                 if (is_array($item)) {
