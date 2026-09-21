@@ -214,7 +214,7 @@ final class ReleaseLifecycleTest extends TestCase
         self::assertTrue($plan->ready);
         self::assertSame('15.0.4', $plan->proposedVersion);
         self::assertSame('releasable-activity', $plan->bumpReason);
-        self::assertCount(1, $plan->releaseActivity);
+        self::assertCount(1, $plan->activity);
         self::assertSame('translation', $plan->releaseActivity[0]['kind']);
     }
 
