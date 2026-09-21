@@ -7,9 +7,9 @@ namespace LibreCode\ReleaseTool\Domain\Version;
 use DomainException;
 use LibreCode\ReleaseTool\Domain\Release\ReleaseActivity;
 
-final class VersionPolicy
+final readonly class VersionPolicy
 {
-    public function __construct(private readonly VersionTransitionPolicy $transitions = new VersionTransitionPolicy())
+    public function __construct(private VersionTransitionPolicy $transitions = new VersionTransitionPolicy())
     {
     }
 
