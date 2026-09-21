@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+namespace LibreCode\ReleaseTool\Application\Configuration;
+
+use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
+
+final class NoopConsumerConfigContextValidator implements ConsumerConfigContextValidator
+{
+    public function validate(ConsumerConfig $config, string $root): void
+    {
+    }
+}
