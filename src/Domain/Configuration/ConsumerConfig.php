@@ -9,6 +9,8 @@ final readonly class ConsumerConfig
     /**
      * @param list<string> $versionMirrors
      * @param list<string> $packageCommand
+     * @param list<string> $packageRequiredPaths
+     * @param list<string> $packageForbiddenPaths
      */
     public function __construct(
         public int $schema,
@@ -29,6 +31,8 @@ final readonly class ConsumerConfig
         public string $prepareMinPermission,
         public string $mergeMinPermission,
         public array $packageCommand,
+        public array $packageRequiredPaths = [],
+        public array $packageForbiddenPaths = [],
     ) {
     }
 }

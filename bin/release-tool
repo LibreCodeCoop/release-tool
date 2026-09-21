@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 
+use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
@@ -10,6 +11,7 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
@@ -49,4 +51,5 @@ exit(ApplicationFactory::create(
         $git,
         GitHubReleaseDraftRepository::fromEnvironment(),
     ),
+    new ArtifactValidator(new PharArchiveReaderFactory()),
 )->run());

@@ -21,6 +21,8 @@ final class ConsumerConfigLoaderTest extends TestCase
         self::assertSame(['package.json', 'package-lock.json'], $config->versionMirrors);
         self::assertSame('docs/changelogs/changelog-{major}.md', $config->changelogPath);
         self::assertSame(['make', 'appstore', 'verify-appstore-package'], $config->packageCommand);
+        self::assertSame(['appinfo', 'lib', 'css', 'js', 'vendor', '3rdparty'], $config->packageRequiredPaths);
+        self::assertSame(['.git', 'node_modules', 'tests'], $config->packageForbiddenPaths);
     }
 
     #[DataProvider('invalidConfigurationProvider')]

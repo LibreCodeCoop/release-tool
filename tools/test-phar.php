@@ -26,7 +26,18 @@ $run = static function (array $arguments, ?string $cwd = null, array $env = []):
     return $process;
 };
 
-foreach ([['--version'], ['list', '--raw'], ['help'], ['metadata:inspect', '--help'], ['release:plan', '--help'], ['release:prepare', '--help'], ['release:finalize', '--help'], ['milestone:transition', '--help'], ['release:draft', '--help']] as $arguments) {
+foreach ([
+    ['--version'],
+    ['list', '--raw'],
+    ['help'],
+    ['metadata:inspect', '--help'],
+    ['artifact:validate', '--help'],
+    ['release:plan', '--help'],
+    ['release:prepare', '--help'],
+    ['release:finalize', '--help'],
+    ['milestone:transition', '--help'],
+    ['release:draft', '--help'],
+] as $arguments) {
     $run([PHP_BINARY, $phar, ...$arguments]);
 }
 
@@ -38,6 +49,7 @@ mkdir($root . '/docs/changelogs', 0777, true);
 try {
     file_put_contents($root . '/appinfo/info.xml', <<<'XML'
 <info>
+  <id>example</id>
   <version>1.0.0</version>
   <dependencies>
     <nextcloud min-version="35" max-version="35" />
@@ -77,6 +89,8 @@ package:
   command:
     - make
     - package
+  required_paths:
+    - appinfo
 YAML);
 
     $git = static fn (array $args): Process => $run(['git', ...$args], $root);
@@ -119,6 +133,47 @@ YAML);
     );
     if ($sourceMetadata->getOutput() !== $pharMetadata->getOutput()) {
         throw new RuntimeException('Source CLI and PHAR metadata inspection differ.');
+    }
+
+    $artifactPath = $root . '/example.tar';
+    $artifact = new PharData($artifactPath);
+    $artifact->addFromString('example/appinfo/info.xml', file_get_contents($root . '/appinfo/info.xml'));
+    $artifact->addFromString('example/CHANGELOG.md', file_get_contents($root . '/docs/changelogs/changelog-1.md'));
+
+    $sourceArtifact = $run(
+        [
+            PHP_BINARY,
+            dirname(__DIR__) . '/bin/release-tool',
+            'artifact:validate',
+            $artifactPath,
+            '--config', $root . '/.nextcloud-release.yml',
+            '--root', $root,
+            '--expected-version', '1.0.0',
+            '--format', 'json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    $pharArtifact = $run(
+        [
+            PHP_BINARY,
+            $phar,
+            'artifact:validate',
+            $artifactPath,
+            '--config', $root . '/.nextcloud-release.yml',
+            '--root', $root,
+            '--expected-version', '1.0.0',
+            '--format', 'json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    if ($sourceArtifact->getOutput() !== $pharArtifact->getOutput()) {
+        throw new RuntimeException('Source CLI and PHAR artifact validation differ.');
+    }
+    $artifactValidation = json_decode($pharArtifact->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+    if (($artifactValidation['schema'] ?? null) !== 1 || ($artifactValidation['valid'] ?? null) !== true) {
+        throw new RuntimeException('PHAR artifact validation fixture did not produce valid ArtifactValidation v1.');
     }
 
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $error);

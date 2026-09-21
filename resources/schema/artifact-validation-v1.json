@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LibreCodeCoop/release-tool/resources/schema/artifact-validation-v1.json",
+  "title": "ArtifactValidation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","id","artifact_path","artifact_name","sha256","expected_app_id","actual_app_id","expected_version","actual_version","changelog","structure","warnings","errors","valid"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string","pattern": "^[0-9a-f]{64}$"},
+    "artifact_path": {"type": "string","minLength": 1},
+    "artifact_name": {"type": "string","minLength": 1},
+    "sha256": {"type": "string","pattern": "^[0-9a-f]{64}$"},
+    "expected_app_id": {"type": "string","minLength": 1},
+    "actual_app_id": {"type": ["string","null"]},
+    "expected_version": {"type": "string","minLength": 1},
+    "actual_version": {"type": ["string","null"]},
+    "changelog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path","present","release_section_found"],
+      "properties": {
+        "path": {"type": "string","minLength": 1},
+        "present": {"type": "boolean"},
+        "release_section_found": {"type": "boolean"}
+      }
+    },
+    "structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["top_level_paths","info_xml","required_paths","missing_required_paths","forbidden_paths","forbidden_paths_found"],
+      "properties": {
+        "top_level_paths": {"type": "array","items": {"type": "string"}},
+        "info_xml": {"type": "boolean"},
+        "required_paths": {"type": "array","items": {"type": "string"}},
+        "missing_required_paths": {"type": "array","items": {"type": "string"}},
+        "forbidden_paths": {"type": "array","items": {"type": "string"}},
+        "forbidden_paths_found": {"type": "array","items": {"type": "string"}}
+      }
+    },
+    "warnings": {"type": "array","items": {"type": "string"}},
+    "errors": {"type": "array","items": {"type": "string"}},
+    "valid": {"type": "boolean"}
+  }
+}
