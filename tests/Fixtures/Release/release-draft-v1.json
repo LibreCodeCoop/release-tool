@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "draft-fixture-id",
+  "prepared_release_id": "prepared-fixture-id",
+  "milestone_transition_id": "milestone-fixture-id",
+  "github_release": {
+    "id": 123,
+    "url": "https://github.com/LibreSign/libresign/releases/tag/untagged-example"
+  },
+  "tag_name": "v15.0.4",
+  "target_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "prerelease": false,
+  "body_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "draft": true,
+  "ready": true
+}
