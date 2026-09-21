@@ -203,4 +203,100 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
             $url,
         );
     }
+    /** @return array<string, mixed>|null */
+    private function findHistoryPullRequest(HistorySyncRequest $request): ?array
+    {
+        [$owner] = explode('/', $request->repository, 2);
+        $response = $this->client->request(
+            'GET',
+            sprintf('/repos/%s/pulls', $request->repository),
+            [
+                'query' => [
+                    'state' => 'open',
+                    'base' => $request->targetBranch,
+                    'head' => $owner . ':' . $request->generatedBranch,
+                    'per_page' => 10,
+                ],
+            ],
+        );
+        $this->assertSuccess($response->getStatusCode(), 'list history synchronization pull requests');
+        foreach ($response->toArray(false) as $item) {
+            if (is_array($item)) {
+                return $item;
+            }
+        }
+        return null;
+    }
+
+    private function optionalRefSha(string $repository, string $branch): ?string
+    {
+        $response = $this->client->request(
+            'GET',
+            sprintf('/repos/%s/git/ref/heads/%s', $repository, $this->encodeRef($branch)),
+        );
+        $status = $response->getStatusCode();
+        if ($status === 404) {
+            return null;
+        }
+        $this->assertSuccess($status, 'read GitHub branch ref');
+        $data = $response->toArray(false);
+        $sha = $data['object']['sha'] ?? null;
+        if (!is_string($sha) || $sha === '') {
+            throw new DomainException(sprintf('GitHub returned an invalid ref for %s.', $branch));
+        }
+        return $sha;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function paginate(string $path): array
+    {
+        $items = [];
+        for ($page = 1; ; ++$page) {
+            $response = $this->client->request('GET', $path, [
+                'query' => ['per_page' => 100, 'page' => $page],
+            ]);
+            $this->assertSuccess($response->getStatusCode(), 'paginate GitHub API');
+            $batch = $response->toArray(false);
+            if ($batch === []) {
+                break;
+            }
+            foreach ($batch as $item) {
+                if (!is_array($item)) {
+                    throw new DomainException('GitHub pagination returned a non-object item.');
+                }
+                $items[] = $item;
+            }
+            if (count($batch) < 100) {
+                break;
+            }
+        }
+        return $items;
+    }
+
+    /**
+     * @param array<string, mixed>|null $json
+     * @return array<string, mixed>
+     */
+    private function request(string $method, string $path, ?array $json = null): array
+    {
+        $response = $this->client->request(
+            $method,
+            $path,
+            $json === null ? [] : ['json' => $json],
+        );
+        $this->assertSuccess($response->getStatusCode(), $method . ' ' . $path);
+        return $response->toArray(false);
+    }
+
+    private function assertSuccess(int $status, string $operation): void
+    {
+        if ($status < 200 || $status >= 300) {
+            throw new DomainException(sprintf('GitHub API failed to %s (%d).', $operation, $status));
+        }
+    }
+
+    private function encodeRef(string $branch): string
+    {
+        return implode('/', array_map(rawurlencode(...), explode('/', $branch)));
+    }
 }
