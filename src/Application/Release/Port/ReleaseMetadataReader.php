@@ -9,5 +9,5 @@ use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 
 interface ReleaseMetadataReader
 {
-    public function read(ConsumerConfig $config): ReleaseMetadata;
+    public function read(ConsumerConfig $config, string $sha): ReleaseMetadata;
 }
