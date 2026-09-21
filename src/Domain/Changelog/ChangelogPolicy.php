@@ -116,7 +116,7 @@ final class ChangelogPolicy
      */
     private function renderSection(string $version, array $entries, string $date): string
     {
-        $lines = [sprintf('## [%s] - %s', $version, $date), ''];
+        $lines = [sprintf('## %s - %s', $version, $date), ''];
 
         foreach (self::CATEGORY_ORDER as $category) {
             if (!isset($entries[$category])) {
