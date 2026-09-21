@@ -9,7 +9,6 @@ use LibreCode\ReleaseTool\Application\Release\Port\GitHubRepository;
 use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\Port\ReleaseMetadataReader;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\PullRequestInfo;
-use LibreCode\ReleaseTool\Domain\Changelog\ChangelogPolicy;
 use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 use LibreCode\ReleaseTool\Domain\Release\BackportBlocker;
 use LibreCode\ReleaseTool\Domain\Release\ConventionalTitle;
