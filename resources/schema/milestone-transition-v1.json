@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LibreCodeCoop/release-tool/resources/schema/milestone-transition-v1.json",
+  "title": "MilestoneTransition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","id","prepared_release_id","released_milestone","follow_up_milestone","moved","already_applied"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string"},
+    "prepared_release_id": {"type": "string"},
+    "released_milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number","url","final_title"],
+      "properties": {
+        "number": {"type": "integer"},
+        "url": {"type": "string"},
+        "final_title": {"type": "string"}
+      }
+    },
+    "follow_up_milestone": {
+      "type": ["object","null"],
+      "additionalProperties": false,
+      "required": ["number","url"],
+      "properties": {
+        "number": {"type": "integer"},
+        "url": {"type": "string"}
+      }
+    },
+    "moved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issues","pull_requests"],
+      "properties": {
+        "issues": {"type": "integer","minimum": 0},
+        "pull_requests": {"type": "integer","minimum": 0}
+      }
+    },
+    "already_applied": {"type": "boolean"}
+  }
+}
