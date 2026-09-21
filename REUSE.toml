@@ -21,7 +21,16 @@ path = [
     "phpcs.xml",
     "deptrac.yaml",
     "infection.json5",
-    "box.json"
+    "box.json",
+    ".php-cs-fixer.dist.php",
+    "rector.php",
+    "README.md",
+    "AGENTS.md",
+    "bin/release-tool",
+    "resources/**",
+    "src/**",
+    "tests/**",
+    "tools/**"
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 LibreCode coop and contributors"
