@@ -28,18 +28,18 @@ final class ChangelogPolicyTest extends TestCase
             Version::parse('15.2.0'),
             $activity,
             'docs/changelogs/changelog-{major}.md',
-            "# Changelog\n\n## [15.1.0] - 2026-08-01\n\n### Fixed\n\n- Old fix.\n",
+            "# Changelog\n\n## 15.1.0 - 2026-08-01\n\n### Fixed\n\n- Old fix.\n",
             '2026-09-21',
         );
 
         self::assertSame('docs/changelogs/changelog-15.md', $result->targetPath);
-        self::assertStringContainsString('## [15.2.0] - 2026-09-21', $result->releaseSection);
+        self::assertStringContainsString('## 15.2.0 - 2026-09-21', $result->releaseSection);
         self::assertStringContainsString("### Added\n\n- add visible signatures (#15)", $result->releaseSection);
         self::assertStringContainsString("### Fixed\n\n- avoid invalid signature state (#12)", $result->releaseSection);
         self::assertSame(1, substr_count($result->releaseSection, 'Dependency updates.'));
         self::assertSame(1, substr_count($result->releaseSection, 'Translation updates.'));
         self::assertStringContainsString("### Security\n\n- security hardening (#16)", $result->releaseSection);
-        self::assertStringContainsString('## [15.1.0]', $result->content);
+        self::assertStringContainsString('## 15.1.0', $result->content);
     }
 
     public function testRejectsDuplicateVersion(): void
@@ -50,7 +50,7 @@ final class ChangelogPolicyTest extends TestCase
             Version::parse('15.1.0'),
             new ReleaseActivity([]),
             'changelog-{major}.md',
-            "## [15.1.0] - 2026-01-01\n",
+            "## 15.1.0 - 2026-01-01\n",
         );
     }
 }
