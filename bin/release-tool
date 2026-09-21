@@ -5,17 +5,20 @@ declare(strict_types=1);
 
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
+use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Infrastructure\AppStore\NextcloudAppStoreRepository;
 use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubMilestoneRepository;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubPublicationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseDraftRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseFinalizationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreparationPublisher;
@@ -52,4 +55,9 @@ exit(ApplicationFactory::create(
         GitHubReleaseDraftRepository::fromEnvironment(),
     ),
     new ArtifactValidator(new PharArchiveReaderFactory()),
+    new PublicationVerifier(
+        GitHubPublicationRepository::fromEnvironment(),
+        new NextcloudAppStoreRepository(),
+        new ArtifactValidator(new PharArchiveReaderFactory()),
+    ),
 )->run());

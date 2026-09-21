@@ -23,6 +23,9 @@ final class ConsumerConfigLoaderTest extends TestCase
         self::assertSame(['make', 'appstore', 'verify-appstore-package'], $config->packageCommand);
         self::assertSame(['appinfo', 'lib', 'css', 'js', 'vendor', '3rdparty'], $config->packageRequiredPaths);
         self::assertSame(['.git', 'node_modules', 'tests'], $config->packageForbiddenPaths);
+        self::assertSame('appstore-build-publish.yml', $config->publicationPublisherWorkflow);
+        self::assertSame('{app}-{tag}.tar.gz', $config->publicationAssetName);
+        self::assertSame('https://apps.nextcloud.com/api/v1/apps.json', $config->publicationAppStoreApi);
     }
 
     #[DataProvider('invalidConfigurationProvider')]

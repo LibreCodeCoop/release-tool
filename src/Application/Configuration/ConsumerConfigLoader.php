@@ -11,7 +11,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ConsumerConfigLoader
 {
-    private const array ROOT_KEYS = ['schema', 'repository', 'app', 'branches', 'version', 'history', 'changelog', 'milestones', 'authorization', 'package'];
+    private const array ROOT_KEYS = ['schema', 'repository', 'app', 'branches', 'version', 'history', 'changelog', 'milestones', 'authorization', 'package', 'publication'];
     private const array PERMISSIONS = ['read', 'triage', 'write', 'maintain', 'admin'];
     private const array TEMPLATE_VALUES = ['nextcloud', 'major', 'version'];
 
@@ -45,6 +45,9 @@ final class ConsumerConfigLoader
         $milestones = $this->mapping($data, 'milestones', ['patch', 'rc']);
         $authorization = $this->mapping($data, 'authorization', ['prepare_min_permission', 'merge_min_permission']);
         $package = $this->mapping($data, 'package', ['command', 'required_paths', 'forbidden_paths']);
+        $publication = isset($data['publication'])
+            ? $this->mapping($data, 'publication', ['publisher_workflow', 'asset_name', 'appstore_api'])
+            : null;
 
         $stablePattern = $this->requiredString($branches, 'stable_pattern', 'branches');
         set_error_handler(static fn (): bool => true);
@@ -100,6 +103,22 @@ final class ConsumerConfigLoader
         $requiredPaths = $this->packagePaths($package['required_paths'] ?? [], 'package.required_paths');
         $forbiddenPaths = $this->packagePaths($package['forbidden_paths'] ?? [], 'package.forbidden_paths');
 
+        $publisherWorkflow = $publication !== null
+            ? $this->requiredString($publication, 'publisher_workflow', 'publication')
+            : null;
+        $assetName = $publication !== null
+            ? $this->requiredString($publication, 'asset_name', 'publication')
+            : null;
+        $appStoreApi = $publication !== null
+            ? $this->requiredString($publication, 'appstore_api', 'publication')
+            : null;
+        if ($assetName !== null) {
+            $this->assertTemplate($assetName, ['app', 'version', 'tag'], 'publication.asset_name');
+        }
+        if ($appStoreApi !== null && filter_var($appStoreApi, FILTER_VALIDATE_URL) === false) {
+            throw new InvalidArgumentException('publication.appstore_api must be a valid URL.');
+        }
+
         $repository = $data['repository'] ?? null;
         if ($repository !== null && (!is_string($repository) || preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository) !== 1)) {
             throw new InvalidArgumentException('repository must be in owner/name form.');
@@ -126,6 +145,9 @@ final class ConsumerConfigLoader
             $command,
             $requiredPaths,
             $forbiddenPaths,
+            $publisherWorkflow,
+            $assetName,
+            $appStoreApi,
         );
     }
 

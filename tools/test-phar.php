@@ -32,6 +32,7 @@ foreach ([
     ['help'],
     ['metadata:inspect', '--help'],
     ['artifact:validate', '--help'],
+    ['publication:verify', '--help'],
     ['release:plan', '--help'],
     ['release:prepare', '--help'],
     ['release:finalize', '--help'],

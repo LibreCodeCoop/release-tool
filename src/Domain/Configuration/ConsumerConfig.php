@@ -33,6 +33,9 @@ final readonly class ConsumerConfig
         public array $packageCommand,
         public array $packageRequiredPaths = [],
         public array $packageForbiddenPaths = [],
+        public ?string $publicationPublisherWorkflow = null,
+        public ?string $publicationAssetName = null,
+        public ?string $publicationAppStoreApi = null,
     ) {
     }
 }

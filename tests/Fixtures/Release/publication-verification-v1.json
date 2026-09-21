@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "release_draft_id": "draft-id",
+  "prepared_release_id": "prepared-id",
+  "repository": "LibreSign/libresign",
+  "tag_name": "v15.0.4",
+  "target_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "github_release": {
+    "id": 101,
+    "url": "https://github.com/LibreSign/libresign/releases/tag/v15.0.4",
+    "published": true
+  },
+  "publisher": {
+    "workflow": "appstore-build-publish.yml",
+    "run_id": 202,
+    "run_url": "https://github.com/LibreSign/libresign/actions/runs/202",
+    "conclusion": "success",
+    "success": true
+  },
+  "artifact": {
+    "name": "libresign-v15.0.4.tar.gz",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "validation_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "valid": true
+  },
+  "appstore": {
+    "api": "https://apps.nextcloud.com/api/v1/apps.json",
+    "app_id": "libresign",
+    "version": "15.0.4",
+    "visible": true
+  },
+  "verified_at": "2026-09-21T19:00:00+00:00",
+  "security_mode": false,
+  "errors": [],
+  "success": true
+}

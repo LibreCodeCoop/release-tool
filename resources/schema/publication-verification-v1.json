@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LibreCodeCoop/release-tool/resources/schema/publication-verification-v1.json",
+  "title": "PublicationVerification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema","id","release_draft_id","prepared_release_id","repository","tag_name","target_sha",
+    "github_release","publisher","artifact","appstore","verified_at","security_mode","errors","success"
+  ],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "release_draft_id": {"type": "string"},
+    "prepared_release_id": {"type": "string"},
+    "repository": {"type": "string"},
+    "tag_name": {"type": "string"},
+    "target_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "github_release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id","url","published"],
+      "properties": {
+        "id": {"type": "integer"},
+        "url": {"type": "string"},
+        "published": {"type": "boolean"}
+      }
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow","run_id","run_url","conclusion","success"],
+      "properties": {
+        "workflow": {"type": "string"},
+        "run_id": {"type": ["integer","null"]},
+        "run_url": {"type": ["string","null"]},
+        "conclusion": {"type": ["string","null"]},
+        "success": {"type": "boolean"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name","sha256","validation_id","valid"],
+      "properties": {
+        "name": {"type": "string"},
+        "sha256": {"type": ["string","null"], "pattern": "^[0-9a-f]{64}$"},
+        "validation_id": {"type": ["string","null"], "pattern": "^[0-9a-f]{64}$"},
+        "valid": {"type": "boolean"}
+      }
+    },
+    "appstore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["api","app_id","version","visible"],
+      "properties": {
+        "api": {"type": "string"},
+        "app_id": {"type": "string"},
+        "version": {"type": "string"},
+        "visible": {"type": "boolean"}
+      }
+    },
+    "verified_at": {"type": "string"},
+    "security_mode": {"type": "boolean"},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "success": {"type": "boolean"}
+  }
+}

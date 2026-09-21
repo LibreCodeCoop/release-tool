@@ -10,6 +10,7 @@ use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextVal
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\PublicationVerifyCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
@@ -22,6 +23,7 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
+use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use Symfony\Component\Console\Application;
 
@@ -40,6 +42,7 @@ final class ApplicationFactory
         ?MilestoneTransitioner $milestoneTransitioner = null,
         ?ReleaseDrafter $releaseDrafter = null,
         ?ArtifactValidator $artifactValidator = null,
+        ?PublicationVerifier $publicationVerifier = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -51,6 +54,13 @@ final class ApplicationFactory
         if ($artifactValidator !== null) {
             $application->add(new ArtifactValidateCommand(
                 $artifactValidator,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
+
+        if ($publicationVerifier !== null) {
+            $application->add(new PublicationVerifyCommand(
+                $publicationVerifier,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
