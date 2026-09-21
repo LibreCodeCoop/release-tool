@@ -31,6 +31,7 @@ final class VersionTransitionPolicyTest extends TestCase
         yield 'repeat rc increments' => ['16.0.0-rc.3', ReleaseChannel::Rc, '16.0.0-rc.4'];
         yield 'rc finalizes' => ['16.0.0-rc.4', ReleaseChannel::Final, '16.0.0'];
         yield 'development starts alpha' => ['16.0.0-dev', ReleaseChannel::Alpha, '16.0.0-alpha.1'];
+        yield 'numbered development starts alpha' => ['16.0.0-dev.2', ReleaseChannel::Alpha, '16.0.0-alpha.1'];
         yield 'development finalizes explicitly' => ['16.0.0-dev', ReleaseChannel::Final, '16.0.0'];
     }
 
