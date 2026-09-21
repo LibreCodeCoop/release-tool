@@ -243,12 +243,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
         );
         $this->assertSuccess($response->getStatusCode(), $method . ' ' . $path);
 
-        $data = $response->toArray(false);
-        if (!is_array($data)) {
-            throw new DomainException(sprintf('Unexpected GitHub API response for %s %s.', $method, $path));
-        }
-
-        return $data;
+        return $response->toArray(false);
     }
 
     private function assertSuccess(int $status, string $operation): void
@@ -260,7 +255,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
 
     private function encodeRef(string $branch): string
     {
-        return implode('/', array_map('rawurlencode', explode('/', $branch)));
+        return implode('/', array_map(rawurlencode(...), explode('/', $branch)));
     }
 
     private function pullRequestBody(ReleasePreparation $preparation): string
