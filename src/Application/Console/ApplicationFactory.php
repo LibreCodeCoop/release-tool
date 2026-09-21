@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Application\Console;
 
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
@@ -16,6 +17,7 @@ final class ApplicationFactory
         $application = new Application('release-tool', self::version());
         $application->setAutoExit(false);
         $application->add(new ConfigValidateCommand());
+        $application->add(new ReleasePlanCommand());
 
         return $application;
     }
