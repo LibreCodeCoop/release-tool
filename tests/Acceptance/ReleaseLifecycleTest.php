@@ -13,6 +13,7 @@ use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublishedRelease;
 use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublisherRun;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
+use LibreCode\ReleaseTool\Application\Release\ReadModel\CommitInfo;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\FinalizedPullRequest;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\MilestoneInfo;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\PreviousRelease;
@@ -173,6 +174,112 @@ final class ReleaseLifecycleTest extends TestCase
         self::assertTrue($draft->ready);
     }
 
+
+    public function testTranslationOnlyDirectCommitProducesPatchRelease(): void
+    {
+        $translationCommit = new CommitInfo(
+            self::BASE,
+            'chore(l10n): update translations',
+            ['l10n/pt_BR.js', 'l10n/pt_BR.json'],
+        );
+        $git = $this->planningGit(commits: [$translationCommit]);
+        $github = new InMemoryGitHubRepository(
+            closed: [],
+            open: [],
+            milestones: [new MilestoneInfo(
+                7,
+                'Next Patch (35)',
+                'https://example.test/milestones/7',
+            )],
+        );
+
+        $plan = (new ReleasePlanner(
+            $git,
+            $github,
+            new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.3'), 35, 35, [])),
+        ))->plan(
+            $this->config(),
+            new PlanReleaseInput(
+                'stable35',
+                null,
+                null,
+                ReleaseChannel::Final,
+                false,
+                false,
+                ReleaseMode::Normal,
+                null,
+            ),
+        );
+
+        self::assertTrue($plan->ready);
+        self::assertSame('15.0.4', $plan->proposedVersion);
+        self::assertSame('patch', $plan->bumpReason);
+        self::assertCount(1, $plan->releaseActivity);
+        self::assertSame('translation', $plan->releaseActivity[0]['kind']);
+    }
+
+    public function testFailedPublicationRemainsExplicitlyUnverifiedAndRerunnable(): void
+    {
+        [, $preparation] = $this->planAndPrepare();
+        [$prepared, $draft] = $this->finalizeAndDraft($preparation);
+
+        $artifact = $this->artifact($prepared->version, $prepared->changelogSection);
+        try {
+            $bytes = (string) file_get_contents($artifact);
+            $release = new PublishedRelease(
+                $draft->releaseId,
+                $draft->releaseUrl,
+                $prepared->tagName,
+                $prepared->finalSha,
+                false,
+                $draft->prerelease,
+                '2026-09-21T18:00:00Z',
+                [new PublishedAsset(
+                    303,
+                    'libresign-' . $prepared->tagName . '.tar.gz',
+                    'asset',
+                    hash('sha256', $bytes),
+                )],
+            );
+            $failedRun = new PublisherRun(
+                202,
+                'https://example.test/actions/runs/202',
+                $prepared->finalSha,
+                'release',
+                'completed',
+                'failure',
+                '2026-09-21T18:01:00Z',
+            );
+
+            $verifier = new PublicationVerifier(
+                new InMemoryPublicationRepository($release, $failedRun, $bytes),
+                new StaticAppStoreRepository(false),
+                new ArtifactValidator(new PharArchiveReaderFactory()),
+            );
+
+            $first = $verifier->verify(
+                $this->config(),
+                $draft,
+                $prepared,
+                new DateTimeImmutable('2026-09-21T19:00:00Z'),
+            );
+            $second = $verifier->verify(
+                $this->config(),
+                $draft,
+                $prepared,
+                new DateTimeImmutable('2026-09-21T19:05:00Z'),
+            );
+
+            self::assertFalse($first->success);
+            self::assertFalse($first->publisherSucceeded);
+            self::assertFalse($first->appStoreVisible);
+            self::assertSame($first->id, $second->id);
+        } finally {
+            @unlink($artifact);
+            @rmdir(dirname($artifact));
+        }
+    }
+
     public function testStalePreparationFailsClosedAndFreshPlanChangesIdentity(): void
     {
         [$plan] = $this->planAndPrepare(prepare: false);
@@ -286,7 +393,8 @@ final class ReleaseLifecycleTest extends TestCase
         );
     }
 
-    private function planningGit(string $head = self::BASE): InMemoryGitRepository
+    /** @param list<CommitInfo> $commits */
+    private function planningGit(string $head = self::BASE, array $commits = []): InMemoryGitRepository
     {
         $files = [
             $head . ':docs/changelogs/changelog-15.md' => "# Changelog\n\n## 15.0.3 - 2026-09-01\n\n### Fixed\n\n- Previous.\n",
@@ -305,6 +413,7 @@ final class ReleaseLifecycleTest extends TestCase
             ],
             new PreviousRelease('v15.0.3', self::PREVIOUS, 'v15.0.3'),
             $files,
+            commits: $commits,
             date: '2026-09-21',
         );
     }
