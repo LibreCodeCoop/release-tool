@@ -26,7 +26,7 @@ $run = static function (array $arguments, ?string $cwd = null, array $env = []):
     return $process;
 };
 
-foreach ([['--version'], ['list', '--raw'], ['help'], ['release:plan', '--help'], ['release:prepare', '--help']] as $arguments) {
+foreach ([['--version'], ['list', '--raw'], ['help'], ['metadata:inspect', '--help'], ['release:plan', '--help'], ['release:prepare', '--help']] as $arguments) {
     $run([PHP_BINARY, $phar, ...$arguments]);
 }
 
@@ -46,7 +46,7 @@ try {
 XML);
     file_put_contents($root . '/package.json', "{\"version\":\"1.0.0\"}\n");
     file_put_contents($root . '/package-lock.json', "{\"version\":\"1.0.0\"}\n");
-    file_put_contents($root . '/docs/changelogs/changelog-1.md', "# Changelog\n");
+    file_put_contents($root . '/docs/changelogs/changelog-1.md', "# Changelog\n\n## 1.0.0 - 2026-09-21\n\n### Fixed\n\n- Initial.\n");
     file_put_contents($root . '/.nextcloud-release.yml', <<<'YAML'
 schema: 1
 repository: Example/app
@@ -90,6 +90,36 @@ YAML);
     file_put_contents($root . '/change.txt', "fix\n");
     $git(['add', 'change.txt']);
     $git(['commit', '-m', 'fix: deterministic PHAR planning']);
+
+    $sourceMetadata = $run(
+        [
+            PHP_BINARY,
+            dirname(__DIR__) . '/bin/release-tool',
+            'metadata:inspect',
+            '--config', $root . '/.nextcloud-release.yml',
+            '--root', $root,
+            '--ref', 'v1.0.0',
+            '--json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    $pharMetadata = $run(
+        [
+            PHP_BINARY,
+            $phar,
+            'metadata:inspect',
+            '--config', $root . '/.nextcloud-release.yml',
+            '--root', $root,
+            '--ref', 'v1.0.0',
+            '--json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    if ($sourceMetadata->getOutput() !== $pharMetadata->getOutput()) {
+        throw new RuntimeException('Source CLI and PHAR metadata inspection differ.');
+    }
 
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $error);
     if ($socket === false) {

@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
+use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
@@ -27,4 +28,6 @@ exit(ApplicationFactory::create(
     new LocalConsumerConfigContextValidator(),
     new ReleasePreparer($git),
     GitHubReleasePreparationPublisher::fromEnvironment(),
+    $git,
+    new LocalReleaseMetadataInspector($git, new GitReleaseMetadataReader($git)),
 )->run());
