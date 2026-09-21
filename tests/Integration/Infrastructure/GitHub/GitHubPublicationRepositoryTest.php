@@ -55,6 +55,15 @@ final class GitHubPublicationRepositoryTest extends TestCase
                             'conclusion' => 'success',
                             'created_at' => '2026-09-21T18:01:00Z',
                         ],
+                        [
+                            'id' => 203,
+                            'html_url' => 'https://example.test/actions/runs/203',
+                            'head_sha' => self::SHA,
+                            'event' => 'release',
+                            'status' => 'completed',
+                            'conclusion' => 'success',
+                            'created_at' => '2026-09-21T18:05:00Z',
+                        ],
                     ],
                 ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
             }

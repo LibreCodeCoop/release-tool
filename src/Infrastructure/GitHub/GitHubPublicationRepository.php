@@ -124,7 +124,7 @@ final readonly class GitHubPublicationRepository implements PublicationRepositor
         usort(
             $matches,
             static fn (array $left, array $right): int =>
-                strcmp((string) ($right['created_at'] ?? ''), (string) ($left['created_at'] ?? '')),
+                strcmp((string) ($left['created_at'] ?? ''), (string) ($right['created_at'] ?? '')),
         );
         $run = $matches[0];
 
