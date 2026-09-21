@@ -26,7 +26,7 @@ $run = static function (array $arguments, ?string $cwd = null, array $env = []):
     return $process;
 };
 
-foreach ([['--version'], ['list', '--raw'], ['help'], ['release:plan', '--help']] as $arguments) {
+foreach ([['--version'], ['list', '--raw'], ['help'], ['release:plan', '--help'], ['release:prepare', '--help']] as $arguments) {
     $run([PHP_BINARY, $phar, ...$arguments]);
 }
 
@@ -190,6 +190,66 @@ PHP);
         }
         if (($pharPlan['schema'] ?? null) !== 1 || ($pharPlan['proposed_version'] ?? null) !== '1.0.1') {
             throw new RuntimeException('PHAR release planning fixture did not produce ReleasePlan v1 patch output.');
+        }
+
+        $planPath = $root . '/release-plan.json';
+        file_put_contents(
+            $planPath,
+            json_encode($sourcePlan, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+        );
+
+        $sourcePreparation = $run(
+            [
+                PHP_BINARY,
+                dirname(__DIR__) . '/bin/release-tool',
+                'release:prepare',
+                '--plan', $planPath,
+                '--config', $root . '/.nextcloud-release.yml',
+                '--root', $root,
+                '--json',
+            ],
+            $root,
+            [
+                'GITHUB_REPOSITORY' => 'Example/app',
+            ],
+        );
+
+        $pharPreparation = $run(
+            [
+                PHP_BINARY,
+                $phar,
+                'release:prepare',
+                '--plan', $planPath,
+                '--config', $root . '/.nextcloud-release.yml',
+                '--root', $root,
+                '--json',
+            ],
+            $root,
+            [
+                'GITHUB_REPOSITORY' => 'Example/app',
+            ],
+        );
+
+        $sourcePreparationData = json_decode(
+            $sourcePreparation->getOutput(),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $pharPreparationData = json_decode(
+            $pharPreparation->getOutput(),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        if ($sourcePreparationData !== $pharPreparationData) {
+            throw new RuntimeException('Source CLI and PHAR release preparations differ.');
+        }
+        if (
+            ($pharPreparationData['schema'] ?? null) !== 1
+            || ($pharPreparationData['version'] ?? null) !== '1.0.1'
+            || count($pharPreparationData['file_changes'] ?? []) !== 4
+        ) {
+            throw new RuntimeException('PHAR release preparation fixture did not produce ReleasePreparation v1.');
         }
     } finally {
         $server->stop(1);

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "prep-fixture-id",
+  "release_plan_id": "plan-fixture-id",
+  "repository": "LibreSign/libresign",
+  "target_branch": "stable35",
+  "planning_base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "version": "15.0.4",
+  "channel": "final",
+  "mode": "normal",
+  "file_changes": [
+    {
+      "path": "appinfo/info.xml",
+      "before_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "after_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+      "path": "docs/changelogs/changelog-15.md",
+      "before_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "after_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "changelog": {
+    "section": "## 15.0.4 - 2026-09-20\n\n### Fixed\n\n- Correct signature parsing (#10)",
+    "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "generated_branch": "release-tool/stable35/15.0.4/plan-fixture",
+  "pr_marker": "<!-- release-tool:preparation plan=plan-fixture-id version=15.0.4 -->",
+  "pull_request": {
+    "number": 9001,
+    "url": "https://github.com/LibreSign/libresign/pull/9001"
+  },
+  "merge_preconditions": {
+    "target_branch": "stable35",
+    "expected_base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "allowed_files": [
+      "appinfo/info.xml",
+      "docs/changelogs/changelog-15.md"
+    ]
+  }
+}

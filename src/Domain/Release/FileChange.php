@@ -12,7 +12,7 @@ final readonly class FileChange implements JsonSerializable
         public string $path,
         public string $beforeSha256,
         public string $afterSha256,
-        public string $content,
+        public ?string $content,
     ) {
     }
 

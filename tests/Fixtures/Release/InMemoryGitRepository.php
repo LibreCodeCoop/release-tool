@@ -26,6 +26,7 @@ final class InMemoryGitRepository implements GitRepository
         private readonly array $files,
         private readonly array $commits = [],
         private readonly array $tags = [],
+        private readonly string $date = '2026-09-21',
     ) {
     }
 
@@ -70,6 +71,11 @@ final class InMemoryGitRepository implements GitRepository
         }
 
         return $this->files[$key];
+    }
+
+    public function commitDate(string $sha): string
+    {
+        return $this->date;
     }
 
     public function previousRelease(string $baseSha, string $tagPrefix, ?string $initialRef): PreviousRelease

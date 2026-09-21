@@ -5,9 +5,11 @@ declare(strict_types=1);
 
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
+use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreparationPublisher;
 use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -23,4 +25,6 @@ $planner = new ReleasePlanner(
 exit(ApplicationFactory::create(
     $planner,
     new LocalConsumerConfigContextValidator(),
+    new ReleasePreparer($git),
+    GitHubReleasePreparationPublisher::fromEnvironment(),
 )->run());

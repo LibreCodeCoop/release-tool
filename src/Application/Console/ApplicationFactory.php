@@ -8,7 +8,10 @@ use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidat
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
+use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
+use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
@@ -18,6 +21,8 @@ final class ApplicationFactory
     public static function create(
         ?ReleasePlanning $planner = null,
         ?ConsumerConfigContextValidator $configValidator = null,
+        ?ReleasePreparer $preparer = null,
+        ?ReleasePreparationPublishing $preparationPublisher = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -30,6 +35,14 @@ final class ApplicationFactory
             $application->add(new ReleasePlanCommand(
                 $planner,
                 contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
+
+        if ($preparer !== null) {
+            $application->add(new ReleasePrepareCommand(
+                $preparer,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+                $preparationPublisher,
             ));
         }
 

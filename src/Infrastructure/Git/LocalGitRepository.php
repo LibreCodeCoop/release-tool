@@ -88,6 +88,16 @@ final readonly class LocalGitRepository implements GitRepository
         return $this->run(['git', 'show', $sha . ':' . $path]);
     }
 
+    public function commitDate(string $sha): string
+    {
+        $date = trim($this->run(['git', 'show', '-s', '--format=%cs', $sha]));
+        if (preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $date) !== 1) {
+            throw new DomainException(sprintf('Git commit date is invalid for %s.', $sha));
+        }
+
+        return $date;
+    }
+
     public function previousRelease(
         string $baseSha,
         string $tagPrefix,
