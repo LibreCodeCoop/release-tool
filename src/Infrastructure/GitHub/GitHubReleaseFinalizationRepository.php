@@ -97,6 +97,110 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
 
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
     {
-        throw new DomainException('Finalization repository incomplete.');
+        $currentHead = $this->branchHead($request->repository, $request->targetBranch);
+        if ($currentHead !== $request->expectedBaseSha) {
+            throw new DomainException(sprintf(
+                'History synchronization is stale: %s now points to %s, expected %s.',
+                $request->targetBranch,
+                $currentHead,
+                $request->expectedBaseSha,
+            ));
+        }
+
+        $baseCommit = $this->request(
+            'GET',
+            sprintf('/repos/%s/git/commits/%s', $request->repository, $request->expectedBaseSha),
+        );
+        $baseTree = $baseCommit['tree']['sha'] ?? null;
+        if (!is_string($baseTree) || $baseTree === '') {
+            throw new DomainException('GitHub did not return the history base tree SHA.');
+        }
+
+        $tree = $this->request(
+            'POST',
+            sprintf('/repos/%s/git/trees', $request->repository),
+            [
+                'base_tree' => $baseTree,
+                'tree' => [[
+                    'path' => $request->targetPath,
+                    'mode' => '100644',
+                    'type' => 'blob',
+                    'content' => $request->content,
+                ]],
+            ],
+        );
+        $treeSha = $tree['sha'] ?? null;
+        if (!is_string($treeSha) || $treeSha === '') {
+            throw new DomainException('GitHub did not return the history synchronization tree SHA.');
+        }
+
+        $generatedHead = $this->optionalRefSha($request->repository, $request->generatedBranch);
+        if ($generatedHead !== null) {
+            $commit = $this->request(
+                'GET',
+                sprintf('/repos/%s/git/commits/%s', $request->repository, $generatedHead),
+            );
+            $existingTree = $commit['tree']['sha'] ?? null;
+            if (!is_string($existingTree) || $existingTree !== $treeSha) {
+                throw new DomainException('Existing history synchronization branch was edited and will not be overwritten.');
+            }
+        } else {
+            $commit = $this->request(
+                'POST',
+                sprintf('/repos/%s/git/commits', $request->repository),
+                [
+                    'message' => sprintf('docs: synchronize release %s history', $request->version),
+                    'tree' => $treeSha,
+                    'parents' => [$request->expectedBaseSha],
+                ],
+            );
+            $generatedHead = $commit['sha'] ?? null;
+            if (!is_string($generatedHead) || $generatedHead === '') {
+                throw new DomainException('GitHub did not return the history synchronization commit SHA.');
+            }
+            $this->request(
+                'POST',
+                sprintf('/repos/%s/git/refs', $request->repository),
+                [
+                    'ref' => 'refs/heads/' . $request->generatedBranch,
+                    'sha' => $generatedHead,
+                ],
+            );
+        }
+
+        $pullRequest = $this->findHistoryPullRequest($request);
+        if ($pullRequest === null) {
+            $pullRequest = $this->request(
+                'POST',
+                sprintf('/repos/%s/pulls', $request->repository),
+                [
+                    'title' => sprintf('docs: synchronize release %s history', $request->version),
+                    'head' => $request->generatedBranch,
+                    'base' => $request->targetBranch,
+                    'body' => $request->marker . "\n\nThis PR synchronizes the exact released changelog section only.",
+                    'maintainer_can_modify' => true,
+                ],
+            );
+        } else {
+            $body = $pullRequest['body'] ?? '';
+            if (!is_string($body) || !str_contains($body, $request->marker)) {
+                throw new DomainException('Existing history synchronization PR is missing the expected marker.');
+            }
+        }
+
+        $number = $pullRequest['number'] ?? null;
+        $url = $pullRequest['html_url'] ?? null;
+        if (!is_int($number) || !is_string($url) || $url === '') {
+            throw new DomainException('GitHub returned an invalid history synchronization pull request.');
+        }
+
+        return new HistorySynchronization(
+            HistorySyncState::PullRequestOpen,
+            $request->targetBranch,
+            $request->targetPath,
+            $request->generatedBranch,
+            $number,
+            $url,
+        );
     }
 }
