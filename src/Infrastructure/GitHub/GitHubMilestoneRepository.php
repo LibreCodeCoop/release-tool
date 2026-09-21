@@ -110,7 +110,7 @@ final readonly class GitHubMilestoneRepository implements MilestoneRepository
     private function milestones(string $repository, string $state): array
     {
         return array_map(
-            fn (array $item): MilestoneInfo => $this->milestoneInfo($item),
+            $this->milestoneInfo(...),
             $this->paginate('/repos/' . $repository . '/milestones', [
                 'state' => $state,
                 'sort' => 'due_on',
