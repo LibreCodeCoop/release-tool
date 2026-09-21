@@ -21,7 +21,7 @@ final class ChangelogPolicy
         ?string $date = null,
     ): ChangelogResult {
         $versionString = (string) $version;
-        if (preg_match('/^## \[' . preg_quote($versionString, '/') . '\](?:\s|$)/m', $currentContent) === 1) {
+        if (preg_match('/^## (?:\\[)?' . preg_quote($versionString, '/') . '(?:\\])?(?:\\s|$)/m', $currentContent) === 1) {
             throw new DomainException(sprintf('Changelog already contains release %s.', $versionString));
         }
 
@@ -135,7 +135,7 @@ final class ChangelogPolicy
 
     private function headerInsertionOffset(string $content): int
     {
-        if (preg_match('/^## \[/m', $content, $match, PREG_OFFSET_CAPTURE) === 1) {
+        if (preg_match('/^## (?:\\[)?\\d+\\.\\d+\\.\\d+/m', $content, $match, PREG_OFFSET_CAPTURE) === 1) {
             return $match[0][1];
         }
 
