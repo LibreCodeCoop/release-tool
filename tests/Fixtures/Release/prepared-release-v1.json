@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "prepared-fixture-id",
+  "release_plan_id": "plan-fixture-id",
+  "release_preparation_id": "preparation-fixture-id",
+  "repository": "LibreSign/libresign",
+  "branch": "stable35",
+  "release_pull_request": {
+    "number": 9001,
+    "url": "https://github.com/LibreSign/libresign/pull/9001"
+  },
+  "final_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "version": "15.0.4",
+  "tag_name": "v15.0.4",
+  "channel": "final",
+  "mode": "normal",
+  "changelog": {
+    "target": "docs/changelogs/changelog-15.md",
+    "section": "## 15.0.4 - 2026-09-21\n\n### Fixed\n\n- Exact merged wording.",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "release_files": {
+    "appinfo/info.xml": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "docs/changelogs/changelog-15.md": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "package-lock.json": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "package.json": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "history_synchronization": {
+    "state": "pull_request_open",
+    "target_branch": "main",
+    "target_path": "docs/changelogs/changelog-15.md",
+    "generated_branch": "release-tool/history/15.0.4/prepared",
+    "pull_request": {
+      "number": 9002,
+      "url": "https://github.com/LibreSign/libresign/pull/9002"
+    }
+  }
+}
