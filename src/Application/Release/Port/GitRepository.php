@@ -21,6 +21,8 @@ interface GitRepository
 
     public function readFile(string $sha, string $path): string;
 
+    public function commitDate(string $sha): string;
+
     public function previousRelease(
         string $baseSha,
         string $tagPrefix,
