@@ -6,7 +6,7 @@ namespace LibreCode\ReleaseTool\Domain\Version;
 
 use InvalidArgumentException;
 
-final readonly class Version
+final readonly class Version implements \Stringable
 {
     public function __construct(
         public int $major,
