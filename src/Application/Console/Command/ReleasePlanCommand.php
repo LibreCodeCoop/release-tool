@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'release:plan', description: 'Build a read-only ReleasePlan v1 for a release line.')]
 final class ReleasePlanCommand extends Command
 {
-    public const EXIT_NOT_READY = 3;
+    public const int EXIT_NOT_READY = 3;
 
     public function __construct(
         private readonly ReleasePlanning $planner,
