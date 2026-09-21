@@ -17,15 +17,15 @@ final class LocalGitRepositoryTest extends TestCase
         $this->directory = sys_get_temp_dir() . '/release-tool-git-' . bin2hex(random_bytes(8));
         mkdir($this->directory, 0777, true);
 
-        $this->run(['git', 'init', '-b', 'main']);
-        $this->run(['git', 'config', 'user.name', 'Release Tool Test']);
-        $this->run(['git', 'config', 'user.email', 'release-tool@example.invalid']);
+        $this->runGit(['git', 'init', '-b', 'main']);
+        $this->runGit(['git', 'config', 'user.name', 'Release Tool Test']);
+        $this->runGit(['git', 'config', 'user.email', 'release-tool@example.invalid']);
         file_put_contents($this->directory . '/README.md', "first\n");
-        $this->run(['git', 'add', 'README.md']);
-        $this->run(['git', 'commit', '-m', 'chore: initial']);
-        $this->run(['git', 'tag', 'v1.0.0']);
+        $this->runGit(['git', 'add', 'README.md']);
+        $this->runGit(['git', 'commit', '-m', 'chore: initial']);
+        $this->runGit(['git', 'tag', 'v1.0.0']);
         file_put_contents($this->directory . '/README.md', "second\n");
-        $this->run(['git', 'commit', '-am', 'fix: second']);
+        $this->runGit(['git', 'commit', '-am', 'fix: second']);
     }
 
     protected function tearDown(): void
@@ -54,7 +54,7 @@ final class LocalGitRepositoryTest extends TestCase
     /**
      * @param list<string> $command
      */
-    private function run(array $command): void
+    private function runGit(array $command): void
     {
         $process = new Process($command, $this->directory);
         $process->mustRun();
