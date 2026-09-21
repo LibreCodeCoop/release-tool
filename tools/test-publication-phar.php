@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use Phar;
-use PharData;
 use Symfony\Component\Process\Process;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -96,14 +94,14 @@ YAML);
     $git(['commit', '-m', 'chore: publication verification fixture']);
 
     $tarPath = $root . '/example-v1.0.0.tar';
-    $archive = new PharData($tarPath);
+    $archive = new \PharData($tarPath);
     $archive->addFromString('example/appinfo/info.xml', '<info><id>example</id><version>1.0.0</version></info>');
     $archive->addFromString(
         'example/CHANGELOG.md',
         "# Changelog\n\n## 1.0.0 - 2026-09-21\n\n### Fixed\n\n- Publication parity.\n",
     );
     $archive->addFromString('example/appinfo/routes.php', '<?php');
-    $archive->compress(Phar::GZ);
+    $archive->compress(\Phar::GZ);
     unset($archive);
     @unlink($tarPath);
     $artifactPath = $tarPath . '.gz';
@@ -129,7 +127,12 @@ YAML);
             'section' => '## 1.0.0 - 2026-09-21',
             'sha256' => str_repeat('b', 64),
         ],
-        'release_files' => [],
+        'release_files' => [
+            'appinfo/info.xml' => str_repeat('d', 64),
+            'docs/changelogs/changelog-1.md' => str_repeat('e', 64),
+            'package-lock.json' => str_repeat('f', 64),
+            'package.json' => str_repeat('1', 64),
+        ],
         'history_synchronization' => [
             'state' => 'already_synchronized',
             'target_branch' => 'main',
