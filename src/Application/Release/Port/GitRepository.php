@@ -17,6 +17,10 @@ interface GitRepository
 
     public function isAncestor(string $ancestorSha, string $descendantSha): bool;
 
+    public function tagExists(string $tag): bool;
+
+    public function readFile(string $sha, string $path): string;
+
     public function previousRelease(
         string $baseSha,
         string $tagPrefix,
