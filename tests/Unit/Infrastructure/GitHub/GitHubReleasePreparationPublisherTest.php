@@ -61,7 +61,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
             ->publish($preparation);
 
         self::assertSame(42, $result->pullRequestNumber);
-        self::assertSame(5, $client->getRequestsCount());
+        self::assertSame(6, $client->getRequestsCount());
     }
 
     public function testRefusesToOverwriteManuallyEditedGeneratedBranch(): void
