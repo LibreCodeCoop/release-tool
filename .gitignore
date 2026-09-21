@@ -1,0 +1,8 @@
+/vendor/
+/build/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+/.phpunit.result.cache
+/.phpstan.cache
+/.psalm-cache/
+composer.phar

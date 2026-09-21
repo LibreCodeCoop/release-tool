@@ -1,0 +1,23 @@
+deptrac:
+  paths:
+    - ./src
+  layers:
+    - name: Domain
+      collectors:
+        - type: classLike
+          value: ^LibreCode\\ReleaseTool\\Domain\\
+    - name: Application
+      collectors:
+        - type: classLike
+          value: ^LibreCode\\ReleaseTool\\Application\\
+    - name: Infrastructure
+      collectors:
+        - type: classLike
+          value: ^LibreCode\\ReleaseTool\\Infrastructure\\
+  ruleset:
+    Domain: []
+    Application:
+      - Domain
+    Infrastructure:
+      - Domain
+      - Application

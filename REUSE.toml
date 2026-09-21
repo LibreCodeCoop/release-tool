@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+version = 1
+SPDX-PackageName = "release-tool"
+SPDX-PackageSupplier = "LibreCode <contact@librecode.coop>"
+SPDX-PackageDownloadLocation = "https://github.com/LibreCodeCoop/release-tool"
+
+default-license = "AGPL-3.0-or-later"
+default-copyright = "2026 LibreCode coop and contributors"
+
+[[annotations]]
+path = [
+    ".gitignore",
+    "composer.json",
+    "composer.lock",
+    "phpunit.xml.dist",
+    "phpstan.neon",
+    "psalm.xml",
+    "phpmd.xml",
+    "phpcs.xml",
+    "deptrac.yaml",
+    "infection.json5",
+    "box.json"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 LibreCode coop and contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

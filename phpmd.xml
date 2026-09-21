@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<ruleset name="LibreCode Release Tool">
+  <description>Complexity and design rules for the release engine.</description>
+  <rule ref="rulesets/cleancode.xml"/>
+  <rule ref="rulesets/codesize.xml"><exclude name="TooManyPublicMethods"/></rule>
+  <rule ref="rulesets/design.xml"/>
+  <rule ref="rulesets/naming.xml"/>
+  <rule ref="rulesets/unusedcode.xml"/>
+</ruleset>

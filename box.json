@@ -1,0 +1,9 @@
+{
+  "output": "build/release-tool.phar",
+  "main": "bin/release-tool",
+  "directories": ["src"],
+  "finder": [{"name": "*.php", "exclude": ["Tests", "tests"], "in": ["vendor"]}],
+  "compression": "GZ",
+  "check-requirements": true,
+  "dump-autoload": true
+}
