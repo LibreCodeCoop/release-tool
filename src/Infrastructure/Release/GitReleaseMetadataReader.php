@@ -11,9 +11,9 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\ReleaseMetadata;
 use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 
-final class GitReleaseMetadataReader implements ReleaseMetadataReader
+final readonly class GitReleaseMetadataReader implements ReleaseMetadataReader
 {
-    public function __construct(private readonly GitRepository $git)
+    public function __construct(private GitRepository $git)
     {
     }
 
