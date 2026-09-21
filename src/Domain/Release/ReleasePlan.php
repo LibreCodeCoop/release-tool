@@ -24,8 +24,9 @@ final readonly class ReleasePlan implements JsonSerializable
         public int $nextcloudMajor,
         public int $appMajor,
         public string $planningBaseSha,
-        public string $previousTag,
+        public ?string $previousTag,
         public string $previousTagSha,
+        public string $previousComparisonRef,
         public string $currentVersion,
         public string $proposedVersion,
         public ?string $explicitVersionOverride,
@@ -58,6 +59,7 @@ final readonly class ReleasePlan implements JsonSerializable
             'previous_release' => [
                 'tag' => $this->previousTag,
                 'sha' => $this->previousTagSha,
+                'comparison_ref' => $this->previousComparisonRef,
             ],
             'current_version' => $this->currentVersion,
             'proposed_version' => $this->proposedVersion,
