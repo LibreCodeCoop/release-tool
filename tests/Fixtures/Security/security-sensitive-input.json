@@ -1,0 +1,4 @@
+{
+  "private_advisory": "PRIVATE-ADVISORY-DO-NOT-PUBLISH",
+  "expected_public_output_must_not_contain": "PRIVATE-ADVISORY-DO-NOT-PUBLISH"
+}

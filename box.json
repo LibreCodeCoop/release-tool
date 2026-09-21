@@ -1,0 +1,24 @@
+{
+  "output": "build/release-tool.phar",
+  "alias": "release-tool.phar",
+  "directories": [
+    "src",
+    "vendor/symfony/console/Resources"
+  ],
+  "finder": [
+    {
+      "name": "*.php",
+      "exclude": [
+        "Tests",
+        "tests"
+      ],
+      "in": [
+        "vendor"
+      ]
+    }
+  ],
+  "compression": "GZ",
+  "algorithm": "SHA256",
+  "timestamp": "2026-01-01T00:00:00+00:00",
+  "git-version": "release_tool_version"
+}

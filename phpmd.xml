@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<ruleset name="LibreCode Release Tool">
+  <description>Objective maintainability checks that complement PHPStan and Psalm.</description>
+  <rule ref="rulesets/unusedcode.xml"/>
+</ruleset>

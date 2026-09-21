@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<ruleset name="LibreCode Release Tool">
+  <description>Baseline PHP coding standards for the release tool.</description>
+  <file>src</file>
+  <arg name="basepath" value="."/>
+  <arg name="colors"/>
+  <arg name="warning-severity" value="0"/>
+  <rule ref="PSR1"/>
+</ruleset>

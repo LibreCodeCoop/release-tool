@@ -1,0 +1,72 @@
+{
+  "name": "librecode/release-tool",
+  "description": "Production-grade PHP CLI and PHAR for reproducible release automation.",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.3",
+    "symfony/console": "^7.4",
+    "symfony/yaml": "^7.4",
+    "symfony/http-client": "^7.4",
+    "symfony/process": "^7.4",
+    "ext-simplexml": "*"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.70",
+    "humbug/box": "^4.6",
+    "infection/infection": "^0.35",
+    "phpmd/phpmd": "^2.15",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5",
+    "rector/rector": "^2.0",
+    "squizlabs/php_codesniffer": "^3.11",
+    "vimeo/psalm": "^6.0",
+    "deptrac/deptrac": "^4.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "LibreCode\\ReleaseTool\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "LibreCode\\ReleaseTool\\Tests\\": "tests/"
+    }
+  },
+  "bin": [
+    "bin/release-tool"
+  ],
+  "scripts": {
+    "test": "phpunit",
+    "test:coverage": "XDEBUG_MODE=coverage phpunit --coverage-clover build/coverage.xml",
+    "infection": "infection --threads=max --min-msi=0 --min-covered-msi=0",
+    "phpstan": "phpstan analyse --no-progress",
+    "psalm": "psalm --no-cache",
+    "phpmd": "phpmd src text phpmd.xml",
+    "phpcs": "phpcs",
+    "cs:check": "php-cs-fixer fix --dry-run --diff",
+    "cs:fix": "php-cs-fixer fix",
+    "rector:check": "rector process --dry-run",
+    "deptrac": "deptrac analyse --no-progress",
+    "qa": [
+      "@test",
+      "@phpstan",
+      "@psalm",
+      "@phpmd",
+      "@phpcs",
+      "@cs:check",
+      "@rector:check",
+      "@deptrac"
+    ],
+    "build:phar": "box compile",
+    "test:phar": "php tools/test-phar.php"
+  },
+  "config": {
+    "allow-plugins": {
+      "infection/extension-installer": true
+    },
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
+use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
+use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
+use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$root = getcwd() ?: '.';
+$git = new LocalGitRepository($root);
+$planner = new ReleasePlanner(
+    $git,
+    GitHubApiRepository::fromEnvironment(),
+    new GitReleaseMetadataReader($git),
+);
+
+exit(ApplicationFactory::create($planner)->run());

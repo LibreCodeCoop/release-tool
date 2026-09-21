@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: PHP quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [composer, phpstan, psalm, phpmd, phpcs, cs-check, rector-check, deptrac]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Composer
+        if: matrix.check == 'composer'
+        run: composer validate --strict && composer audit --locked
+      - name: PHPStan
+        if: matrix.check == 'phpstan'
+        run: composer phpstan
+      - name: Psalm
+        if: matrix.check == 'psalm'
+        run: composer psalm
+      - name: PHPMD
+        if: matrix.check == 'phpmd'
+        run: composer phpmd
+      - name: PHPCS
+        if: matrix.check == 'phpcs'
+        run: composer phpcs
+      - name: PHP-CS-Fixer
+        if: matrix.check == 'cs-check'
+        run: composer cs:check
+      - name: Rector
+        if: matrix.check == 'rector-check'
+        run: composer rector:check
+      - name: Deptrac
+        if: matrix.check == 'deptrac'
+        run: composer deptrac
