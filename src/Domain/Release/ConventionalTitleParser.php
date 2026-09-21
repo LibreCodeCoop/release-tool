@@ -26,9 +26,9 @@ final class ConventionalTitleParser
         return new ConventionalTitle(
             $normalized,
             strtolower($match['type']),
-            ($match['scope'] ?? '') !== '' ? strtolower($match['scope']) : null,
+            $match['scope'] !== '' ? strtolower($match['scope']) : null,
             trim($match['subject']),
-            ($match['breaking'] ?? '') === '!',
+            $match['breaking'] === '!',
         );
     }
 }
