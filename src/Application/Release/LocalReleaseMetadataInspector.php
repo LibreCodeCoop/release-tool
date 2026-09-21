@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Application\Release;
 
 use DomainException;
+use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\Port\ReleaseMetadataReader;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\LocalReleaseMetadata;
 use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
@@ -12,16 +13,18 @@ use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 final readonly class LocalReleaseMetadataInspector
 {
     public function __construct(
+        private GitRepository $git,
         private ReleaseMetadataReader $metadataReader,
     ) {
     }
 
-    public function inspect(ConsumerConfig $config, string $sha, string $changelogContent): LocalReleaseMetadata
+    public function inspect(ConsumerConfig $config, string $sha): LocalReleaseMetadata
     {
         $metadata = $this->metadataReader->read($config, $sha);
         $version = (string) $metadata->version;
         $major = $metadata->version->major;
         $changelogPath = str_replace('{major}', (string) $major, $config->changelogPath);
+        $changelogContent = $this->git->readFile($sha, $changelogPath);
         $required = !$metadata->version->development;
         $present = $this->containsReleaseSection($changelogContent, $version);
 
