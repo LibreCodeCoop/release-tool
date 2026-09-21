@@ -13,7 +13,9 @@ final class ChangelogMigrator
      */
     public function splitByMajor(string $content): array
     {
-        if (preg_match_all('/^## \[(?<version>\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)\].*?(?=^## \[|\z)/ms', $content, $matches, PREG_SET_ORDER) === false) {
+        $pattern = '/^## (?:\[)?(?<version>\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)(?:\])?(?:\s+-\s+[^\n]+)?\n[\s\S]*?(?=^## (?:\[)?\d+\.\d+\.\d+|\z)/m';
+
+        if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER) === false) {
             throw new DomainException('Could not parse changelog.');
         }
 
