@@ -131,8 +131,8 @@ final readonly class GitHubPublicationRepository implements PublicationRepositor
         return new PublisherRun(
             (int) ($run['id'] ?? 0),
             (string) ($run['html_url'] ?? ''),
-            (string) ($run['head_sha'] ?? ''),
-            (string) ($run['event'] ?? ''),
+            (string) $run['head_sha'],
+            (string) $run['event'],
             (string) ($run['status'] ?? ''),
             isset($run['conclusion']) && is_string($run['conclusion']) ? $run['conclusion'] : null,
             (string) ($run['created_at'] ?? ''),

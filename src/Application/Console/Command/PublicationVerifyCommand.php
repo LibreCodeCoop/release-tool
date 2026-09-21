@@ -6,8 +6,8 @@ namespace LibreCode\ReleaseTool\Application\Console\Command;
 
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
-use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Publication\PublicationVerificationCodec;
+use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Release\PreparedReleaseCodec;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDraftCodec;
 use Symfony\Component\Console\Attribute\AsCommand;

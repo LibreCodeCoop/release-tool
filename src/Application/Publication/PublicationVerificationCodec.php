@@ -58,7 +58,7 @@ final class PublicationVerificationCodec
             $this->bool($appstore, 'visible'),
             $this->string($data, 'verified_at'),
             $this->bool($data, 'security_mode'),
-            array_values(array_map(static fn (mixed $error): string => (string) $error, $errors)),
+            array_map(static fn (mixed $error): string => (string) $error, $errors),
             $this->bool($data, 'success'),
         );
     }
