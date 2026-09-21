@@ -25,9 +25,9 @@ final class MilestoneTransitionCodec
         }
         $released = $this->object($data, 'released_milestone');
         $moved = $this->object($data, 'moved');
-        $followUp = $data['follow_up_milestone'] ?? null;
-        if ($followUp !== null && (!is_array($followUp) || array_is_list($followUp))) {
-            throw new InvalidArgumentException('follow_up_milestone must be an object or null.');
+        $followUp = null;
+        if (array_key_exists('follow_up_milestone', $data) && $data['follow_up_milestone'] !== null) {
+            $followUp = $this->object($data, 'follow_up_milestone');
         }
 
         return new MilestoneTransition(
@@ -36,8 +36,8 @@ final class MilestoneTransitionCodec
             $this->int($released, 'number'),
             $this->string($released, 'url'),
             $this->string($released, 'final_title'),
-            is_array($followUp) ? $this->int($followUp, 'number') : null,
-            is_array($followUp) ? $this->string($followUp, 'url') : null,
+            $followUp !== null ? $this->int($followUp, 'number') : null,
+            $followUp !== null ? $this->string($followUp, 'url') : null,
             $this->int($moved, 'issues'),
             $this->int($moved, 'pull_requests'),
             $this->bool($data, 'already_applied'),
