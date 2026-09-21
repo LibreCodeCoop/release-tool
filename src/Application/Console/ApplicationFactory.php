@@ -8,10 +8,12 @@ use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidat
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
+use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
@@ -31,6 +33,7 @@ final class ApplicationFactory
         ?GitRepository $gitRepository = null,
         ?LocalReleaseMetadataInspector $metadataInspector = null,
         ?ReleaseFinalizer $finalizer = null,
+        ?MilestoneTransitioner $milestoneTransitioner = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -50,6 +53,13 @@ final class ApplicationFactory
         if ($finalizer !== null) {
             $application->add(new ReleaseFinalizeCommand(
                 $finalizer,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
+
+        if ($milestoneTransitioner !== null) {
+            $application->add(new MilestoneTransitionCommand(
+                $milestoneTransitioner,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
