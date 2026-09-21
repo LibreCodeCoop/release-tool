@@ -57,6 +57,10 @@ final class ConfigValidateCommand extends Command
                 'valid' => true,
                 'app_id' => $config->appId,
                 'repository' => $config->repository,
+                'authorization' => [
+                    'prepare_min_permission' => $config->prepareMinPermission,
+                    'merge_min_permission' => $config->mergeMinPermission,
+                ],
             ], JSON_UNESCAPED_SLASHES));
 
             return Command::SUCCESS;

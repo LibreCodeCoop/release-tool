@@ -23,7 +23,16 @@ final class ConfigValidateCommandTest extends TestCase
 
         self::assertSame(0, $exit);
         self::assertSame(
-            ['schema' => 1, 'valid' => true, 'app_id' => 'libresign', 'repository' => 'LibreSign/libresign'],
+            [
+                'schema' => 1,
+                'valid' => true,
+                'app_id' => 'libresign',
+                'repository' => 'LibreSign/libresign',
+                'authorization' => [
+                    'prepare_min_permission' => 'maintain',
+                    'merge_min_permission' => 'maintain',
+                ],
+            ],
             json_decode(trim($tester->getDisplay()), true, flags: JSON_THROW_ON_ERROR),
         );
     }
