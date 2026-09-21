@@ -9,9 +9,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: phpunit-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   phpunit:
     name: PHP ${{ matrix.php }}
