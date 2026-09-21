@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console;
 
+use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
+use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand;
@@ -37,6 +39,7 @@ final class ApplicationFactory
         ?ReleaseFinalizer $finalizer = null,
         ?MilestoneTransitioner $milestoneTransitioner = null,
         ?ReleaseDrafter $releaseDrafter = null,
+        ?ArtifactValidator $artifactValidator = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -44,6 +47,13 @@ final class ApplicationFactory
         $application->add(new ConfigValidateCommand(
             contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
         ));
+
+        if ($artifactValidator !== null) {
+            $application->add(new ArtifactValidateCommand(
+                $artifactValidator,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
 
         if ($gitRepository !== null && $metadataInspector !== null) {
             $application->add(new MetadataInspectCommand(

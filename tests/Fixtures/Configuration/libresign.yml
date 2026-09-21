@@ -28,3 +28,14 @@ package:
     - make
     - appstore
     - verify-appstore-package
+  required_paths:
+    - appinfo
+    - lib
+    - css
+    - js
+    - vendor
+    - 3rdparty
+  forbidden_paths:
+    - .git
+    - node_modules
+    - tests

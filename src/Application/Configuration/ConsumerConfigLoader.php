@@ -44,7 +44,7 @@ final class ConsumerConfigLoader
         $changelog = $this->mapping($data, 'changelog', ['strategy', 'path', 'package_root']);
         $milestones = $this->mapping($data, 'milestones', ['patch', 'rc']);
         $authorization = $this->mapping($data, 'authorization', ['prepare_min_permission', 'merge_min_permission']);
-        $package = $this->mapping($data, 'package', ['command']);
+        $package = $this->mapping($data, 'package', ['command', 'required_paths', 'forbidden_paths']);
 
         $stablePattern = $this->requiredString($branches, 'stable_pattern', 'branches');
         set_error_handler(static fn (): bool => true);
@@ -54,15 +54,7 @@ final class ConsumerConfigLoader
             throw new InvalidArgumentException('branches.stable_pattern must be a valid PCRE expression.');
         }
 
-        $mirrors = $version['mirrors'] ?? [];
-        if (!is_array($mirrors) || !array_is_list($mirrors)) {
-            throw new InvalidArgumentException('version.mirrors must be a list.');
-        }
-        foreach ($mirrors as $mirror) {
-            if (!is_string($mirror) || $mirror === '') {
-                throw new InvalidArgumentException('version.mirrors must contain non-empty paths.');
-            }
-        }
+        $mirrors = $this->stringList($version['mirrors'] ?? [], 'version.mirrors');
 
         $strategy = $this->requiredString($history, 'previous_release', 'history');
         if ($strategy !== 'reachable-tag') {
@@ -105,6 +97,9 @@ final class ConsumerConfigLoader
             }
         }
 
+        $requiredPaths = $this->packagePaths($package['required_paths'] ?? [], 'package.required_paths');
+        $forbiddenPaths = $this->packagePaths($package['forbidden_paths'] ?? [], 'package.forbidden_paths');
+
         $repository = $data['repository'] ?? null;
         if ($repository !== null && (!is_string($repository) || preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository) !== 1)) {
             throw new InvalidArgumentException('repository must be in owner/name form.');
@@ -129,6 +124,8 @@ final class ConsumerConfigLoader
             $preparePermission,
             $mergePermission,
             $command,
+            $requiredPaths,
+            $forbiddenPaths,
         );
     }
 
@@ -181,6 +178,43 @@ final class ConsumerConfigLoader
         }
 
         return $data[$key];
+    }
+
+    /** @return list<string> */
+    private function stringList(mixed $value, string $path): array
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            throw new InvalidArgumentException(sprintf('%s must be a list.', $path));
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            if (!is_string($item) || $item === '') {
+                throw new InvalidArgumentException(sprintf('%s must contain non-empty paths.', $path));
+            }
+            $result[] = $item;
+        }
+
+        return $result;
+    }
+
+    /** @return list<string> */
+    private function packagePaths(mixed $value, string $path): array
+    {
+        $paths = $this->stringList($value, $path);
+        foreach ($paths as $item) {
+            if (
+                str_starts_with($item, '/')
+                || str_contains($item, '\\')
+                || str_contains($item, "\0")
+                || in_array('..', explode('/', $item), true)
+                || in_array('.', explode('/', $item), true)
+            ) {
+                throw new InvalidArgumentException(sprintf('%s must contain safe relative paths.', $path));
+            }
+        }
+
+        return array_values(array_unique($paths));
     }
 
     /** @param list<string> $allowed */

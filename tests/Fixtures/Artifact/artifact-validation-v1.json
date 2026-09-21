@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "artifact_path": "build/artifacts/libresign.tar.gz",
+  "artifact_name": "libresign.tar.gz",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "expected_app_id": "libresign",
+  "actual_app_id": "libresign",
+  "expected_version": "15.2.1",
+  "actual_version": "15.2.1",
+  "changelog": {
+    "path": "CHANGELOG.md",
+    "present": true,
+    "release_section_found": true
+  },
+  "structure": {
+    "top_level_paths": ["libresign"],
+    "info_xml": true,
+    "required_paths": ["appinfo", "lib"],
+    "missing_required_paths": [],
+    "forbidden_paths": ["tests"],
+    "forbidden_paths_found": []
+  },
+  "warnings": [],
+  "errors": [],
+  "valid": true
+}
