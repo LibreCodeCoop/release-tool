@@ -7,8 +7,11 @@ namespace LibreCode\ReleaseTool\Application\Console;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
+use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
+use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
@@ -23,6 +26,8 @@ final class ApplicationFactory
         ?ConsumerConfigContextValidator $configValidator = null,
         ?ReleasePreparer $preparer = null,
         ?ReleasePreparationPublishing $preparationPublisher = null,
+        ?GitRepository $gitRepository = null,
+        ?LocalReleaseMetadataInspector $metadataInspector = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -30,6 +35,14 @@ final class ApplicationFactory
         $application->add(new ConfigValidateCommand(
             contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
         ));
+
+        if ($gitRepository !== null && $metadataInspector !== null) {
+            $application->add(new MetadataInspectCommand(
+                $gitRepository,
+                $metadataInspector,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
 
         if ($planner !== null) {
             $application->add(new ReleasePlanCommand(
