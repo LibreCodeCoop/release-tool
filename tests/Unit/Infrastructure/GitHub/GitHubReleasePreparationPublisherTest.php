@@ -22,6 +22,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
     {
         $responses = [
             $this->json(['object' => ['sha' => self::BASE]]),
+            $this->json(['tree' => ['sha' => 'base-tree']]),
             $this->json(['sha' => 'tree-sha']),
             $this->json(['message' => 'Not Found'], 404),
             $this->json(['sha' => 'commit-sha']),
@@ -44,6 +45,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
         $preparation = $this->preparation();
         $responses = [
             $this->json(['object' => ['sha' => self::BASE]]),
+            $this->json(['tree' => ['sha' => 'base-tree']]),
             $this->json(['sha' => 'tree-sha']),
             $this->json(['object' => ['sha' => 'commit-sha']]),
             $this->json(['tree' => ['sha' => 'tree-sha']]),
@@ -66,6 +68,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
     {
         $responses = [
             $this->json(['object' => ['sha' => self::BASE]]),
+            $this->json(['tree' => ['sha' => 'base-tree']]),
             $this->json(['sha' => 'tree-sha']),
             $this->json(['object' => ['sha' => 'edited-commit']]),
             $this->json(['tree' => ['sha' => 'different-tree']]),
