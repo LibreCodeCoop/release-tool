@@ -83,10 +83,6 @@ final class PharArchiveReader implements ArchiveReader
             throw new RuntimeException(sprintf('Could not read archive path %s: %s', $path, $exception->getMessage()), 0, $exception);
         }
 
-        if (!is_string($content)) {
-            throw new RuntimeException(sprintf('Could not read archive path: %s', $path));
-        }
-
         return $content;
     }
 
