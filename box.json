@@ -2,7 +2,8 @@
   "output": "build/release-tool.phar",
   "alias": "release-tool.phar",
   "directories": [
-    "src"
+    "src",
+    "vendor/symfony/console/Resources"
   ],
   "finder": [
     {
