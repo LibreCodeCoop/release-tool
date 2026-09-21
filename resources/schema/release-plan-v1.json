@@ -5,40 +5,144 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema", "id", "repository", "consumer_id", "branch", "nextcloud_major", "app_major",
-    "planning_base_sha", "previous_release", "current_version", "proposed_version", "channel",
-    "bump_reason", "activity", "changelog_target", "backport_blockers", "ignore_open_backport",
-    "create_follow_up_milestone", "mode", "public_release_text", "warnings", "ready"
+    "schema",
+    "id",
+    "repository",
+    "consumer_id",
+    "branch",
+    "nextcloud_major",
+    "app_major",
+    "planning_base_sha",
+    "previous_release",
+    "current_version",
+    "proposed_version",
+    "channel",
+    "bump_reason",
+    "activity",
+    "changelog_target",
+    "backport_blockers",
+    "ignore_open_backport",
+    "create_follow_up_milestone",
+    "mode",
+    "public_release_text",
+    "warnings",
+    "ready"
   ],
   "properties": {
-    "schema": {"const": 1},
-    "id": {"type": "string"},
-    "repository": {"type": "string"},
-    "consumer_id": {"type": "string"},
-    "branch": {"type": "string"},
-    "nextcloud_major": {"type": "integer"},
-    "app_major": {"type": "integer"},
-    "planning_base_sha": {"type": "string"},
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "consumer_id": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "nextcloud_major": {
+      "type": "integer"
+    },
+    "app_major": {
+      "type": "integer"
+    },
+    "planning_base_sha": {
+      "type": "string"
+    },
     "previous_release": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tag", "sha"],
-      "properties": {"tag": {"type": "string"}, "sha": {"type": "string"}}
+      "required": [
+        "tag",
+        "sha",
+        "comparison_ref"
+      ],
+      "properties": {
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha": {
+          "type": "string"
+        },
+        "comparison_ref": {
+          "type": "string"
+        }
+      }
     },
-    "current_version": {"type": "string"},
-    "proposed_version": {"type": "string"},
-    "explicit_version_override": {"type": ["string", "null"]},
-    "channel": {"enum": ["alpha", "beta", "rc", "final"]},
-    "bump_reason": {"type": "string"},
-    "activity": {"type": "array", "items": {"type": "object"}},
-    "changelog_target": {"type": "string"},
-    "milestone": {"type": ["object", "null"]},
-    "backport_blockers": {"type": "array", "items": {"type": "object"}},
-    "ignore_open_backport": {"type": "boolean"},
-    "create_follow_up_milestone": {"type": "boolean"},
-    "mode": {"enum": ["normal", "security"]},
-    "public_release_text": {"type": "object"},
-    "warnings": {"type": "array", "items": {"type": "string"}},
-    "ready": {"type": "boolean"}
+    "current_version": {
+      "type": "string"
+    },
+    "proposed_version": {
+      "type": "string"
+    },
+    "explicit_version_override": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "channel": {
+      "enum": [
+        "alpha",
+        "beta",
+        "rc",
+        "final"
+      ]
+    },
+    "bump_reason": {
+      "type": "string"
+    },
+    "activity": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "changelog_target": {
+      "type": "string"
+    },
+    "milestone": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "backport_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "ignore_open_backport": {
+      "type": "boolean"
+    },
+    "create_follow_up_milestone": {
+      "type": "boolean"
+    },
+    "mode": {
+      "enum": [
+        "normal",
+        "security"
+      ]
+    },
+    "public_release_text": {
+      "type": "object"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ready": {
+      "type": "boolean"
+    }
   }
 }
