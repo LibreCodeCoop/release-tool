@@ -11,7 +11,7 @@ use LibreCode\ReleaseTool\Domain\Version\Version;
 
 final class ChangelogPolicy
 {
-    private const CATEGORY_ORDER = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
+    private const array CATEGORY_ORDER = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 
     public function prepare(
         Version $version,
