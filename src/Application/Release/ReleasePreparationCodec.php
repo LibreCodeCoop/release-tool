@@ -42,7 +42,7 @@ final class ReleasePreparationCodec
 
         $changelog = $this->object($data, 'changelog');
         $pullRequest = $data['pull_request'] ?? null;
-        if ($pullRequest !== null && (!is_array($pullRequest) || array_is_list($pullRequest))) {
+        if ($pullRequest !== null && array_is_list($pullRequest)) {
             throw new InvalidArgumentException('ReleasePreparation pull_request must be an object or null.');
         }
 
