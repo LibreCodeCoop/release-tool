@@ -59,7 +59,10 @@
       "@deptrac"
     ],
     "build:phar": "box compile",
-    "test:phar": "php tools/test-phar.php"
+    "test:phar": [
+      "php tools/test-phar.php",
+      "php tools/test-publication-phar.php"
+    ]
   },
   "config": {
     "allow-plugins": {
