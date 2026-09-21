@@ -6,7 +6,7 @@ namespace LibreCode\ReleaseTool\Domain\Security;
 
 final class SecurityReleasePolicy
 {
-    public const NEUTRAL_SECURITY_TEXT = 'This release includes security fixes.';
+    public const string NEUTRAL_SECURITY_TEXT = 'This release includes security fixes.';
 
     public function publicText(ReleaseMode $mode, ?string $explicitSafeText): PublicReleaseText
     {
