@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
+use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
+use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
@@ -24,6 +26,7 @@ final class ReleasePlanCommand extends Command
     public function __construct(
         private readonly ReleasePlanning $planner,
         private readonly ConsumerConfigLoader $configLoader = new ConsumerConfigLoader(),
+        private readonly ConsumerConfigContextValidator $contextValidator = new NoopConsumerConfigContextValidator(),
     ) {
         parent::__construct();
     }
@@ -32,9 +35,10 @@ final class ReleasePlanCommand extends Command
     {
         $this
             ->addOption('config', null, InputOption::VALUE_REQUIRED, 'Consumer configuration path.', '.nextcloud-release.yml')
+            ->addOption('root', null, InputOption::VALUE_REQUIRED, 'Consumer repository root.', '.')
             ->addOption('branch', null, InputOption::VALUE_REQUIRED, 'Release branch to plan.')
             ->addOption('ref', null, InputOption::VALUE_REQUIRED, 'Immutable or resolvable planning ref.')
-            ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Explicit version override.')
+            ->addOption('release-version', null, InputOption::VALUE_REQUIRED, 'Explicit release version override.')
             ->addOption('channel', null, InputOption::VALUE_REQUIRED, 'Release channel: alpha, beta, rc or final.', 'final')
             ->addOption('mode', null, InputOption::VALUE_REQUIRED, 'Release mode: normal or security.', 'normal')
             ->addOption('safe-public-text', null, InputOption::VALUE_REQUIRED, 'Explicitly public-safe release text.')
@@ -62,12 +66,13 @@ final class ReleasePlanCommand extends Command
 
         try {
             $config = $this->configLoader->load((string) $input->getOption('config'));
+            $this->contextValidator->validate($config, (string) $input->getOption('root'));
             $plan = $this->planner->plan(
                 $config,
                 new PlanReleaseInput(
                     trim($branch),
                     $this->nullableString($input->getOption('ref')),
-                    $this->nullableString($input->getOption('version')),
+                    $this->nullableString($input->getOption('release-version')),
                     $channel,
                     (bool) $input->getOption('ignore-open-backport'),
                     (bool) $input->getOption('create-follow-up-milestone'),

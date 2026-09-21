@@ -15,7 +15,11 @@ final readonly class GitHubApiRepository implements GitHubRepository
 {
     private HttpClientInterface $client;
 
-    public function __construct(?string $token = null, ?HttpClientInterface $client = null)
+    public function __construct(
+        ?string $token = null,
+        ?HttpClientInterface $client = null,
+        string $apiUrl = 'https://api.github.com',
+    )
     {
         $headers = [
             'Accept' => 'application/vnd.github+json',
@@ -27,7 +31,7 @@ final readonly class GitHubApiRepository implements GitHubRepository
         }
 
         $this->client = $client ?? HttpClient::create([
-            'base_uri' => 'https://api.github.com',
+            'base_uri' => rtrim($apiUrl, '/'),
             'headers' => $headers,
         ]);
     }
@@ -36,7 +40,9 @@ final readonly class GitHubApiRepository implements GitHubRepository
     {
         $token = getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN') ?: null;
 
-        return new self($token);
+        $apiUrl = getenv('GITHUB_API_URL') ?: 'https://api.github.com';
+
+        return new self($token, apiUrl: $apiUrl);
     }
 
     public function closedPullRequests(string $repository, string $baseBranch): array

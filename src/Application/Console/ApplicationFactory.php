@@ -27,7 +27,10 @@ final class ApplicationFactory
         ));
 
         if ($planner !== null) {
-            $application->add(new ReleasePlanCommand($planner));
+            $application->add(new ReleasePlanCommand(
+                $planner,
+                contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
         }
 
         return $application;
