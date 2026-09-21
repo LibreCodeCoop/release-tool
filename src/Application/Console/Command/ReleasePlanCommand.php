@@ -6,14 +6,10 @@ namespace LibreCode\ReleaseTool\Application\Console\Command;
 
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
-use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
-use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
-use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
-use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,23 +21,10 @@ final class ReleasePlanCommand extends Command
 {
     public const EXIT_NOT_READY = 3;
 
-    private ReleasePlanning $planner;
-
     public function __construct(
-        ?ReleasePlanning $planner = null,
+        private readonly ReleasePlanning $planner,
         private readonly ConsumerConfigLoader $configLoader = new ConsumerConfigLoader(),
     ) {
-        if ($planner === null) {
-            $root = getcwd() ?: '.';
-            $git = new LocalGitRepository($root);
-            $planner = new ReleasePlanner(
-                $git,
-                GitHubApiRepository::fromEnvironment(),
-                new GitReleaseMetadataReader($git),
-            );
-        }
-
-        $this->planner = $planner;
         parent::__construct();
     }
 
@@ -132,9 +115,11 @@ final class ReleasePlanCommand extends Command
                 'schema' => 1,
                 'error' => $message,
             ], JSON_UNESCAPED_SLASHES));
-        } else {
-            $output->writeln('<error>' . $message . '</error>');
+
+            return Command::INVALID;
         }
+
+        $output->writeln('<error>' . $message . '</error>');
 
         return Command::INVALID;
     }
