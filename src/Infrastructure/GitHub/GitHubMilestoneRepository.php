@@ -183,7 +183,7 @@ final readonly class GitHubMilestoneRepository implements MilestoneRepository
         );
         $this->assertSuccess($response->getStatusCode(), $method . ' ' . $path);
         $data = $response->toArray(false);
-        if (!is_array($data) || array_is_list($data)) {
+        if (array_is_list($data)) {
             throw new DomainException('GitHub returned an invalid object response.');
         }
         return $data;
