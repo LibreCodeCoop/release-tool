@@ -48,10 +48,10 @@ final class ConsumerConfigLoader
 
         $stablePattern = $this->requiredString($branches, 'stable_pattern', 'branches');
         set_error_handler(static fn (): bool => true);
-        $patternResult = preg_match($stablePattern, '');
+        $patternResult = preg_match('~' . str_replace('~', '\\~', $stablePattern) . '~', '');
         restore_error_handler();
         if ($patternResult === false) {
-            throw new InvalidArgumentException('branches.stable_pattern must be a valid PCRE pattern including delimiters.');
+            throw new InvalidArgumentException('branches.stable_pattern must be a valid PCRE expression.');
         }
 
         $mirrors = $version['mirrors'] ?? [];
