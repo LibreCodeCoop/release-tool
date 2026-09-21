@@ -25,6 +25,11 @@ final class ReleasePlannerTest extends TestCase
     private const MERGE = '2222222222222222222222222222222222222222';
     private const HEAD = '3333333333333333333333333333333333333333';
 
+    protected function setUp(): void
+    {
+        putenv('GITHUB_REPOSITORY');
+    }
+
     public function testFeaturePullRequestProducesMinorPlanAndRealBackportBlocks(): void
     {
         $planner = $this->planner(
