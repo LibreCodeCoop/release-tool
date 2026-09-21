@@ -39,3 +39,8 @@ package:
     - .git
     - node_modules
     - tests
+
+publication:
+  publisher_workflow: appstore-build-publish.yml
+  asset_name: '{app}-{tag}.tar.gz'
+  appstore_api: https://apps.nextcloud.com/api/v1/apps.json

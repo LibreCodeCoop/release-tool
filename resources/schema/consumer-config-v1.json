@@ -4,91 +4,217 @@
   "title": "Release Tool Consumer Configuration v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "app", "branches", "version", "history", "changelog", "milestones", "authorization", "package"],
+  "required": [
+    "schema",
+    "app",
+    "branches",
+    "version",
+    "history",
+    "changelog",
+    "milestones",
+    "authorization",
+    "package"
+  ],
   "properties": {
-    "schema": {"const": 1},
-    "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+    "schema": {
+      "const": 1
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
     "app": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "main_branch"],
+      "required": [
+        "id",
+        "main_branch"
+      ],
       "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "main_branch": {"type": "string", "minLength": 1}
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "main_branch": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "branches": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stable_pattern"],
-      "properties": {"stable_pattern": {"type": "string", "minLength": 1}}
+      "required": [
+        "stable_pattern"
+      ],
+      "properties": {
+        "stable_pattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "version": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "tag_prefix"],
+      "required": [
+        "source",
+        "tag_prefix"
+      ],
       "properties": {
-        "source": {"type": "string", "minLength": 1},
-        "mirrors": {"type": "array", "items": {"type": "string", "minLength": 1}},
-        "tag_prefix": {"type": "string"}
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mirrors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "tag_prefix": {
+          "type": "string"
+        }
       }
     },
     "history": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["previous_release"],
+      "required": [
+        "previous_release"
+      ],
       "properties": {
-        "previous_release": {"const": "reachable-tag"},
-        "initial_ref": {"type": "string", "minLength": 1}
+        "previous_release": {
+          "const": "reachable-tag"
+        },
+        "initial_ref": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "changelog": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["strategy", "path", "package_root"],
+      "required": [
+        "strategy",
+        "path",
+        "package_root"
+      ],
       "properties": {
-        "strategy": {"const": "per-major"},
-        "path": {"type": "string", "minLength": 1},
-        "package_root": {"type": "string", "minLength": 1}
+        "strategy": {
+          "const": "per-major"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_root": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "milestones": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["patch", "rc"],
+      "required": [
+        "patch",
+        "rc"
+      ],
       "properties": {
-        "patch": {"type": "string", "minLength": 1},
-        "rc": {"type": "string", "minLength": 1}
+        "patch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rc": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "authorization": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["prepare_min_permission", "merge_min_permission"],
+      "required": [
+        "prepare_min_permission",
+        "merge_min_permission"
+      ],
       "properties": {
-        "prepare_min_permission": {"enum": ["read", "triage", "write", "maintain", "admin"]},
-        "merge_min_permission": {"enum": ["read", "triage", "write", "maintain", "admin"]}
+        "prepare_min_permission": {
+          "enum": [
+            "read",
+            "triage",
+            "write",
+            "maintain",
+            "admin"
+          ]
+        },
+        "merge_min_permission": {
+          "enum": [
+            "read",
+            "triage",
+            "write",
+            "maintain",
+            "admin"
+          ]
+        }
       }
     },
     "package": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["command"],
+      "required": [
+        "command"
+      ],
       "properties": {
         "command": {
           "type": "array",
           "minItems": 1,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "required_paths": {
           "type": "array",
           "uniqueItems": true,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "forbidden_paths": {
           "type": "array",
           "uniqueItems": true,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publisher_workflow",
+        "asset_name",
+        "appstore_api"
+      ],
+      "properties": {
+        "publisher_workflow": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asset_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "appstore_api": {
+          "type": "string",
+          "format": "uri"
         }
       }
     }
