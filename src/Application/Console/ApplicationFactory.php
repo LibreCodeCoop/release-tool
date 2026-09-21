@@ -11,7 +11,7 @@ use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
 {
-    private const PACKAGED_VERSION = '@release_tool_version@';
+    private const string PACKAGED_VERSION = '@release_tool_version@';
 
     public static function create(?ReleasePlanning $planner = null): Application
     {
