@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LibreCodeCoop/release-tool/resources/schema/release-draft-v1.json",
+  "title": "ReleaseDraft v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","id","prepared_release_id","milestone_transition_id","github_release","tag_name","target_sha","prerelease","body_sha256","draft","ready"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string"},
+    "prepared_release_id": {"type": "string"},
+    "milestone_transition_id": {"type": "string"},
+    "github_release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id","url"],
+      "properties": {
+        "id": {"type": "integer"},
+        "url": {"type": "string"}
+      }
+    },
+    "tag_name": {"type": "string"},
+    "target_sha": {"type": "string","pattern":"^[0-9a-f]{40}$"},
+    "prerelease": {"type": "boolean"},
+    "body_sha256": {"type": "string","pattern":"^[0-9a-f]{64}$"},
+    "draft": {"type": "boolean"},
+    "ready": {"type": "boolean"}
+  }
+}
