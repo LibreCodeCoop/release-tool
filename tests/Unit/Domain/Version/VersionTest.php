@@ -25,6 +25,7 @@ final class VersionTest extends TestCase
         yield 'beta' => ['16.0.0-beta.2', '16.0.0-beta.2'];
         yield 'rc' => ['16.0.0-rc.4', '16.0.0-rc.4'];
         yield 'development' => ['16.0.0-dev', '16.0.0-dev'];
+        yield 'numbered development' => ['16.0.0-dev.2', '16.0.0-dev.2'];
     }
 
     public function testRejectsInvalidVersion(): void
