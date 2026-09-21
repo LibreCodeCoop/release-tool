@@ -117,7 +117,7 @@ final class ConsumerConfigLoader
             $repository,
             $stablePattern,
             $this->requiredString($version, 'source', 'version'),
-            array_values($mirrors),
+            $mirrors,
             $this->requiredString($version, 'tag_prefix', 'version'),
             $strategy,
             isset($history['initial_ref']) ? $this->stringValue($history['initial_ref'], 'history.initial_ref') : null,
@@ -128,7 +128,7 @@ final class ConsumerConfigLoader
             $rcMilestone,
             $preparePermission,
             $mergePermission,
-            array_values($command),
+            $command,
         );
     }
 
@@ -136,7 +136,7 @@ final class ConsumerConfigLoader
     private function assertKnownKeys(array $data, array $allowed, string $path): void
     {
         foreach (array_keys($data) as $key) {
-            if (!is_string($key) || !in_array($key, $allowed, true)) {
+            if (!in_array($key, $allowed, true)) {
                 throw new InvalidArgumentException(sprintf('Unknown configuration key at %s: %s', $path, (string) $key));
             }
         }
