@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console;
 
+use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
@@ -15,6 +16,7 @@ final class ApplicationFactory
     {
         $application = new Application(self::NAME, self::VERSION);
         $application->setAutoExit(false);
+        $application->add(new ConfigValidateCommand());
 
         return $application;
     }
