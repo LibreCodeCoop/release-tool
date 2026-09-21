@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "transition-fixture-id",
+  "prepared_release_id": "prepared-fixture-id",
+  "released_milestone": {
+    "number": 7,
+    "url": "https://github.com/LibreSign/libresign/milestone/7",
+    "final_title": "15.0.4"
+  },
+  "follow_up_milestone": {
+    "number": 8,
+    "url": "https://github.com/LibreSign/libresign/milestone/8"
+  },
+  "moved": {
+    "issues": 3,
+    "pull_requests": 1
+  },
+  "already_applied": false
+}
