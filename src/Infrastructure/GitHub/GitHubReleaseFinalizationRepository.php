@@ -46,12 +46,53 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
 
     public function pullRequest(string $repository, int $number): FinalizedPullRequest
     {
-        throw new DomainException('Finalization repository incomplete.');
+        $pullRequest = $this->request(
+            'GET',
+            sprintf('/repos/%s/pulls/%d', $repository, $number),
+        );
+        $files = $this->paginate(
+            sprintf('/repos/%s/pulls/%d/files', $repository, $number),
+        );
+
+        $changedFiles = [];
+        foreach ($files as $file) {
+            $filename = $file['filename'] ?? null;
+            if (!is_string($filename) || $filename === '') {
+                throw new DomainException('GitHub returned an invalid pull request filename.');
+            }
+            $changedFiles[] = $filename;
+        }
+        sort($changedFiles);
+
+        $mergedAt = $pullRequest['merged_at'] ?? null;
+        $mergeCommitSha = $pullRequest['merge_commit_sha'] ?? null;
+        $baseBranch = $pullRequest['base']['ref'] ?? null;
+        $url = $pullRequest['html_url'] ?? null;
+        if (!is_string($baseBranch) || !is_string($url)) {
+            throw new DomainException('GitHub returned invalid release pull request metadata.');
+        }
+
+        return new FinalizedPullRequest(
+            $number,
+            $url,
+            $baseBranch,
+            is_string($mergedAt) && $mergedAt !== '',
+            is_string($mergeCommitSha) && $mergeCommitSha !== '' ? $mergeCommitSha : null,
+            $changedFiles,
+        );
     }
 
     public function branchHead(string $repository, string $branch): string
     {
-        throw new DomainException('Finalization repository incomplete.');
+        $data = $this->request(
+            'GET',
+            sprintf('/repos/%s/git/ref/heads/%s', $repository, $this->encodeRef($branch)),
+        );
+        $sha = $data['object']['sha'] ?? null;
+        if (!is_string($sha) || preg_match('/^[0-9a-f]{40}$/', $sha) !== 1) {
+            throw new DomainException(sprintf('GitHub returned an invalid branch head for %s.', $branch));
+        }
+        return $sha;
     }
 
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
