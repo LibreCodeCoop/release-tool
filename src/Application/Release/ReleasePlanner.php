@@ -22,7 +22,7 @@ use LibreCode\ReleaseTool\Domain\Version\Version;
 use LibreCode\ReleaseTool\Domain\Version\VersionPolicy;
 use LibreCode\ReleaseTool\Domain\Version\VersionTransitionPolicy;
 
-final class ReleasePlanner
+final class ReleasePlanner implements ReleasePlanning
 {
     public function __construct(
         private readonly GitRepository $git,
