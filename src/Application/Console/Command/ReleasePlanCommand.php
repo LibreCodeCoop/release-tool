@@ -38,7 +38,7 @@ final class ReleasePlanCommand extends Command
             ->addOption('root', null, InputOption::VALUE_REQUIRED, 'Consumer repository root.', '.')
             ->addOption('branch', null, InputOption::VALUE_REQUIRED, 'Release branch to plan.')
             ->addOption('ref', null, InputOption::VALUE_REQUIRED, 'Immutable or resolvable planning ref.')
-            ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Explicit version override.')
+            ->addOption('release-version', null, InputOption::VALUE_REQUIRED, 'Explicit release version override.')
             ->addOption('channel', null, InputOption::VALUE_REQUIRED, 'Release channel: alpha, beta, rc or final.', 'final')
             ->addOption('mode', null, InputOption::VALUE_REQUIRED, 'Release mode: normal or security.', 'normal')
             ->addOption('safe-public-text', null, InputOption::VALUE_REQUIRED, 'Explicitly public-safe release text.')
@@ -72,7 +72,7 @@ final class ReleasePlanCommand extends Command
                 new PlanReleaseInput(
                     trim($branch),
                     $this->nullableString($input->getOption('ref')),
-                    $this->nullableString($input->getOption('version')),
+                    $this->nullableString($input->getOption('release-version')),
                     $channel,
                     (bool) $input->getOption('ignore-open-backport'),
                     (bool) $input->getOption('create-follow-up-milestone'),
