@@ -30,7 +30,7 @@ final class LocalGitRepository implements GitRepository
             '#^ssh://git@github\.com/(?<repo>[^/]+/[^/]+?)(?:\.git)?$#',
         ] as $pattern) {
             if (preg_match($pattern, $remote, $match) === 1) {
-                return rtrim($match['repo'], '.git');
+                return preg_replace('/\\.git$/', '', $match['repo']) ?: $match['repo'];
             }
         }
 
