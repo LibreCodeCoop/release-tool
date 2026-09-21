@@ -1,8 +1,6 @@
 {
   "output": "build/release-tool.phar",
-  "main": "bin/release-tool",
   "alias": "release-tool.phar",
-  "chmod": "0755",
   "directories": [
     "src"
   ],
@@ -20,8 +18,6 @@
   ],
   "compression": "GZ",
   "algorithm": "SHA256",
-  "check-requirements": true,
-  "dump-autoload": true,
   "timestamp": "2026-01-01T00:00:00+00:00",
   "git-version": "release_tool_version"
 }
