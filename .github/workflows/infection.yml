@@ -25,5 +25,4 @@ jobs:
           php-version: '8.3'
           coverage: xdebug
       - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: composer test:coverage
-      - run: composer infection -- --coverage=build
+      - run: composer infection
