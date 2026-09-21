@@ -46,10 +46,12 @@ final class GitHubMilestoneRepositoryTest extends TestCase
         $requests = [];
         $client = new MockHttpClient(
             function (string $method, string $url, array $options) use (&$requests): MockResponse {
-                $requests[] = [$method, parse_url($url, PHP_URL_PATH), $options['json'] ?? null];
+                $body = isset($options['body']) && is_string($options['body']) && $options['body'] !== ''
+                    ? json_decode($options['body'], true, flags: JSON_THROW_ON_ERROR)
+                    : null;
+                $requests[] = [$method, parse_url($url, PHP_URL_PATH), $body];
                 $path = (string) parse_url($url, PHP_URL_PATH);
                 if ($method === 'PATCH' && $path === '/repos/LibreSign/libresign/milestones/7') {
-                    $body = $options['json'] ?? [];
                     return $this->json([
                         'number' => 7,
                         'title' => (string) ($body['title'] ?? '15.0.4'),
