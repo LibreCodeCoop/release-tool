@@ -145,11 +145,20 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
             $preparation->fileChanges,
         );
 
+        $baseCommit = $this->request(
+            'GET',
+            sprintf('/repos/%s/git/commits/%s', $preparation->repository, $preparation->planningBaseSha),
+        );
+        $baseTree = $baseCommit['tree']['sha'] ?? null;
+        if (!is_string($baseTree) || $baseTree === '') {
+            throw new DomainException('GitHub did not return the planning base tree SHA.');
+        }
+
         $tree = $this->request(
             'POST',
             sprintf('/repos/%s/git/trees', $preparation->repository),
             [
-                'base_tree' => $preparation->planningBaseSha,
+                'base_tree' => $baseTree,
                 'tree' => $entries,
             ],
         );
