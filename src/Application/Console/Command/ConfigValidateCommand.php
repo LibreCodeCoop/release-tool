@@ -16,8 +16,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class ConfigValidateCommand extends Command
 {
     public function __construct(
-        private readonly ConsumerConfigLoader $loader = new ConsumerConfigLoader(),
         private readonly ConsumerConfigContextValidator $contextValidator,
+        private readonly ConsumerConfigLoader $loader = new ConsumerConfigLoader(),
     )
     {
         parent::__construct();
