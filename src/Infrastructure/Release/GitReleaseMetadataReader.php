@@ -19,7 +19,7 @@ final class GitReleaseMetadataReader implements ReleaseMetadataReader
 
     public function read(ConsumerConfig $config, string $sha): ReleaseMetadata
     {
-        $xml = @simplexml_load_string($this->git->readFile($sha, $config->versionSource));
+        $xml = simplexml_load_string($this->git->readFile($sha, $config->versionSource));
         if ($xml === false) {
             throw new DomainException(sprintf('Invalid XML version source: %s', $config->versionSource));
         }
