@@ -19,6 +19,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
         ?string $token = null,
         ?HttpClientInterface $client = null,
         string $apiUrl = 'https://api.github.com',
+        private ?string $requestedBy = null,
     ) {
         $headers = [
             'Accept' => 'application/vnd.github+json',
@@ -40,6 +41,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
         return new self(
             getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN') ?: null,
             apiUrl: getenv('GITHUB_API_URL') ?: 'https://api.github.com',
+            requestedBy: getenv('RELEASE_REQUESTED_BY') ?: getenv('GITHUB_ACTOR') ?: null,
         );
     }
 
@@ -260,9 +262,18 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
 
     private function pullRequestBody(ReleasePreparation $preparation): string
     {
-        return implode("\n", [
+        $lines = [
             $preparation->prMarker,
             '',
+        ];
+
+        if ($this->requestedBy !== null && trim($this->requestedBy) !== '') {
+            $lines[] = sprintf('Requested by @%s via Prepare release', ltrim(trim($this->requestedBy), '@'));
+            $lines[] = '';
+        }
+
+        return implode("\n", [
+            ...$lines,
             sprintf('ReleasePlan: `%s`', $preparation->releasePlanId),
             sprintf('ReleasePreparation: `%s`', $preparation->id),
             sprintf('Version: `%s`', $preparation->version),
