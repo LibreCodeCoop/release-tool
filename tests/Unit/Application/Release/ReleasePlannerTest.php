@@ -106,6 +106,46 @@ final class ReleasePlannerTest extends TestCase
         self::assertSame([10, 11], array_column($plan->activity, 'pull_request'));
     }
 
+    public function testDirectCommitsAreIgnoredExceptForTranslationDetection(): void
+    {
+        $planner = $this->planner(
+            closed: [
+                new PullRequestInfo(
+                    10,
+                    'fix: correct signature parsing',
+                    '',
+                    'stable35',
+                    self::MERGE,
+                    '2026-09-20T00:00:00Z',
+                    'https://example.test/10',
+                    [],
+                    'contributor',
+                ),
+            ],
+            milestones: [new MilestoneInfo(7, 'Next Patch (35)', 'https://example.test/m7')],
+            commits: [
+                new CommitInfo(self::SOURCE, 'fix: direct implementation detail', ['lib/Service.php']),
+                new CommitInfo(
+                    '5555555555555555555555555555555555555555',
+                    'chore(l10n): update translations',
+                    ['l10n/pt_BR.js', 'l10n/pt_BR.json'],
+                ),
+            ],
+        );
+
+        $plan = $planner->plan($this->config(), $this->input());
+
+        self::assertSame('15.0.4', $plan->proposedVersion);
+        self::assertCount(2, $plan->activity);
+        self::assertSame(10, $plan->activity[0]['pull_request']);
+        self::assertSame('translation', $plan->activity[1]['kind']);
+        self::assertSame('Update translations', $plan->activity[1]['title']);
+        self::assertSame(
+            ['pull_request', 'translation'],
+            array_column($plan->activity, 'kind'),
+        );
+    }
+
     public function testExplicitBackportOverrideIsAuditableAndMakesPlanReady(): void
     {
         $planner = $this->planner(
