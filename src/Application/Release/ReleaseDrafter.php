@@ -162,9 +162,48 @@ final readonly class ReleaseDrafter
             rawurlencode($prepared->tagName),
         );
 
+        $contributors = $this->contributors($prepared);
+
         return $this->renderChangelogSection($prepared->changelogSection)
+            . $contributors
             . "\n\nMilestone: [" . $prepared->tagName . '](' . $milestoneUrl . ')'
             . "\n\n**Full Changelog**: " . $compareUrl;
+    }
+
+    private function contributors(PreparedRelease $prepared): string
+    {
+        preg_match_all(
+            '/\[#(?<number>\d+)\]\(https:\/\/github\.com\/[^)]+\/pull\/\d+\)/',
+            $prepared->changelogSection,
+            $matches,
+        );
+
+        $contributors = [];
+        foreach ($matches['number'] ?? [] as $number) {
+            $login = $this->github->pullRequestAuthor($prepared->repository, (int) $number);
+            if ($this->isBot($login) || in_array($login, $contributors, true)) {
+                continue;
+            }
+            $contributors[] = $login;
+        }
+
+        if ($contributors === []) {
+            return '';
+        }
+
+        $mentions = array_map(static fn (string $login): string => '@' . $login, $contributors);
+        $last = array_pop($mentions);
+        $joined = $mentions === []
+            ? $last
+            : implode(', ', $mentions) . ' and ' . $last;
+
+        return "\n\n### Contributors\n\nThanks to " . $joined . ' for contributing to this release.';
+    }
+
+    private function isBot(string $login): bool
+    {
+        return str_ends_with(strtolower($login), '[bot]')
+            || in_array(strtolower($login), ['dependabot', 'github-actions'], true);
     }
 
     private function renderChangelogSection(string $section): string
