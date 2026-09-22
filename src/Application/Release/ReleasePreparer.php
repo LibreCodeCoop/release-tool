@@ -13,7 +13,6 @@ use LibreCode\ReleaseTool\Domain\Release\ReleaseActivity;
 use LibreCode\ReleaseTool\Domain\Release\ReleaseItem;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePreparation;
-use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 
 final readonly class ReleasePreparer
@@ -176,16 +175,6 @@ final readonly class ReleasePreparer
 
     private function releaseActivity(ReleasePlan $plan): ReleaseActivity
     {
-        if ($plan->mode === ReleaseMode::Security) {
-            return new ReleaseActivity([
-                new ReleaseItem(
-                    'pull_request',
-                    $plan->publicReleaseText->text,
-                    publicSecurityEntry: true,
-                ),
-            ]);
-        }
-
         $items = [];
         foreach ($plan->activity as $entry) {
             $kind = isset($entry['kind']) && is_string($entry['kind']) ? $entry['kind'] : 'direct_commit';
@@ -196,12 +185,27 @@ final readonly class ReleasePreparer
             $type = isset($entry['type']) && is_string($entry['type'])
                 ? $entry['type']
                 : null;
+            $labels = isset($entry['labels']) && is_array($entry['labels'])
+                ? array_values(array_filter($entry['labels'], 'is_string'))
+                : [];
 
             if ($title === '') {
                 throw new DomainException('ReleasePlan activity contains an item without a title.');
             }
 
-            $items[] = new ReleaseItem($kind, $title, $pullRequest, $type);
+            $security = count(array_filter(
+                $labels,
+                static fn (string $label): bool => strcasecmp(trim($label), 'security') === 0,
+            )) > 0;
+
+            $items[] = new ReleaseItem(
+                $kind,
+                $title,
+                $pullRequest,
+                $type,
+                $labels,
+                $security,
+            );
         }
 
         return new ReleaseActivity($items);
