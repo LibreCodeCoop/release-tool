@@ -152,6 +152,9 @@ final class PharArchiveReader implements ArchiveReader
 
                 $effectivePath = $pendingLongName ?? $path;
                 $pendingLongName = null;
+                if ($type === '5') {
+                    $effectivePath = rtrim($effectivePath, '/');
+                }
                 $this->assertSafePath($effectivePath);
             }
         } finally {

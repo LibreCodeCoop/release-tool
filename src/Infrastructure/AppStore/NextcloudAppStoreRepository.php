@@ -22,7 +22,15 @@ final readonly class NextcloudAppStoreRepository implements AppStoreRepository
 
     public function hasRelease(string $apiUrl, string $appId, string $version): bool
     {
-        $response = $this->client->request('GET', $apiUrl);
+        $response = $this->client->request('GET', $apiUrl, [
+            'headers' => [
+                'Cache-Control' => 'no-cache',
+                'Pragma' => 'no-cache',
+            ],
+            'query' => [
+                'release-tool-check' => $version,
+            ],
+        ]);
         $status = $response->getStatusCode();
         if ($status < 200 || $status >= 300) {
             throw new DomainException(sprintf('Nextcloud App Store API request failed (%d).', $status));

@@ -10,6 +10,8 @@ use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublisherRun;
 
 final class InMemoryPublicationRepository implements PublicationRepository
 {
+    public int $downloadCount = 0;
+
     public function __construct(
         public ?PublishedRelease $release,
         public ?PublisherRun $run,
@@ -33,6 +35,7 @@ final class InMemoryPublicationRepository implements PublicationRepository
 
     public function downloadAsset(string $repository, int $assetId, string $targetPath): void
     {
+        ++$this->downloadCount;
         file_put_contents($targetPath, $this->assetBytes);
     }
 }
