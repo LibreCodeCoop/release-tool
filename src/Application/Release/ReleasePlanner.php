@@ -367,27 +367,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
         );
     }
 
-    /**
-     * @param list<string> $paths
-     */
-    private function isMaintenanceOnlyPaths(array $paths): bool
-    {
-        if ($paths === []) {
-            return false;
-        }
-
-        $maintenancePaths = array_filter(
-            $paths,
-            static fn (string $path): bool =>
-                str_starts_with($path, '.github/')
-                || str_starts_with($path, 'docs/changelogs/')
-                || $path === '.nextcloud-release.yml'
-                || $path === 'CHANGELOG.md',
-        );
-
-        return count($maintenancePaths) === count($paths);
-    }
-
     private function proposedVersion(
         ConsumerConfig $config,
         Version $current,
