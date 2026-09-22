@@ -153,18 +153,18 @@ final class ReleaseLifecycleTest extends TestCase
         self::assertSame('15.0.4', $preparation->version);
     }
 
-    public function testSecurityLabeledPullRequestKeepsPublicTitleInSecurityCategory(): void
+    public function testPublicSafeSecurityFixTitleRemainsOrdinaryReleaseActivity(): void
     {
         [, $preparation] = $this->planAndPrepare(
             pullRequestTitle: 'fix(auth): restrict unauthorized file access',
-            pullRequestLabels: ['security'],
         );
 
-        self::assertStringContainsString('### Security', $preparation->changelogSection);
+        self::assertStringContainsString('### Fixed', $preparation->changelogSection);
         self::assertStringContainsString(
             '- restrict unauthorized file access (#10)',
             $preparation->changelogSection,
         );
+        self::assertStringNotContainsString('### Security', $preparation->changelogSection);
 
         [$prepared, $draft] = $this->finalizeAndDraft($preparation);
 
@@ -329,13 +329,12 @@ final class ReleaseLifecycleTest extends TestCase
         array $openPullRequests = [],
         bool $ignoreOpenBackport = false,
         string $pullRequestTitle = 'fix: correct signature parsing',
-        array $pullRequestLabels = [],
         bool $prepare = true,
     ): array {
         $git = $this->planningGit();
         $planner = new ReleasePlanner(
             $git,
-            $this->planningGitHub($channel, $openPullRequests, $pullRequestTitle, $pullRequestLabels),
+            $this->planningGitHub($channel, $openPullRequests, $pullRequestTitle),
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.3'), 35, 35, [])),
         );
         $plan = $planner->plan(
@@ -374,7 +373,6 @@ final class ReleaseLifecycleTest extends TestCase
         ReleaseChannel $channel = ReleaseChannel::Final,
         array $openPullRequests = [],
         string $pullRequestTitle = 'fix: correct signature parsing',
-        array $pullRequestLabels = [],
     ): InMemoryGitHubRepository {
         $milestoneTitle = $channel === ReleaseChannel::Final
             ? 'Next Patch (35)'
@@ -389,7 +387,7 @@ final class ReleaseLifecycleTest extends TestCase
                 self::MERGE,
                 '2026-09-20T00:00:00Z',
                 'https://example.test/pull/10',
-                $pullRequestLabels,
+                [],
                 'contributor',
             )],
             open: $openPullRequests,
