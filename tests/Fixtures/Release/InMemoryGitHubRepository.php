@@ -15,12 +15,14 @@ final class InMemoryGitHubRepository implements GitHubRepository
      * @param list<PullRequestInfo> $open
      * @param list<MilestoneInfo> $milestones
      * @param list<string> $releases
+     * @param array<int, list<string>> $pullRequestCommits
      */
     public function __construct(
         private readonly array $closed = [],
         private readonly array $open = [],
         private readonly array $milestones = [],
         private readonly array $releases = [],
+        private readonly array $pullRequestCommits = [],
     ) {
     }
 
@@ -38,6 +40,11 @@ final class InMemoryGitHubRepository implements GitHubRepository
             $this->open,
             static fn (PullRequestInfo $pullRequest): bool => $pullRequest->baseBranch === $baseBranch,
         ));
+    }
+
+    public function pullRequestCommitShas(string $repository, int $pullRequestNumber): array
+    {
+        return $this->pullRequestCommits[$pullRequestNumber] ?? [];
     }
 
     public function openMilestones(string $repository): array
