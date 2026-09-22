@@ -11,6 +11,7 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\ReleaseMetadata;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 use LibreCode\ReleaseTool\Domain\Release\FileChange;
+use LibreCode\ReleaseTool\Domain\Release\HistorySynchronization;
 use LibreCode\ReleaseTool\Domain\Release\HistorySyncState;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePreparation;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
@@ -116,7 +117,7 @@ final class ReleaseFinalizerTest extends TestCase
         ))->finalize($this->config(), $this->preparation());
     }
 
-    public function testSecurityModeDefersPublicHistorySynchronization(): void
+    public function testSecurityModeSynchronizesPublicSafeHistory(): void
     {
         $preparation = $this->preparation(ReleaseMode::Security);
         $github = new InMemoryReleaseFinalizationRepository(
@@ -128,7 +129,15 @@ final class ReleaseFinalizerTest extends TestCase
                 self::FINAL,
                 array_map(static fn (FileChange $change): string => $change->path, $preparation->fileChanges),
             ),
-            ['stable35' => self::FINAL],
+            ['stable35' => self::FINAL, 'main' => self::MAIN],
+            new HistorySynchronization(
+                HistorySyncState::PullRequestOpen,
+                'main',
+                'docs/changelogs/changelog-15.md',
+                'release-tool/history/15.0.4/main/test',
+                88,
+                'https://github.com/LibreSign/libresign/pull/88',
+            ),
         );
 
         $prepared = (new ReleaseFinalizer(
@@ -137,8 +146,10 @@ final class ReleaseFinalizerTest extends TestCase
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.4'), 35, 35, [])),
         ))->finalize($this->config(), $preparation, true);
 
-        self::assertSame(HistorySyncState::DeferredSecurity, $prepared->historySynchronization->state);
-        self::assertNull($github->lastHistoryRequest);
+        self::assertSame(HistorySyncState::PullRequestOpen, $prepared->historySynchronization->state);
+        self::assertNotNull($github->lastHistoryRequest);
+        self::assertSame('main', $github->lastHistoryRequest->targetBranch);
+        self::assertStringContainsString('### Fixed', $github->lastHistoryRequest->content);
     }
 
     private function git(): InMemoryGitRepository
