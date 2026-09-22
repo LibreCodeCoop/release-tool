@@ -95,6 +95,22 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         return $sha;
     }
 
+    /** @return list<string> */
+    public function branches(string $repository): array
+    {
+        $items = $this->paginate(sprintf('/repos/%s/branches', $repository));
+        $branches = [];
+        foreach ($items as $item) {
+            $name = $item['name'] ?? null;
+            if (!is_string($name) || $name === '') {
+                throw new DomainException('GitHub returned an invalid branch name.');
+            }
+            $branches[] = $name;
+        }
+
+        return $branches;
+    }
+
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
     {
         $currentHead = $this->branchHead($request->repository, $request->targetBranch);
