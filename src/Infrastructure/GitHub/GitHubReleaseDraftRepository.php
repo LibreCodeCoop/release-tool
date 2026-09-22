@@ -118,6 +118,20 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
         return $login;
     }
 
+    public function pullRequestAuthor(string $repository, int $pullRequestNumber): string
+    {
+        $data = $this->request(
+            'GET',
+            sprintf('/repos/%s/pulls/%d', $repository, $pullRequestNumber),
+        );
+        $login = $data['user']['login'] ?? null;
+        if (!is_string($login) || $login === '') {
+            throw new DomainException('GitHub returned no identifiable pull request author.');
+        }
+
+        return $login;
+    }
+
     public function permission(string $repository, string $login): string
     {
         $data = $this->request(
