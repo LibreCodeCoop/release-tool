@@ -69,6 +69,49 @@ final class ReleaseFinalizerTest extends TestCase
         );
     }
 
+    public function testFallsBackToGitHubWhenHistoryTargetIsNotFetchedLocally(): void
+    {
+        $files = [
+            self::FINAL . ':appinfo/info.xml' => "<info><version>15.0.4</version></info>\n",
+            self::FINAL . ':package.json' => "{\"version\":\"15.0.4\",\"human\":true}\n",
+            self::FINAL . ':package-lock.json' => "{\"version\":\"15.0.4\"}\n",
+            self::FINAL . ':docs/changelogs/changelog-15.md' => "# Changelog\n\n## 15.0.4 - 2026-09-21\n\n### Fixed\n- Human-edited wording (#77)\n\n## 15.0.3 - 2026-09-20\n- Previous.\n",
+        ];
+        $git = new InMemoryGitRepository(
+            'LibreSign/libresign',
+            ['stable35' => self::FINAL],
+            [self::FINAL => [self::BASE]],
+            new PreviousRelease('v15.0.3', self::BASE, 'v15.0.3'),
+            $files,
+        );
+        $github = new InMemoryReleaseFinalizationRepository(
+            new FinalizedPullRequest(
+                77,
+                'https://github.com/LibreSign/libresign/pull/77',
+                'stable35',
+                true,
+                self::FINAL,
+                array_map(static fn (FileChange $change): string => $change->path, $this->preparation()->fileChanges),
+            ),
+            ['stable35' => self::FINAL, 'main' => self::MAIN],
+            files: [
+                self::MAIN . ':docs/changelogs/changelog-15.md' => "# Changelog\n\n## 15.0.3 - 2026-09-20\n- Previous.\n",
+            ],
+        );
+
+        $prepared = (new ReleaseFinalizer(
+            $git,
+            $github,
+            new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.4'), 35, 35, [
+                'package.json' => '15.0.4',
+                'package-lock.json' => '15.0.4',
+            ])),
+        ))->finalize($this->config(), $this->preparation());
+
+        self::assertSame(HistorySyncState::Planned, $prepared->historySynchronization->state);
+        self::assertSame('main', $prepared->historySynchronization->targetBranch);
+    }
+
     public function testRejectsUnexpectedMergedFile(): void
     {
         $github = new InMemoryReleaseFinalizationRepository(

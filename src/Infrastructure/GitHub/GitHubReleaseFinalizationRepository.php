@@ -111,6 +111,32 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         return $branches;
     }
 
+    public function readFile(string $repository, string $sha, string $path): string
+    {
+        $data = $this->request(
+            'GET',
+            sprintf(
+                '/repos/%s/contents/%s?ref=%s',
+                $repository,
+                $this->encodePath($path),
+                rawurlencode($sha),
+            ),
+        );
+
+        $encoding = $data['encoding'] ?? null;
+        $content = $data['content'] ?? null;
+        if ($encoding !== 'base64' || !is_string($content)) {
+            throw new DomainException(sprintf('GitHub returned invalid file content for %s at %s.', $path, $sha));
+        }
+
+        $decoded = base64_decode(str_replace(["\r", "\n"], '', $content), true);
+        if ($decoded === false) {
+            throw new DomainException(sprintf('GitHub returned invalid base64 content for %s at %s.', $path, $sha));
+        }
+
+        return $decoded;
+    }
+
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
     {
         $currentHead = $this->branchHead($request->repository, $request->targetBranch);
@@ -309,6 +335,11 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         if ($status < 200 || $status >= 300) {
             throw new DomainException(sprintf('GitHub API failed to %s (%d).', $operation, $status));
         }
+    }
+
+    private function encodePath(string $path): string
+    {
+        return implode('/', array_map(rawurlencode(...), explode('/', $path)));
     }
 
     private function encodeRef(string $branch): string
