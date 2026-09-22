@@ -190,7 +190,7 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
                 'POST',
                 sprintf('/repos/%s/pulls', $request->repository),
                 [
-                    'title' => sprintf('docs: synchronize release %s history', $request->version),
+                    'title' => sprintf('docs: synchronize release %s history [skip ci]', $request->version),
                     'head' => $request->generatedBranch,
                     'base' => $request->targetBranch,
                     'body' => $request->marker . "\n\nThis PR synchronizes the exact released changelog section only.",
