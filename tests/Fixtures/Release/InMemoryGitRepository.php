@@ -78,8 +78,12 @@ final class InMemoryGitRepository implements GitRepository
         return $this->date;
     }
 
-    public function previousRelease(string $baseSha, string $tagPrefix, ?string $initialRef): PreviousRelease
-    {
+    public function previousRelease(
+        string $baseSha,
+        string $tagPrefix,
+        ?string $initialRef,
+        ?string $excludeTag = null,
+    ): PreviousRelease {
         return $this->previous;
     }
 

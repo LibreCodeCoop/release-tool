@@ -76,7 +76,7 @@ final readonly class ReleaseDrafter
             ));
         }
 
-        $body = $this->body($prepared, $milestone);
+        $body = $this->body($config, $prepared, $milestone);
         $prerelease = $prepared->channel !== ReleaseChannel::Final;
         $existing = $this->github->releaseByTag($prepared->repository, $prepared->tagName);
         if ($existing !== null && !$existing->draft) {
@@ -142,18 +142,29 @@ final readonly class ReleaseDrafter
         );
     }
 
-    private function body(PreparedRelease $prepared, MilestoneTransition $milestone): string
-    {
-        $changelogUrl = sprintf(
-            'https://github.com/%s/blob/%s/%s',
-            $prepared->repository,
+    private function body(
+        ConsumerConfig $config,
+        PreparedRelease $prepared,
+        MilestoneTransition $milestone,
+    ): string {
+        $previous = $this->git->previousRelease(
             $prepared->finalSha,
-            $prepared->changelogTarget,
+            $config->tagPrefix,
+            $config->initialRef,
+            $prepared->tagName,
+        );
+        $milestoneSeparator = str_contains($milestone->releasedMilestoneUrl, '?') ? '&' : '?';
+        $milestoneUrl = $milestone->releasedMilestoneUrl . $milestoneSeparator . 'closed=1';
+        $compareUrl = sprintf(
+            'https://github.com/%s/compare/%s...%s',
+            $prepared->repository,
+            rawurlencode($previous->comparisonRef),
+            rawurlencode($prepared->tagName),
         );
 
         return $this->renderChangelogSection($prepared->changelogSection)
-            . "\n\nMilestone: " . $milestone->releasedMilestoneUrl
-            . "\n\n[Full changelog](" . $changelogUrl . ')';
+            . "\n\nMilestone: [" . $prepared->tagName . '](' . $milestoneUrl . ')'
+            . "\n\n**Full Changelog**: " . $compareUrl;
     }
 
     private function renderChangelogSection(string $section): string

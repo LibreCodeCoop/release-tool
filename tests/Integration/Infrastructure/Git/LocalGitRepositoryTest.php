@@ -26,6 +26,7 @@ final class LocalGitRepositoryTest extends TestCase
         $this->runGit(['git', 'tag', 'v1.0.0']);
         file_put_contents($this->directory . '/README.md', "second\n");
         $this->runGit(['git', 'commit', '-am', 'fix: second']);
+        $this->runGit(['git', 'tag', 'v1.0.1']);
     }
 
     protected function tearDown(): void
@@ -42,7 +43,7 @@ final class LocalGitRepositoryTest extends TestCase
     {
         $repository = new LocalGitRepository($this->directory);
         $head = $repository->branchHead('main');
-        $previous = $repository->previousRelease($head, 'v', null);
+        $previous = $repository->previousRelease($head, 'v', null, 'v1.0.1');
 
         self::assertSame(40, strlen($head));
         self::assertSame('v1.0.0', $previous->tag);
