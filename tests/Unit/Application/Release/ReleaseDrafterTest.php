@@ -48,6 +48,42 @@ final class ReleaseDrafterTest extends TestCase
         );
     }
 
+    public function testCreditsUniqueHumanAuthorsFromPublishedPullRequests(): void
+    {
+        $prepared = $this->prepared(section: <<<MD
+## 15.0.4
+
+### Fixed
+- first fix
+  [#10](https://github.com/LibreSign/libresign/pull/10)
+- second fix
+  [#11](https://github.com/LibreSign/libresign/pull/11)
+- bot update
+  [#12](https://github.com/LibreSign/libresign/pull/12)
+MD);
+        $github = new InMemoryReleaseDraftRepository(
+            ['stable35' => self::SHA],
+            pullRequestAuthors: [
+                10 => 'alice',
+                11 => 'bob',
+                12 => 'dependabot[bot]',
+            ],
+        );
+
+        (new ReleaseDrafter($this->git($prepared), $github))->prepare(
+            $this->config(),
+            $prepared,
+            $this->milestone(),
+        );
+
+        self::assertNotNull($github->release);
+        self::assertStringContainsString(
+            "### Contributors\n\nThanks to @alice and @bob for contributing to this release.",
+            $github->release->body,
+        );
+        self::assertStringNotContainsString('dependabot', $github->release->body);
+    }
+
     public function testPrereleaseSetsGitHubPrereleaseFlag(): void
     {
         $prepared = $this->prepared('15.0.4-rc.1', ReleaseChannel::Rc);
