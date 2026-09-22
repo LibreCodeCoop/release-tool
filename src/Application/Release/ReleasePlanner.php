@@ -259,43 +259,33 @@ final readonly class ReleasePlanner implements ReleasePlanning
             }
         }
 
+        $directTranslationSeen = false;
         foreach ($this->git->commitsBetween($previousSha, $baseSha) as $commit) {
-            if (
-                isset($pullRequestCommitShas[$commit->sha])
-                || preg_match('/^Merge\b/i', $commit->subject) === 1
-            ) {
+            if (isset($pullRequestCommitShas[$commit->sha])) {
                 continue;
             }
 
             $parsed = $this->titleParser->parse($commit->subject);
             $kind = $this->directCommitKind($commit->subject, $parsed, $commit->paths);
-            $maintenance = $this->isMaintenance($parsed)
-                || $this->isMaintenanceOnlyPaths($commit->paths);
+            if ($kind !== 'translation' || $directTranslationSeen) {
+                continue;
+            }
 
             $items[] = new ReleaseItem(
-                kind: $kind,
-                title: $commit->subject,
-                conventionalType: $parsed->type,
-                conventionalScope: $parsed->scope,
-                maintenance: $maintenance,
+                kind: 'translation',
+                title: 'Update translations',
             );
             $data[] = [
-                'kind' => $kind,
-                'title' => $commit->subject,
-                'subject' => $parsed->subject,
+                'kind' => 'translation',
+                'title' => 'Update translations',
+                'subject' => 'Update translations',
                 'commit' => $commit->sha,
-                'type' => $parsed->type,
-                'scope' => $parsed->scope,
+                'type' => null,
+                'scope' => null,
                 'backport' => false,
-                'maintenance' => $maintenance,
+                'maintenance' => false,
             ];
-
-            if ($parsed->breaking) {
-                $warnings[] = sprintf(
-                    'Commit %.12s declares a breaking marker; app major promotion is manual and was not applied.',
-                    $commit->sha,
-                );
-            }
+            $directTranslationSeen = true;
         }
 
         return [new ReleaseActivity($items), $data, $warnings];
