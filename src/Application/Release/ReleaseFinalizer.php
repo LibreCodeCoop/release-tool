@@ -154,7 +154,7 @@ final readonly class ReleaseFinalizer
 
         foreach ($targets as $targetBranch) {
             $targetSha = $this->github->branchHead($preparation->repository, $targetBranch);
-            $current = $this->git->readFile($targetSha, $targetPath);
+            $current = $this->github->readFile($preparation->repository, $targetSha, $targetPath);
             $updated = $this->historySynchronizer->synchronize(
                 $current,
                 $preparation->version,
