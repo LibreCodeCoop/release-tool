@@ -38,9 +38,12 @@ final class ReleaseDrafterTest extends TestCase
         self::assertTrue($draft->ready);
         self::assertSame(1, $github->createCalls);
         self::assertNotNull($github->release);
-        self::assertStringContainsString('Milestone: https://example.test/milestones/7', $github->release->body);
+        self::assertStringContainsString(
+            'Milestone: [v15.0.4](https://example.test/milestones/7?closed=1)',
+            $github->release->body,
+        );
         self::assertStringEndsWith(
-            '[Full changelog](https://github.com/LibreSign/libresign/blob/' . self::SHA . '/docs/changelogs/changelog-15.md)',
+            '**Full Changelog**: https://github.com/LibreSign/libresign/compare/v15.0.3...v15.0.4',
             $github->release->body,
         );
     }
@@ -183,7 +186,7 @@ final class ReleaseDrafterTest extends TestCase
             'LibreSign/libresign',
             ['stable35' => $branchHead],
             $ancestors,
-            new PreviousRelease(null, self::SHA, self::SHA),
+            new PreviousRelease('v15.0.3', self::SHA, 'v15.0.3'),
             $files,
         );
     }
