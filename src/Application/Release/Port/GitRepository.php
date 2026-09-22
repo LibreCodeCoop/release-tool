@@ -27,6 +27,7 @@ interface GitRepository
         string $baseSha,
         string $tagPrefix,
         ?string $initialRef,
+        ?string $excludeTag = null,
     ): PreviousRelease;
 
     /**
