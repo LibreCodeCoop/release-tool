@@ -78,7 +78,7 @@ final class PublicationVerifierTest extends TestCase
         }
     }
 
-    public function testFailedPublisherAndMissingAppStoreReleaseProduceFailureArtifact(): void
+    public function testFailedPublisherStopsBeforeAppStoreAndArtifactVerification(): void
     {
         $artifact = $this->artifact();
         try {
@@ -113,7 +113,7 @@ final class PublicationVerifierTest extends TestCase
             self::assertFalse($verification->publisherSucceeded);
             self::assertFalse($verification->appStoreVisible);
             self::assertStringContainsString('Publisher workflow', implode("\n", $verification->errors));
-            self::assertStringContainsString('App Store', implode("\n", $verification->errors));
+            self::assertStringNotContainsString('App Store', implode("\n", $verification->errors));
             self::assertSame(0, $repository->downloadCount);
         } finally {
             $this->removeArtifact($artifact);
