@@ -229,7 +229,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
                 'pull_request' => $pullRequest->number,
                 'type' => $parsed->type,
                 'url' => $pullRequest->url,
-                'labels' => $pullRequest->labels,
             ];
 
             if ($parsed->type === null) {
