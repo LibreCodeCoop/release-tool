@@ -185,27 +185,12 @@ final readonly class ReleasePreparer
             $type = isset($entry['type']) && is_string($entry['type'])
                 ? $entry['type']
                 : null;
-            $labels = isset($entry['labels']) && is_array($entry['labels'])
-                ? array_values(array_filter($entry['labels'], is_string(...)))
-                : [];
 
             if ($title === '') {
                 throw new DomainException('ReleasePlan activity contains an item without a title.');
             }
 
-            $security = count(array_filter(
-                $labels,
-                static fn (string $label): bool => strcasecmp(trim($label), 'security') === 0,
-            )) > 0;
-
-            $items[] = new ReleaseItem(
-                $kind,
-                $title,
-                $pullRequest,
-                $type,
-                $labels,
-                $security,
-            );
+            $items[] = new ReleaseItem($kind, $title, $pullRequest, $type);
         }
 
         return new ReleaseActivity($items);
