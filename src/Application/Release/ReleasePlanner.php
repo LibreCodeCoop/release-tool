@@ -213,22 +213,39 @@ final readonly class ReleasePlanner implements ReleasePlanning
         foreach ($pullRequests as $pullRequest) {
             $parsed = $this->titleParser->parse($pullRequest->title);
             $kind = $this->pullRequestKind($pullRequest, $parsed);
+            $backport = $this->isBackportPullRequest($pullRequest);
+            $maintenance = $this->isMaintenance($parsed);
+
             $item = new ReleaseItem(
-                $kind,
-                $pullRequest->title,
-                $pullRequest->number,
-                $parsed->type,
-                $pullRequest->labels,
+                kind: $kind,
+                title: $pullRequest->title,
+                pullRequestNumber: $pullRequest->number,
+                conventionalType: $parsed->type,
+                labels: $pullRequest->labels,
+                url: $pullRequest->url,
+                conventionalScope: $parsed->scope,
+                backport: $backport,
+                maintenance: $maintenance,
             );
             $items[] = $item;
-            $pullRequestCommitShas[$pullRequest->mergeCommitSha ?? ''] = true;
+
+            if ($pullRequest->mergeCommitSha !== null) {
+                $pullRequestCommitShas[$pullRequest->mergeCommitSha] = true;
+            }
+            foreach ($this->github->pullRequestCommitShas($repository, $pullRequest->number) as $commitSha) {
+                $pullRequestCommitShas[$commitSha] = true;
+            }
+
             $data[] = [
                 'kind' => $kind,
                 'title' => $pullRequest->title,
                 'subject' => $parsed->subject,
                 'pull_request' => $pullRequest->number,
                 'type' => $parsed->type,
+                'scope' => $parsed->scope,
                 'url' => $pullRequest->url,
+                'backport' => $backport,
+                'maintenance' => $maintenance,
             ];
 
             if ($parsed->type === null) {
@@ -243,19 +260,34 @@ final readonly class ReleasePlanner implements ReleasePlanning
         }
 
         foreach ($this->git->commitsBetween($previousSha, $baseSha) as $commit) {
-            if (isset($pullRequestCommitShas[$commit->sha])) {
+            if (
+                isset($pullRequestCommitShas[$commit->sha])
+                || preg_match('/^Merge\b/i', $commit->subject) === 1
+            ) {
                 continue;
             }
 
             $parsed = $this->titleParser->parse($commit->subject);
             $kind = $this->directCommitKind($commit->subject, $parsed, $commit->paths);
-            $items[] = new ReleaseItem($kind, $commit->subject, conventionalType: $parsed->type);
+            $maintenance = $this->isMaintenance($parsed)
+                || $this->isMaintenanceOnlyPaths($commit->paths);
+
+            $items[] = new ReleaseItem(
+                kind: $kind,
+                title: $commit->subject,
+                conventionalType: $parsed->type,
+                conventionalScope: $parsed->scope,
+                maintenance: $maintenance,
+            );
             $data[] = [
                 'kind' => $kind,
                 'title' => $commit->subject,
                 'subject' => $parsed->subject,
                 'commit' => $commit->sha,
                 'type' => $parsed->type,
+                'scope' => $parsed->scope,
+                'backport' => false,
+                'maintenance' => $maintenance,
             ];
 
             if ($parsed->breaking) {
@@ -322,6 +354,48 @@ final readonly class ReleasePlanner implements ReleasePlanning
         }
 
         return 'direct_commit';
+    }
+
+    private function isBackportPullRequest(PullRequestInfo $pullRequest): bool
+    {
+        return preg_match(
+            '/^\[stable\d+\]|^backport(?:\([^)]*\))?:|\bbackport\b/i',
+            $pullRequest->title . "\n" . implode(' ', $pullRequest->labels),
+        ) === 1;
+    }
+
+    private function isMaintenance(ConventionalTitle $parsed): bool
+    {
+        if (in_array($parsed->type, ['ci', 'chore', 'build', 'test', 'docs'], true)) {
+            return true;
+        }
+
+        return in_array(
+            $parsed->scope,
+            ['release', 'ci', 'workflow', 'workflows', 'tooling', 'ops', 'dev', 'tests'],
+            true,
+        );
+    }
+
+    /**
+     * @param list<string> $paths
+     */
+    private function isMaintenanceOnlyPaths(array $paths): bool
+    {
+        if ($paths === []) {
+            return false;
+        }
+
+        $maintenancePaths = array_filter(
+            $paths,
+            static fn (string $path): bool =>
+                str_starts_with($path, '.github/')
+                || str_starts_with($path, 'docs/changelogs/')
+                || $path === '.nextcloud-release.yml'
+                || $path === 'CHANGELOG.md',
+        );
+
+        return count($maintenancePaths) === count($paths);
     }
 
     private function proposedVersion(
