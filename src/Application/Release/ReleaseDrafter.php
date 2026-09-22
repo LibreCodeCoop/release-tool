@@ -151,9 +151,16 @@ final readonly class ReleaseDrafter
             $prepared->changelogTarget,
         );
 
-        return rtrim($prepared->changelogSection)
+        return $this->renderChangelogSection($prepared->changelogSection)
             . "\n\nMilestone: " . $milestone->releasedMilestoneUrl
             . "\n\n[Full changelog](" . $changelogUrl . ')';
+    }
+
+    private function renderChangelogSection(string $section): string
+    {
+        $section = rtrim($section);
+
+        return preg_replace('/^(### .+)\n\n(?=- )/m', "$1\n", $section) ?? $section;
     }
 
     private function permissionRank(string $permission): int
