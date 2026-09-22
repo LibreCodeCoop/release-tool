@@ -185,12 +185,29 @@ final readonly class ReleasePreparer
             $type = isset($entry['type']) && is_string($entry['type'])
                 ? $entry['type']
                 : null;
+            $scope = isset($entry['scope']) && is_string($entry['scope'])
+                ? $entry['scope']
+                : null;
+            $url = isset($entry['url']) && is_string($entry['url'])
+                ? $entry['url']
+                : null;
+            $backport = isset($entry['backport']) && $entry['backport'] === true;
+            $maintenance = isset($entry['maintenance']) && $entry['maintenance'] === true;
 
             if ($title === '') {
                 throw new DomainException('ReleasePlan activity contains an item without a title.');
             }
 
-            $items[] = new ReleaseItem($kind, $title, $pullRequest, $type);
+            $items[] = new ReleaseItem(
+                kind: $kind,
+                title: $title,
+                pullRequestNumber: $pullRequest,
+                conventionalType: $type,
+                url: $url,
+                conventionalScope: $scope,
+                backport: $backport,
+                maintenance: $maintenance,
+            );
         }
 
         return new ReleaseActivity($items);
