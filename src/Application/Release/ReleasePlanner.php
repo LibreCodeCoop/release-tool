@@ -202,8 +202,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $items = [];
         $data = [];
         $warnings = [];
-        $pullRequestCommitShas = [];
-
         $pullRequests = array_values(array_filter(
             $this->github->closedPullRequests($repository, $branch),
             fn (PullRequestInfo $pullRequest): bool => $this->pullRequestInRange($pullRequest, $previousSha, $baseSha),
@@ -213,22 +211,32 @@ final readonly class ReleasePlanner implements ReleasePlanning
         foreach ($pullRequests as $pullRequest) {
             $parsed = $this->titleParser->parse($pullRequest->title);
             $kind = $this->pullRequestKind($pullRequest, $parsed);
+            $backport = $this->isBackportPullRequest($pullRequest);
+            $maintenance = $this->isMaintenance($parsed);
+
             $item = new ReleaseItem(
-                $kind,
-                $pullRequest->title,
-                $pullRequest->number,
-                $parsed->type,
-                $pullRequest->labels,
+                kind: $kind,
+                title: $pullRequest->title,
+                pullRequestNumber: $pullRequest->number,
+                conventionalType: $parsed->type,
+                labels: $pullRequest->labels,
+                url: $pullRequest->url,
+                conventionalScope: $parsed->scope,
+                backport: $backport,
+                maintenance: $maintenance,
             );
             $items[] = $item;
-            $pullRequestCommitShas[$pullRequest->mergeCommitSha ?? ''] = true;
+
             $data[] = [
                 'kind' => $kind,
                 'title' => $pullRequest->title,
                 'subject' => $parsed->subject,
                 'pull_request' => $pullRequest->number,
                 'type' => $parsed->type,
+                'scope' => $parsed->scope,
                 'url' => $pullRequest->url,
+                'backport' => $backport,
+                'maintenance' => $maintenance,
             ];
 
             if ($parsed->type === null) {
@@ -242,28 +250,29 @@ final readonly class ReleasePlanner implements ReleasePlanning
             }
         }
 
+        $directTranslationSeen = false;
         foreach ($this->git->commitsBetween($previousSha, $baseSha) as $commit) {
-            if (isset($pullRequestCommitShas[$commit->sha])) {
+            $parsed = $this->titleParser->parse($commit->subject);
+            $kind = $this->directCommitKind($commit->subject, $parsed, $commit->paths);
+            if ($kind !== 'translation' || $directTranslationSeen) {
                 continue;
             }
 
-            $parsed = $this->titleParser->parse($commit->subject);
-            $kind = $this->directCommitKind($commit->subject, $parsed, $commit->paths);
-            $items[] = new ReleaseItem($kind, $commit->subject, conventionalType: $parsed->type);
+            $items[] = new ReleaseItem(
+                kind: 'translation',
+                title: 'Update translations',
+            );
             $data[] = [
-                'kind' => $kind,
-                'title' => $commit->subject,
-                'subject' => $parsed->subject,
+                'kind' => 'translation',
+                'title' => 'Update translations',
+                'subject' => 'Update translations',
                 'commit' => $commit->sha,
-                'type' => $parsed->type,
+                'type' => null,
+                'scope' => null,
+                'backport' => false,
+                'maintenance' => false,
             ];
-
-            if ($parsed->breaking) {
-                $warnings[] = sprintf(
-                    'Commit %.12s declares a breaking marker; app major promotion is manual and was not applied.',
-                    $commit->sha,
-                );
-            }
+            $directTranslationSeen = true;
         }
 
         return [new ReleaseActivity($items), $data, $warnings];
@@ -322,6 +331,27 @@ final readonly class ReleasePlanner implements ReleasePlanning
         }
 
         return 'direct_commit';
+    }
+
+    private function isBackportPullRequest(PullRequestInfo $pullRequest): bool
+    {
+        return preg_match(
+            '/^\[stable\d+\]|^backport(?:\([^)]*\))?:|\bbackport\b/i',
+            $pullRequest->title . "\n" . implode(' ', $pullRequest->labels),
+        ) === 1;
+    }
+
+    private function isMaintenance(ConventionalTitle $parsed): bool
+    {
+        if (in_array($parsed->type, ['ci', 'chore', 'build', 'test', 'docs'], true)) {
+            return true;
+        }
+
+        return in_array(
+            $parsed->scope,
+            ['release', 'ci', 'workflow', 'workflows', 'tooling', 'ops', 'dev', 'tests'],
+            true,
+        );
     }
 
     private function proposedVersion(

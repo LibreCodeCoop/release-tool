@@ -161,7 +161,7 @@ final class ReleaseLifecycleTest extends TestCase
 
         self::assertStringContainsString('### Fixed', $preparation->changelogSection);
         self::assertStringContainsString(
-            '- restrict unauthorized file access (#10)',
+            "- restrict unauthorized file access\n  [#10](https://example.test/pull/10)",
             $preparation->changelogSection,
         );
         self::assertStringNotContainsString('### Security', $preparation->changelogSection);
@@ -170,7 +170,7 @@ final class ReleaseLifecycleTest extends TestCase
 
         self::assertSame('planned', $prepared->historySynchronization->state->value);
         self::assertStringContainsString(
-            '- restrict unauthorized file access (#10)',
+            "- restrict unauthorized file access\n  [#10](https://example.test/pull/10)",
             $prepared->changelogSection,
         );
         self::assertTrue($draft->ready);

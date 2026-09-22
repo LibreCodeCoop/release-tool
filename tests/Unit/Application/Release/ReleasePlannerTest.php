@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Tests\Unit\Application\Release;
 
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
+use LibreCode\ReleaseTool\Application\Release\ReadModel\CommitInfo;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\MilestoneInfo;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\PreviousRelease;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\PullRequestInfo;
@@ -24,6 +25,7 @@ final class ReleasePlannerTest extends TestCase
     private const PREVIOUS = '1111111111111111111111111111111111111111';
     private const MERGE = '2222222222222222222222222222222222222222';
     private const HEAD = '3333333333333333333333333333333333333333';
+    private const SOURCE = '4444444444444444444444444444444444444444';
 
     protected function setUp(): void
     {
@@ -53,6 +55,92 @@ final class ReleasePlannerTest extends TestCase
         self::assertFalse($plan->ready);
         self::assertSame('Next Patch (35)', $plan->milestone['title']);
         self::assertStringContainsString('other open pull request', implode("\n", $plan->warnings));
+    }
+
+    public function testBackportAndReleaseToolingDoNotPromoteMinorOrDuplicateCommits(): void
+    {
+        $planner = $this->planner(
+            closed: [
+                new PullRequestInfo(
+                    10,
+                    '[stable35] feat(chat): add visible signatures',
+                    '',
+                    'stable35',
+                    self::MERGE,
+                    '2026-09-20T00:00:00Z',
+                    'https://example.test/10',
+                    ['backport'],
+                    'contributor',
+                ),
+                new PullRequestInfo(
+                    11,
+                    'feat(release): integrate reusable release tooling',
+                    '',
+                    'stable35',
+                    self::HEAD,
+                    '2026-09-20T00:00:00Z',
+                    'https://example.test/11',
+                    [],
+                    'contributor',
+                ),
+            ],
+            milestones: [new MilestoneInfo(7, 'Next Patch (35)', 'https://example.test/m7')],
+            commits: [
+                new CommitInfo(self::SOURCE, 'fix: implementation detail from backport', ['lib/Service.php']),
+            ],
+        );
+
+        $plan = $planner->plan($this->config(), $this->input());
+
+        self::assertSame('15.0.4', $plan->proposedVersion);
+        self::assertSame('releasable-activity', $plan->bumpReason);
+        self::assertCount(2, $plan->activity);
+        self::assertTrue($plan->activity[0]['backport']);
+        self::assertFalse($plan->activity[0]['maintenance']);
+        self::assertSame('https://example.test/10', $plan->activity[0]['url']);
+        self::assertFalse($plan->activity[1]['backport']);
+        self::assertTrue($plan->activity[1]['maintenance']);
+        self::assertSame([10, 11], array_column($plan->activity, 'pull_request'));
+    }
+
+    public function testDirectCommitsAreIgnoredExceptForTranslationDetection(): void
+    {
+        $planner = $this->planner(
+            closed: [
+                new PullRequestInfo(
+                    10,
+                    'fix: correct signature parsing',
+                    '',
+                    'stable35',
+                    self::MERGE,
+                    '2026-09-20T00:00:00Z',
+                    'https://example.test/10',
+                    [],
+                    'contributor',
+                ),
+            ],
+            milestones: [new MilestoneInfo(7, 'Next Patch (35)', 'https://example.test/m7')],
+            commits: [
+                new CommitInfo(self::SOURCE, 'fix: direct implementation detail', ['lib/Service.php']),
+                new CommitInfo(
+                    '5555555555555555555555555555555555555555',
+                    'chore(l10n): update translations',
+                    ['l10n/pt_BR.js', 'l10n/pt_BR.json'],
+                ),
+            ],
+        );
+
+        $plan = $planner->plan($this->config(), $this->input());
+
+        self::assertSame('15.0.4', $plan->proposedVersion);
+        self::assertCount(2, $plan->activity);
+        self::assertSame(10, $plan->activity[0]['pull_request']);
+        self::assertSame('translation', $plan->activity[1]['kind']);
+        self::assertSame('Update translations', $plan->activity[1]['title']);
+        self::assertSame(
+            ['pull_request', 'translation'],
+            array_column($plan->activity, 'kind'),
+        );
     }
 
     public function testExplicitBackportOverrideIsAuditableAndMakesPlanReady(): void
@@ -85,8 +173,12 @@ final class ReleasePlannerTest extends TestCase
         self::assertStringContainsString('Expected open milestone not found', implode("\n", $plan->warnings));
     }
 
-    private function planner(array $closed = [], array $open = [], array $milestones = []): ReleasePlanner
-    {
+    private function planner(
+        array $closed = [],
+        array $open = [],
+        array $milestones = [],
+        array $commits = [],
+    ): ReleasePlanner {
         $git = new InMemoryGitRepository(
             'LibreSign/libresign',
             ['stable35' => self::HEAD],
@@ -97,6 +189,7 @@ final class ReleasePlannerTest extends TestCase
             ],
             new PreviousRelease('v15.0.3', self::PREVIOUS, 'v15.0.3'),
             [self::HEAD . ':docs/changelogs/changelog-15.md' => "# Changelog\n"],
+            $commits,
         );
 
         return new ReleasePlanner(

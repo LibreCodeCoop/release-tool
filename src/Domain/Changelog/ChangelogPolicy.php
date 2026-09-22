@@ -52,6 +52,7 @@ final class ChangelogPolicy
         $categories = array_fill_keys(self::CATEGORY_ORDER, []);
         $dependencySeen = false;
         $translationSeen = false;
+        $maintenanceSeen = false;
 
         $items = $activity->items;
         usort($items, static function (ReleaseItem $a, ReleaseItem $b): int {
@@ -65,7 +66,7 @@ final class ChangelogPolicy
         foreach ($items as $item) {
             if ($item->isDependency()) {
                 if (!$dependencySeen) {
-                    $categories['Changed'][] = '- Dependency updates.';
+                    $categories['Changed'][] = '- Update dependencies';
                     $dependencySeen = true;
                 }
 
@@ -74,8 +75,17 @@ final class ChangelogPolicy
 
             if ($item->isTranslation()) {
                 if (!$translationSeen) {
-                    $categories['Changed'][] = '- Translation updates.';
+                    $categories['Changed'][] = '- Update translations';
                     $translationSeen = true;
+                }
+
+                continue;
+            }
+
+            if ($item->isMaintenance()) {
+                if (!$maintenanceSeen) {
+                    $categories['Changed'][] = '- Internal maintenance';
+                    $maintenanceSeen = true;
                 }
 
                 continue;
@@ -94,8 +104,14 @@ final class ChangelogPolicy
                     default => 'Changed',
                 };
 
-            $reference = $item->pullRequestNumber !== null ? sprintf(' (#%d)', $item->pullRequestNumber) : '';
-            $categories[$category][] = sprintf('- %s%s', $title, $reference);
+            $entry = '- ' . $title;
+            if ($item->pullRequestNumber !== null && $item->url !== null) {
+                $entry .= sprintf("\n  [#%d](%s)", $item->pullRequestNumber, $item->url);
+            } elseif ($item->pullRequestNumber !== null) {
+                $entry .= sprintf(' (#%d)', $item->pullRequestNumber);
+            }
+
+            $categories[$category][] = $entry;
         }
 
         return array_filter($categories, static fn (array $values): bool => $values !== []);

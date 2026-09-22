@@ -45,6 +45,31 @@ final class VersionPolicyTest extends TestCase
             ReleaseChannel::Final,
             '15.2.0',
         ];
+        yield 'backported feature stays patch' => [
+            '15.1.3',
+            [[
+                'kind' => 'pull_request',
+                'title' => '[stable35] feat: add visible signatures',
+                'pullRequestNumber' => 11,
+                'conventionalType' => 'feat',
+                'backport' => true,
+            ]],
+            ReleaseChannel::Final,
+            '15.1.4',
+        ];
+        yield 'release-tooling feature stays patch' => [
+            '15.1.3',
+            [[
+                'kind' => 'pull_request',
+                'title' => 'feat(release): integrate reusable tooling',
+                'pullRequestNumber' => 12,
+                'conventionalType' => 'feat',
+                'conventionalScope' => 'release',
+                'maintenance' => true,
+            ]],
+            ReleaseChannel::Final,
+            '15.1.4',
+        ];
         yield 'translation-only release is patch' => [
             '15.1.3',
             [['translation', 'Update translations']],

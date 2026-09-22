@@ -35,7 +35,7 @@ final class ReleasePreparerTest extends TestCase
             array_map(static fn ($change): string => $change->path, $preparation->fileChanges),
         );
         self::assertStringContainsString('## 15.0.4 - 2026-09-20', $preparation->changelogSection);
-        self::assertStringContainsString('- correct signature parsing (#10)', $preparation->changelogSection);
+        self::assertStringContainsString("- correct signature parsing\n  [#10](https://example.test/10)", $preparation->changelogSection);
         self::assertStringContainsString('--- before', $result->diff);
         self::assertStringContainsString('--- after', $result->diff);
         self::assertSame(
