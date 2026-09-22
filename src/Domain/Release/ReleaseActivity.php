@@ -21,7 +21,12 @@ final readonly class ReleaseActivity
     public function hasFeaturePullRequest(): bool
     {
         foreach ($this->items as $item) {
-            if ($item->kind === 'pull_request' && $item->conventionalType === 'feat') {
+            if (
+                $item->kind === 'pull_request'
+                && $item->conventionalType === 'feat'
+                && !$item->isBackport()
+                && !$item->isMaintenance()
+            ) {
                 return true;
             }
         }
