@@ -60,9 +60,9 @@ final readonly class ReleaseFinalizer
 
         $finalSha = $pullRequest->mergeCommitSha;
         $branchHead = $this->github->branchHead($preparation->repository, $preparation->targetBranch);
-        if ($branchHead !== $finalSha) {
+        if ($branchHead !== $finalSha && !$this->git->isAncestor($finalSha, $branchHead)) {
             throw new DomainException(sprintf(
-                'Release branch advanced after merge: expected %s, found %s.',
+                'Release branch no longer contains merged release %s; current head is %s.',
                 $finalSha,
                 $branchHead,
             ));
