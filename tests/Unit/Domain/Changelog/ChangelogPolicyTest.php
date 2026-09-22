@@ -16,12 +16,33 @@ final class ChangelogPolicyTest extends TestCase
     public function testRendersCuratedDeterministicKeepAChangelogSection(): void
     {
         $activity = new ReleaseActivity([
-            new ReleaseItem('pull_request', 'fix(pdf): avoid invalid signature state', 12, 'fix'),
+            new ReleaseItem(
+                'pull_request',
+                'fix(pdf): avoid invalid signature state',
+                12,
+                'fix',
+                url: 'https://example.test/pull/12',
+            ),
             new ReleaseItem('dependency', 'chore(deps): bump package A', 13, 'chore'),
             new ReleaseItem('dependency', 'chore(deps): bump package B', 14, 'chore'),
             new ReleaseItem('translation', 'Update translations'),
-            new ReleaseItem('pull_request', '[stable35] backport: feat: add visible signatures', 15, 'feat'),
-            new ReleaseItem('pull_request', 'security hardening', 16, 'fix', publicSecurityEntry: true),
+            new ReleaseItem(
+                'pull_request',
+                '[stable35] backport: feat: add visible signatures',
+                15,
+                'feat',
+                url: 'https://example.test/pull/15',
+                backport: true,
+            ),
+            new ReleaseItem(
+                'pull_request',
+                'feat(release): integrate reusable release tooling',
+                16,
+                'feat',
+                url: 'https://example.test/pull/16',
+                conventionalScope: 'release',
+                maintenance: true,
+            ),
         ]);
 
         $result = (new ChangelogPolicy())->prepare(
@@ -34,13 +55,19 @@ final class ChangelogPolicyTest extends TestCase
 
         self::assertSame('docs/changelogs/changelog-15.md', $result->targetPath);
         self::assertStringContainsString('## 15.2.0 - 2026-09-21', $result->releaseSection);
-        self::assertStringContainsString("### Added\n- add visible signatures (#15)", $result->releaseSection);
-        self::assertStringContainsString("### Fixed\n- avoid invalid signature state (#12)", $result->releaseSection);
-        self::assertSame(1, substr_count($result->releaseSection, 'Dependency updates.'));
-        self::assertSame(1, substr_count($result->releaseSection, 'Translation updates.'));
-        self::assertStringContainsString("### Security\n- security hardening (#16)", $result->releaseSection);
+        self::assertStringContainsString(
+            "### Added\n- add visible signatures\n  [#15](https://example.test/pull/15)",
+            $result->releaseSection,
+        );
+        self::assertStringContainsString(
+            "### Fixed\n- avoid invalid signature state\n  [#12](https://example.test/pull/12)",
+            $result->releaseSection,
+        );
+        self::assertSame(1, substr_count($result->releaseSection, 'Update dependencies'));
+        self::assertSame(1, substr_count($result->releaseSection, 'Update translations'));
+        self::assertSame(1, substr_count($result->releaseSection, 'Internal maintenance'));
+        self::assertStringNotContainsString('integrate reusable release tooling', $result->releaseSection);
         self::assertStringContainsString('## 15.1.0', $result->content);
-        self::assertStringContainsString("- security hardening (#16)\n\n## 15.1.0", $result->content);
     }
 
     public function testRejectsDuplicateVersion(): void
