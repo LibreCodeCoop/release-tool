@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Bootstrap v0.10.5 release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/bootstrap-v0.10.5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v0.10.5
+      TARGET_SHA: 1b92596630afdf2195dc9ecfeed7edcb84b94be6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ env.TARGET_SHA }}
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Refuse to overwrite existing release
+        run: |
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "::error::Release ${TAG} already exists"
+            exit 1
+          fi
+      - name: Prepare local release tag
+        run: git tag "${TAG}" "${TARGET_SHA}"
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: vendor/bin/box validate
+      - run: composer build:phar
+      - run: composer test:phar
+      - name: Verify embedded version
+        run: php build/release-tool.phar --version | grep -F '0.10.5'
+      - name: Generate checksum
+        run: |
+          cd build
+          sha256sum release-tool.phar > release-tool.phar.sha256
+      - name: Publish release
+        run: |
+          gh release create "${TAG}" \
+            build/release-tool.phar \
+            build/release-tool.phar.sha256 \
+            --target "${TARGET_SHA}" \
+            --title "release-tool 0.10.5" \
+            --generate-notes
