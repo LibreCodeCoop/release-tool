@@ -98,7 +98,7 @@ final class ReleasePlannerTest extends TestCase
         self::assertTrue($plan->activity[0]['backport']);
         self::assertFalse($plan->activity[0]['maintenance']);
         self::assertSame('https://example.test/10', $plan->activity[0]['url']);
-        self::assertFalse($plan->activity[1]['backport']);
+        self::assertTrue($plan->activity[1]['backport']);
         self::assertTrue($plan->activity[1]['maintenance']);
         self::assertSame([10, 11], array_column($plan->activity, 'pull_request'));
     }
