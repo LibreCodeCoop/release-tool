@@ -57,6 +57,7 @@ final readonly class PublicationVerifier
         $artifactValidationId = null;
         $artifactValid = false;
         $appStoreVisible = false;
+        $asset = null;
 
         $release = $this->publication->release($prepared->repository, $draft->releaseId);
         if ($release === null) {
@@ -107,12 +108,6 @@ final readonly class PublicationVerifier
             $asset = $this->findAsset($release->assets, $assetName);
             if ($asset === null) {
                 $errors[] = sprintf('Expected release asset not found: %s.', $assetName);
-            } else {
-                [$artifactSha256, $artifactValidationId, $artifactValid, $artifactErrors] =
-                    $this->validateArtifact($asset, $prepared, $config);
-                foreach ($artifactErrors as $error) {
-                    $errors[] = $error;
-                }
             }
         }
 
@@ -131,6 +126,17 @@ final readonly class PublicationVerifier
             }
         } catch (\Throwable $exception) {
             $errors[] = 'App Store verification failed: ' . $exception->getMessage();
+        }
+
+        // Artifact validation is intentionally deferred until all external publication
+        // signals have converged. This keeps retry polling lightweight and guarantees
+        // that the release asset is downloaded at most once during a successful run.
+        if ($releasePublished && $publisherSucceeded && $asset !== null && $appStoreVisible) {
+            [$artifactSha256, $artifactValidationId, $artifactValid, $artifactErrors] =
+                $this->validateArtifact($asset, $prepared, $config);
+            foreach ($artifactErrors as $error) {
+                $errors[] = $error;
+            }
         }
 
         $timestamp = ($verifiedAt ?? new DateTimeImmutable())->format(DATE_ATOM);
