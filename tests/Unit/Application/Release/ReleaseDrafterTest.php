@@ -141,6 +141,22 @@ final class ReleaseDrafterTest extends TestCase
         (new ReleaseDrafter($this->git($prepared), $github))->prepare($this->config(), $prepared, $this->milestone());
     }
 
+    public function testDraftNormalizesCategorySpacing(): void
+    {
+        $prepared = $this->prepared(section: "## 15.0.4\n\n### Security\n\n- Security fixes.");
+        $github = new InMemoryReleaseDraftRepository(['stable35' => self::SHA]);
+
+        (new ReleaseDrafter($this->git($prepared), $github))->prepare(
+            $this->config(),
+            $prepared,
+            $this->milestone(),
+        );
+
+        self::assertNotNull($github->release);
+        self::assertStringContainsString("### Security\n- Security fixes.", $github->release->body);
+        self::assertStringNotContainsString("### Security\n\n- Security fixes.", $github->release->body);
+    }
+
     public function testSecurityDraftUsesOnlyFinalizedPublicChangelogText(): void
     {
         $prepared = $this->prepared(mode: ReleaseMode::Security, section: "## 15.0.4\n\n- Security fixes.");
