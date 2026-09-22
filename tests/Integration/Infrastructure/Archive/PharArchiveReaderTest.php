@@ -37,6 +37,19 @@ final class PharArchiveReaderTest extends TestCase
         self::assertSame('# Changelog', $reader->read('libresign/CHANGELOG.md'));
     }
 
+    public function testAcceptsSafeDirectoryEntriesWithTrailingSlash(): void
+    {
+        $path = $this->path('.tar');
+        $archive = new PharData($path);
+        $archive->addEmptyDir('libresign');
+        $archive->addEmptyDir('libresign/appinfo');
+        $archive->addFromString('libresign/appinfo/info.xml', '<info/>');
+
+        $reader = new PharArchiveReader($path);
+
+        self::assertSame(['libresign/appinfo/info.xml'], $reader->paths());
+    }
+
     public function testRejectsTraversalEntryEvenWhenPharIteratorWouldHideIt(): void
     {
         $path = $this->path('.tar');
