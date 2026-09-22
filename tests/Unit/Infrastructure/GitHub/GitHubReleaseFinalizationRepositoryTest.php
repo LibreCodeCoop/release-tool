@@ -38,6 +38,22 @@ final class GitHubReleaseFinalizationRepositoryTest extends TestCase
         self::assertSame(['appinfo/info.xml', 'package.json'], $result->changedFiles);
     }
 
+    public function testReadsFileAtExactCommitThroughGitHubContentsApi(): void
+    {
+        $content = "# Changelog\n\n## 13.4.2 - 2026-09-21\n";
+        $client = new MockHttpClient([
+            $this->json([
+                'encoding' => 'base64',
+                'content' => chunk_split(base64_encode($content), 60, "\n"),
+            ]),
+        ], 'https://api.github.test');
+
+        $result = (new GitHubReleaseFinalizationRepository('token', $client, 'https://api.github.test'))
+            ->readFile('LibreSign/libresign', self::SHA, 'docs/changelogs/changelog-13.md');
+
+        self::assertSame($content, $result);
+    }
+
     public function testPublishesHistoryThroughGeneratedBranchAndPullRequest(): void
     {
         $client = new MockHttpClient([
