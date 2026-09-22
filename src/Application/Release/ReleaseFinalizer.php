@@ -213,7 +213,7 @@ final readonly class ReleaseFinalizer
     /** @return list<string> */
     private function historyTargets(ConsumerConfig $config, string $repository, string $sourceBranch): array
     {
-        if (preg_match($config->stablePattern, $sourceBranch, $sourceMatch) !== 1) {
+        if (preg_match($this->stablePattern($config), $sourceBranch, $sourceMatch) !== 1) {
             throw new DomainException(sprintf(
                 'Release branch %s does not match configured stable pattern.',
                 $sourceBranch,
@@ -226,7 +226,7 @@ final readonly class ReleaseFinalizer
 
         $stableTargets = [];
         foreach ($this->github->branches($repository) as $branch) {
-            if (preg_match($config->stablePattern, $branch, $match) !== 1 || !isset($match['nextcloud'])) {
+            if (preg_match($this->stablePattern($config), $branch, $match) !== 1 || !isset($match['nextcloud'])) {
                 continue;
             }
             $major = (int) $match['nextcloud'];
@@ -237,6 +237,11 @@ final readonly class ReleaseFinalizer
         ksort($stableTargets, SORT_NUMERIC);
 
         return [...array_values($stableTargets), $config->mainBranch];
+    }
+
+    private function stablePattern(ConsumerConfig $config): string
+    {
+        return '~' . str_replace('~', '\\~', $config->stablePattern) . '~';
     }
 
     private function changelogTarget(ConsumerConfig $config, int $major): string
