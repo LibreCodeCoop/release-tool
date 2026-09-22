@@ -144,37 +144,99 @@ final readonly class ReleaseFinalizer
         if ($preparation->targetBranch === $config->mainBranch) {
             return new HistorySynchronization(HistorySyncState::NotRequired, $config->mainBranch, $targetPath);
         }
-        if ($preparation->mode === ReleaseMode::Security) {
-            return new HistorySynchronization(HistorySyncState::DeferredSecurity, $config->mainBranch, $targetPath);
-        }
 
-        $mainSha = $this->github->branchHead($preparation->repository, $config->mainBranch);
-        $current = $this->git->readFile($mainSha, $targetPath);
-        $updated = $this->historySynchronizer->synchronize($current, $preparation->version, $exactSection);
-        if ($updated === $current) {
-            return new HistorySynchronization(HistorySyncState::AlreadySynchronized, $config->mainBranch, $targetPath);
-        }
-
-        $branch = sprintf(
-            'release-tool/history/%s/%s',
-            preg_replace('/[^A-Za-z0-9._-]+/', '-', $preparation->version) ?: 'release',
-            substr($preparedId, 0, 12),
-        );
-        $marker = sprintf('<!-- release-tool:history prepared=%s version=%s -->', $preparedId, $preparation->version);
-        if (!$apply) {
-            return new HistorySynchronization(HistorySyncState::Planned, $config->mainBranch, $targetPath, $branch);
-        }
-
-        return $this->github->publishHistorySynchronization(new HistorySyncRequest(
-            $preparation->repository,
+        $targets = $this->historyTargets($config, $preparation->repository, $preparation->targetBranch);
+        $mainResult = new HistorySynchronization(
+            HistorySyncState::AlreadySynchronized,
             $config->mainBranch,
-            $mainSha,
             $targetPath,
-            $updated,
-            $branch,
-            $marker,
-            $preparation->version,
-        ));
+        );
+
+        foreach ($targets as $targetBranch) {
+            $targetSha = $this->github->branchHead($preparation->repository, $targetBranch);
+            $current = $this->git->readFile($targetSha, $targetPath);
+            $updated = $this->historySynchronizer->synchronize(
+                $current,
+                $preparation->version,
+                $exactSection,
+            );
+
+            if ($updated === $current) {
+                $result = new HistorySynchronization(
+                    HistorySyncState::AlreadySynchronized,
+                    $targetBranch,
+                    $targetPath,
+                );
+            } else {
+                $branch = sprintf(
+                    'release-tool/history/%s/%s/%s',
+                    preg_replace('/[^A-Za-z0-9._-]+/', '-', $preparation->version) ?: 'release',
+                    preg_replace('/[^A-Za-z0-9._-]+/', '-', $targetBranch) ?: 'target',
+                    substr($preparedId, 0, 12),
+                );
+                $marker = sprintf(
+                    '<!-- release-tool:history prepared=%s version=%s target=%s -->',
+                    $preparedId,
+                    $preparation->version,
+                    $targetBranch,
+                );
+
+                if (!$apply) {
+                    $result = new HistorySynchronization(
+                        HistorySyncState::Planned,
+                        $targetBranch,
+                        $targetPath,
+                        $branch,
+                    );
+                } else {
+                    $result = $this->github->publishHistorySynchronization(new HistorySyncRequest(
+                        $preparation->repository,
+                        $targetBranch,
+                        $targetSha,
+                        $targetPath,
+                        $updated,
+                        $branch,
+                        $marker,
+                        $preparation->version,
+                    ));
+                }
+            }
+
+            if ($targetBranch === $config->mainBranch) {
+                $mainResult = $result;
+            }
+        }
+
+        return $mainResult;
+    }
+
+    /** @return list<string> */
+    private function historyTargets(ConsumerConfig $config, string $repository, string $sourceBranch): array
+    {
+        if (preg_match($config->stablePattern, $sourceBranch, $sourceMatch) !== 1) {
+            throw new DomainException(sprintf(
+                'Release branch %s does not match configured stable pattern.',
+                $sourceBranch,
+            ));
+        }
+        $sourceMajor = isset($sourceMatch['nextcloud']) ? (int) $sourceMatch['nextcloud'] : null;
+        if ($sourceMajor === null) {
+            throw new DomainException('Stable branch pattern must expose a nextcloud capture group.');
+        }
+
+        $stableTargets = [];
+        foreach ($this->github->branches($repository) as $branch) {
+            if (preg_match($config->stablePattern, $branch, $match) !== 1 || !isset($match['nextcloud'])) {
+                continue;
+            }
+            $major = (int) $match['nextcloud'];
+            if ($major > $sourceMajor) {
+                $stableTargets[$major] = $branch;
+            }
+        }
+        ksort($stableTargets, SORT_NUMERIC);
+
+        return [...array_values($stableTargets), $config->mainBranch];
     }
 
     private function changelogTarget(ConsumerConfig $config, int $major): string
