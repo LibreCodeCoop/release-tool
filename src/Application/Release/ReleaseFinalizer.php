@@ -154,7 +154,11 @@ final readonly class ReleaseFinalizer
 
         foreach ($targets as $targetBranch) {
             $targetSha = $this->github->branchHead($preparation->repository, $targetBranch);
-            $current = $this->github->readFile($preparation->repository, $targetSha, $targetPath);
+            try {
+                $current = $this->git->readFile($targetSha, $targetPath);
+            } catch (DomainException) {
+                $current = $this->github->readFile($preparation->repository, $targetSha, $targetPath);
+            }
             $updated = $this->historySynchronizer->synchronize(
                 $current,
                 $preparation->version,
