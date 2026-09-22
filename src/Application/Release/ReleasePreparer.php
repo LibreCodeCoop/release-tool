@@ -186,7 +186,7 @@ final readonly class ReleasePreparer
                 ? $entry['type']
                 : null;
             $labels = isset($entry['labels']) && is_array($entry['labels'])
-                ? array_values(array_filter($entry['labels'], 'is_string'))
+                ? array_values(array_filter($entry['labels'], is_string(...)))
                 : [];
 
             if ($title === '') {
