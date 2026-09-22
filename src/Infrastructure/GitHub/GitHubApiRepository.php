@@ -55,19 +55,6 @@ final readonly class GitHubApiRepository implements GitHubRepository
         return $this->pullRequests($repository, $baseBranch, 'open');
     }
 
-    public function pullRequestCommitShas(string $repository, int $pullRequestNumber): array
-    {
-        $items = $this->paginate(
-            '/repos/' . $repository . '/pulls/' . $pullRequestNumber . '/commits',
-            [],
-        );
-
-        return array_values(array_filter(array_map(
-            static fn (array $item): string => is_string($item['sha'] ?? null) ? $item['sha'] : '',
-            $items,
-        )));
-    }
-
     public function openMilestones(string $repository): array
     {
         $items = $this->paginate('/repos/' . $repository . '/milestones', [
