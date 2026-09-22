@@ -57,6 +57,7 @@ final readonly class PublicationVerifier
         $artifactValidationId = null;
         $artifactValid = false;
         $appStoreVisible = false;
+        $appStoreVerificationApi = $appStoreApi;
         $asset = null;
 
         $release = $this->publication->release($prepared->repository, $draft->releaseId);
@@ -111,21 +112,27 @@ final readonly class PublicationVerifier
             }
         }
 
-        try {
-            $appStoreVisible = $this->appStore->hasRelease(
-                $appStoreApi,
-                $config->appId,
-                $prepared->version,
-            );
-            if (!$appStoreVisible) {
-                $errors[] = sprintf(
-                    'App Store does not expose %s version %s.',
+        // Do not fetch the App Store feed while GitHub-side publication is still
+        // converging. The feed is comparatively large and cannot prove publication
+        // before the publisher has completed and attached the expected asset.
+        if ($releasePublished && $publisherSucceeded && $asset !== null) {
+            try {
+                $appStoreVerificationApi = $this->appStoreApiForRelease($appStoreApi, $config, $prepared);
+                $appStoreVisible = $this->appStore->hasRelease(
+                    $appStoreVerificationApi,
                     $config->appId,
                     $prepared->version,
                 );
+                if (!$appStoreVisible) {
+                    $errors[] = sprintf(
+                        'App Store does not expose %s version %s.',
+                        $config->appId,
+                        $prepared->version,
+                    );
+                }
+            } catch (\Throwable $exception) {
+                $errors[] = 'App Store verification failed: ' . $exception->getMessage();
             }
-        } catch (\Throwable $exception) {
-            $errors[] = 'App Store verification failed: ' . $exception->getMessage();
         }
 
         // Artifact validation is intentionally deferred until all external publication
@@ -171,7 +178,7 @@ final readonly class PublicationVerifier
             $artifactSha256,
             $artifactValidationId,
             $artifactValid,
-            $appStoreApi,
+            $appStoreVerificationApi,
             $config->appId,
             $prepared->version,
             $appStoreVisible,
@@ -180,6 +187,33 @@ final readonly class PublicationVerifier
             $errors,
             $success,
         );
+    }
+
+    private function appStoreApiForRelease(
+        string $apiUrl,
+        ConsumerConfig $config,
+        PreparedRelease $prepared,
+    ): string {
+        if (!str_contains($apiUrl, '{nextcloud}')) {
+            return $apiUrl;
+        }
+
+        $pattern = '~' . str_replace('~', '\\~', $config->stablePattern) . '~';
+        if (preg_match($pattern, $prepared->branch, $matches) !== 1) {
+            throw new DomainException(sprintf(
+                'publication.appstore_api requires {nextcloud}, but branch %s does not match branches.stable_pattern.',
+                $prepared->branch,
+            ));
+        }
+
+        $nextcloud = $matches['nextcloud'] ?? null;
+        if (!is_string($nextcloud) || !ctype_digit($nextcloud)) {
+            throw new DomainException(
+                'publication.appstore_api requires {nextcloud}, but branches.stable_pattern did not capture a numeric nextcloud value.',
+            );
+        }
+
+        return str_replace('{nextcloud}', $nextcloud, $apiUrl);
     }
 
     private function assertIdentity(ConsumerConfig $config, ReleaseDraft $draft, PreparedRelease $prepared): void

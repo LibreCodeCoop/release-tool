@@ -115,8 +115,12 @@ final class ConsumerConfigLoader
         if ($assetName !== null) {
             $this->assertTemplate($assetName, ['app', 'version', 'tag'], 'publication.asset_name');
         }
-        if ($appStoreApi !== null && filter_var($appStoreApi, FILTER_VALIDATE_URL) === false) {
-            throw new InvalidArgumentException('publication.appstore_api must be a valid URL.');
+        if ($appStoreApi !== null) {
+            $this->assertTemplate($appStoreApi, ['nextcloud'], 'publication.appstore_api');
+            $validationUrl = str_replace('{nextcloud}', '1', $appStoreApi);
+            if (filter_var($validationUrl, FILTER_VALIDATE_URL) === false) {
+                throw new InvalidArgumentException('publication.appstore_api must be a valid URL or URL template.');
+            }
         }
 
         $repository = $data['repository'] ?? null;

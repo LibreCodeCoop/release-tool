@@ -78,7 +78,7 @@ final class PublicationVerifierTest extends TestCase
         }
     }
 
-    public function testFailedPublisherAndMissingAppStoreReleaseProduceFailureArtifact(): void
+    public function testFailedPublisherStopsBeforeAppStoreAndArtifactVerification(): void
     {
         $artifact = $this->artifact();
         try {
@@ -113,7 +113,7 @@ final class PublicationVerifierTest extends TestCase
             self::assertFalse($verification->publisherSucceeded);
             self::assertFalse($verification->appStoreVisible);
             self::assertStringContainsString('Publisher workflow', implode("\n", $verification->errors));
-            self::assertStringContainsString('App Store', implode("\n", $verification->errors));
+            self::assertStringNotContainsString('App Store', implode("\n", $verification->errors));
             self::assertSame(0, $repository->downloadCount);
         } finally {
             $this->removeArtifact($artifact);
@@ -158,6 +158,99 @@ final class PublicationVerifierTest extends TestCase
             self::assertFalse($verification->appStoreVisible);
             self::assertFalse($verification->artifactValid);
             self::assertSame(0, $repository->downloadCount);
+        } finally {
+            $this->removeArtifact($artifact);
+        }
+    }
+
+    public function testDoesNotQueryAppStoreBeforePublisherConverges(): void
+    {
+        $release = new PublishedRelease(
+            101,
+            'https://example.test/releases/101',
+            'v15.0.4',
+            self::SHA,
+            false,
+            false,
+            '2026-09-21T18:00:00Z',
+            [new PublishedAsset(303, 'libresign-v15.0.4.tar.gz', 'asset', null)],
+        );
+        $run = new PublisherRun(
+            202,
+            'https://example.test/actions/runs/202',
+            self::SHA,
+            'release',
+            'in_progress',
+            null,
+            '2026-09-21T18:01:00Z',
+        );
+        $appStore = new class() implements \LibreCode\ReleaseTool\Application\Publication\Port\AppStoreRepository {
+            public int $calls = 0;
+
+            public function hasRelease(string $apiUrl, string $appId, string $version): bool
+            {
+                ++$this->calls;
+                return false;
+            }
+        };
+
+        $verification = (new PublicationVerifier(
+            new InMemoryPublicationRepository($release, $run, ''),
+            $appStore,
+            new ArtifactValidator(new PharArchiveReaderFactory()),
+        ))->verify($this->config(), $this->draft(), $this->prepared());
+
+        self::assertFalse($verification->success);
+        self::assertSame(0, $appStore->calls);
+        self::assertStringContainsString('Publisher workflow', implode("\n", $verification->errors));
+    }
+
+    public function testUsesPlatformScopedAppStoreFeedForStableBranch(): void
+    {
+        $artifact = $this->artifact();
+        try {
+            $bytes = (string) file_get_contents($artifact);
+            $digest = hash('sha256', $bytes);
+            $release = new PublishedRelease(
+                101,
+                'https://example.test/releases/101',
+                'v15.0.4',
+                self::SHA,
+                false,
+                false,
+                '2026-09-21T18:00:00Z',
+                [new PublishedAsset(303, 'libresign-v15.0.4.tar.gz', 'asset', $digest)],
+            );
+            $run = new PublisherRun(
+                202,
+                'https://example.test/actions/runs/202',
+                self::SHA,
+                'release',
+                'completed',
+                'success',
+                '2026-09-21T18:01:00Z',
+            );
+            $appStore = new class() implements \LibreCode\ReleaseTool\Application\Publication\Port\AppStoreRepository {
+                public ?string $apiUrl = null;
+
+                public function hasRelease(string $apiUrl, string $appId, string $version): bool
+                {
+                    $this->apiUrl = $apiUrl;
+                    return true;
+                }
+            };
+
+            $verification = (new PublicationVerifier(
+                new InMemoryPublicationRepository($release, $run, $bytes),
+                $appStore,
+                new ArtifactValidator(new PharArchiveReaderFactory()),
+            ))->verify($this->config(), $this->draft(), $this->prepared());
+
+            self::assertTrue($verification->success);
+            self::assertSame(
+                'https://apps.nextcloud.com/api/v1/platform/35.0.0/apps.json',
+                $appStore->apiUrl,
+            );
         } finally {
             $this->removeArtifact($artifact);
         }
@@ -221,7 +314,7 @@ final class PublicationVerifierTest extends TestCase
             'Next Patch ({nextcloud})', 'Next RC ({nextcloud})', 'maintain', 'maintain',
             ['make', 'appstore'], ['appinfo'], ['tests'],
             'appstore-build-publish.yml', '{app}-{tag}.tar.gz',
-            'https://apps.nextcloud.com/api/v1/apps.json',
+            'https://apps.nextcloud.com/api/v1/platform/{nextcloud}.0.0/apps.json',
         );
     }
 
