@@ -165,7 +165,7 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
                 'POST',
                 sprintf('/repos/%s/git/commits', $request->repository),
                 [
-                    'message' => sprintf('docs: synchronize release %s history', $request->version),
+                    'message' => sprintf('docs: synchronize release %s history [skip ci]', $request->version),
                     'tree' => $treeSha,
                     'parents' => [$request->expectedBaseSha],
                 ],
