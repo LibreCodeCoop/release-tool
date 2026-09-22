@@ -28,7 +28,7 @@ final readonly class NextcloudAppStoreRepository implements AppStoreRepository
                 'Pragma' => 'no-cache',
             ],
             'query' => [
-                'release-tool-check' => $version,
+                'release-tool-check' => sprintf('%s-%s', $version, bin2hex(random_bytes(8))),
             ],
         ]);
         $status = $response->getStatusCode();
