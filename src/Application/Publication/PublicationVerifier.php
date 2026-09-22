@@ -57,6 +57,7 @@ final readonly class PublicationVerifier
         $artifactValidationId = null;
         $artifactValid = false;
         $appStoreVisible = false;
+        $appStoreVerificationApi = $appStoreApi;
         $asset = null;
 
         $release = $this->publication->release($prepared->repository, $draft->releaseId);
@@ -116,8 +117,9 @@ final readonly class PublicationVerifier
         // before the publisher has completed and attached the expected asset.
         if ($releasePublished && $publisherSucceeded && $asset !== null) {
             try {
+                $appStoreVerificationApi = $this->appStoreApiForRelease($appStoreApi, $config, $prepared);
                 $appStoreVisible = $this->appStore->hasRelease(
-                    $this->appStoreApiForRelease($appStoreApi, $config, $prepared),
+                    $appStoreVerificationApi,
                     $config->appId,
                     $prepared->version,
                 );
@@ -176,7 +178,7 @@ final readonly class PublicationVerifier
             $artifactSha256,
             $artifactValidationId,
             $artifactValid,
-            $appStoreApi,
+            $appStoreVerificationApi,
             $config->appId,
             $prepared->version,
             $appStoreVisible,
@@ -192,26 +194,26 @@ final readonly class PublicationVerifier
         ConsumerConfig $config,
         PreparedRelease $prepared,
     ): string {
+        if (!str_contains($apiUrl, '{nextcloud}')) {
+            return $apiUrl;
+        }
+
         $pattern = '~' . str_replace('~', '\\~', $config->stablePattern) . '~';
         if (preg_match($pattern, $prepared->branch, $matches) !== 1) {
-            return $apiUrl;
+            throw new DomainException(sprintf(
+                'publication.appstore_api requires {nextcloud}, but branch %s does not match branches.stable_pattern.',
+                $prepared->branch,
+            ));
         }
 
         $nextcloud = $matches['nextcloud'] ?? null;
         if (!is_string($nextcloud) || !ctype_digit($nextcloud)) {
-            return $apiUrl;
+            throw new DomainException(
+                'publication.appstore_api requires {nextcloud}, but branches.stable_pattern did not capture a numeric nextcloud value.',
+            );
         }
 
-        $suffix = '/apps.json';
-        if (
-            !str_ends_with($apiUrl, $suffix)
-            || preg_match('~/platform/\\d+\\.\\d+\\.\\d+/apps\\.json$~', $apiUrl) === 1
-        ) {
-            return $apiUrl;
-        }
-
-        return substr($apiUrl, 0, -strlen($suffix))
-            . sprintf('/platform/%d.0.0/apps.json', (int) $nextcloud);
+        return str_replace('{nextcloud}', $nextcloud, $apiUrl);
     }
 
     private function assertIdentity(ConsumerConfig $config, ReleaseDraft $draft, PreparedRelease $prepared): void
