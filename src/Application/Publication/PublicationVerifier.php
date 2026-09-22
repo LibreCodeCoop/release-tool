@@ -203,7 +203,10 @@ final readonly class PublicationVerifier
         }
 
         $suffix = '/apps.json';
-        if (!str_ends_with($apiUrl, $suffix)) {
+        if (
+            !str_ends_with($apiUrl, $suffix)
+            || preg_match('~/platform/\\d+\\.\\d+\\.\\d+/apps\\.json$~', $apiUrl) === 1
+        ) {
             return $apiUrl;
         }
 
