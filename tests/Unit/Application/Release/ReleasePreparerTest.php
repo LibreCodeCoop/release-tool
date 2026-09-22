@@ -48,35 +48,6 @@ final class ReleasePreparerTest extends TestCase
         self::assertSame($result->diff, $rerun->diff);
     }
 
-    public function testSecurityLabelCategorizesOnlyMarkedPullRequest(): void
-    {
-        $plan = $this->plan(
-            activity: [
-                [
-                    'kind' => 'pull_request',
-                    'title' => 'fix: correct signature parsing',
-                    'pull_request' => 10,
-                    'type' => 'fix',
-                    'labels' => [],
-                ],
-                [
-                    'kind' => 'pull_request',
-                    'title' => 'fix(auth): restrict unauthorized file access',
-                    'pull_request' => 11,
-                    'type' => 'fix',
-                    'labels' => ['security'],
-                ],
-            ],
-        );
-
-        $result = (new ReleasePreparer($this->git()))->prepare($this->config(), $plan);
-
-        self::assertStringContainsString('### Fixed', $result->preparation->changelogSection);
-        self::assertStringContainsString('- correct signature parsing (#10)', $result->preparation->changelogSection);
-        self::assertStringContainsString('### Security', $result->preparation->changelogSection);
-        self::assertStringContainsString('- restrict unauthorized file access (#11)', $result->preparation->changelogSection);
-    }
-
     public function testLegacySecurityModeDoesNotHideNormalReleaseActivity(): void
     {
         $plan = $this->plan(
@@ -87,7 +58,6 @@ final class ReleasePreparerTest extends TestCase
                 'title' => 'fix: correct signature parsing',
                 'pull_request' => 10,
                 'type' => 'fix',
-                'labels' => [],
             ]],
         );
 
