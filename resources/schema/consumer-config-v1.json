@@ -214,7 +214,7 @@
         },
         "appstore_api": {
           "type": "string",
-          "format": "uri"
+          "minLength": 1
         }
       }
     }
