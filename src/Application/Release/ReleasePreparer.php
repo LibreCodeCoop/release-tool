@@ -13,7 +13,6 @@ use LibreCode\ReleaseTool\Domain\Release\ReleaseActivity;
 use LibreCode\ReleaseTool\Domain\Release\ReleaseItem;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePreparation;
-use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 
 final readonly class ReleasePreparer
@@ -176,16 +175,6 @@ final readonly class ReleasePreparer
 
     private function releaseActivity(ReleasePlan $plan): ReleaseActivity
     {
-        if ($plan->mode === ReleaseMode::Security) {
-            return new ReleaseActivity([
-                new ReleaseItem(
-                    'pull_request',
-                    $plan->publicReleaseText->text,
-                    publicSecurityEntry: true,
-                ),
-            ]);
-        }
-
         $items = [];
         foreach ($plan->activity as $entry) {
             $kind = isset($entry['kind']) && is_string($entry['kind']) ? $entry['kind'] : 'direct_commit';

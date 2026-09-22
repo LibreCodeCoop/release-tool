@@ -48,14 +48,14 @@ final class ReleasePreparerTest extends TestCase
         self::assertSame($result->diff, $rerun->diff);
     }
 
-    public function testSecurityModePublishesOnlyApprovedPublicText(): void
+    public function testLegacySecurityModeDoesNotHideNormalReleaseActivity(): void
     {
         $plan = $this->plan(
             mode: ReleaseMode::Security,
             publicText: new PublicReleaseText('This release includes security fixes.', false),
             activity: [[
                 'kind' => 'pull_request',
-                'title' => 'fix: PRIVATE vulnerability details',
+                'title' => 'fix: correct signature parsing',
                 'pull_request' => 10,
                 'type' => 'fix',
             ]],
@@ -63,10 +63,8 @@ final class ReleasePreparerTest extends TestCase
 
         $result = (new ReleasePreparer($this->git()))->prepare($this->config(), $plan);
 
-        self::assertStringContainsString('### Security', $result->preparation->changelogSection);
-        self::assertStringContainsString('This release includes security fixes.', $result->preparation->changelogSection);
-        self::assertStringNotContainsString('PRIVATE vulnerability details', $result->preparation->changelogSection);
-        self::assertStringNotContainsString('PRIVATE vulnerability details', $result->diff);
+        self::assertStringContainsString('- correct signature parsing (#10)', $result->preparation->changelogSection);
+        self::assertStringNotContainsString('This release includes security fixes.', $result->preparation->changelogSection);
     }
 
     public function testRejectsStalePlan(): void

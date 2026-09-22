@@ -153,24 +153,26 @@ final class ReleaseLifecycleTest extends TestCase
         self::assertSame('15.0.4', $preparation->version);
     }
 
-    public function testSecurityLifecycleKeepsPrivateActivityOutOfPublicArtifacts(): void
+    public function testPublicSafeSecurityFixTitleRemainsOrdinaryReleaseActivity(): void
     {
-        [$plan, $preparation] = $this->planAndPrepare(
-            mode: ReleaseMode::Security,
-            pullRequestTitle: 'fix: PRIVATE-ADVISORY-DO-NOT-PUBLISH',
+        [, $preparation] = $this->planAndPrepare(
+            pullRequestTitle: 'fix(auth): restrict unauthorized file access',
         );
 
-        self::assertSame('This release includes security fixes.', $plan->publicReleaseText->text);
-        self::assertStringContainsString('### Security', $preparation->changelogSection);
-        self::assertStringNotContainsString('PRIVATE-ADVISORY-DO-NOT-PUBLISH', $preparation->changelogSection);
-
-        [$prepared, $draft] = $this->finalizeAndDraft(
-            $preparation,
-            mode: ReleaseMode::Security,
+        self::assertStringContainsString('### Fixed', $preparation->changelogSection);
+        self::assertStringContainsString(
+            '- restrict unauthorized file access (#10)',
+            $preparation->changelogSection,
         );
+        self::assertStringNotContainsString('### Security', $preparation->changelogSection);
+
+        [$prepared, $draft] = $this->finalizeAndDraft($preparation);
 
         self::assertSame('planned', $prepared->historySynchronization->state->value);
-        self::assertStringNotContainsString('PRIVATE-ADVISORY-DO-NOT-PUBLISH', $prepared->changelogSection);
+        self::assertStringContainsString(
+            '- restrict unauthorized file access (#10)',
+            $prepared->changelogSection,
+        );
         self::assertTrue($draft->ready);
     }
 
