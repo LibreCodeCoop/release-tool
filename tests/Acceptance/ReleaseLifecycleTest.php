@@ -473,7 +473,7 @@ final class ReleaseLifecycleTest extends TestCase
         ))->finalize($this->config(), $preparation);
 
         if ($mode === ReleaseMode::Security) {
-            self::assertSame('deferred_security', $prepared->historySynchronization->state->value);
+            self::assertSame('planned', $prepared->historySynchronization->state->value);
         }
 
         $milestones = new InMemoryMilestoneRepository([
