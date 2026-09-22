@@ -88,9 +88,6 @@ final class ReleasePlannerTest extends TestCase
             commits: [
                 new CommitInfo(self::SOURCE, 'fix: implementation detail from backport', ['lib/Service.php']),
             ],
-            pullRequestCommits: [
-                10 => [self::SOURCE],
-            ],
         );
 
         $plan = $planner->plan($this->config(), $this->input());
@@ -181,7 +178,6 @@ final class ReleasePlannerTest extends TestCase
         array $open = [],
         array $milestones = [],
         array $commits = [],
-        array $pullRequestCommits = [],
     ): ReleasePlanner {
         $git = new InMemoryGitRepository(
             'LibreSign/libresign',
@@ -198,7 +194,7 @@ final class ReleasePlannerTest extends TestCase
 
         return new ReleasePlanner(
             $git,
-            new InMemoryGitHubRepository($closed, $open, $milestones, pullRequestCommits: $pullRequestCommits),
+            new InMemoryGitHubRepository($closed, $open, $milestones),
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.3'), 35, 35, [])),
         );
     }
