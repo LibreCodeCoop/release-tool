@@ -212,7 +212,7 @@ final readonly class ReleasePlanner implements ReleasePlanning
             $parsed = $this->titleParser->parse($pullRequest->title);
             $kind = $this->pullRequestKind($pullRequest, $parsed);
             $backport = $this->isBackportPullRequest($pullRequest);
-            $maintenance = $this->isMaintenance($parsed);
+            $maintenance = $this->isMaintenance($parsed, $pullRequest->title);
 
             $item = new ReleaseItem(
                 kind: $kind,
@@ -341,17 +341,24 @@ final readonly class ReleasePlanner implements ReleasePlanning
         ) === 1;
     }
 
-    private function isMaintenance(ConventionalTitle $parsed): bool
+    private function isMaintenance(ConventionalTitle $parsed, string $title): bool
     {
         if (in_array($parsed->type, ['ci', 'chore', 'build', 'test', 'docs'], true)) {
             return true;
         }
 
-        return in_array(
+        if (in_array(
             $parsed->scope,
             ['release', 'ci', 'workflow', 'workflows', 'tooling', 'ops', 'dev', 'tests'],
             true,
-        );
+        )) {
+            return true;
+        }
+
+        return preg_match(
+            '/\brelease (?:tooling|workflow|workflows|automation|infrastructure)\b|\bchangelog history\b/i',
+            $title,
+        ) === 1;
     }
 
     private function proposedVersion(
