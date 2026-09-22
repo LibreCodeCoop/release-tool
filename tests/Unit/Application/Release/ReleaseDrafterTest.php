@@ -114,14 +114,30 @@ final class ReleaseDrafterTest extends TestCase
         (new ReleaseDrafter($this->git($prepared), $github))->prepare($this->config(), $prepared, $this->milestone());
     }
 
-    public function testBranchAdvanceFailsClosed(): void
+    public function testAllowsBranchAdvanceWhenFinalizedReleaseRemainsAncestor(): void
+    {
+        $prepared = $this->prepared();
+        $advanced = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $github = new InMemoryReleaseDraftRepository(
+            ['stable35' => $advanced],
+        );
+        $draft = (new ReleaseDrafter($this->git($prepared, $advanced), $github))->prepare(
+            $this->config(),
+            $prepared,
+            $this->milestone(),
+        );
+
+        self::assertSame('v15.0.4', $draft->tagName);
+    }
+
+    public function testRejectsBranchAdvanceWhenFinalizedReleaseIsNotAncestor(): void
     {
         $prepared = $this->prepared();
         $github = new InMemoryReleaseDraftRepository(
             ['stable35' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
         );
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('branch advanced');
+        $this->expectExceptionMessage('no longer contains finalized release');
         (new ReleaseDrafter($this->git($prepared), $github))->prepare($this->config(), $prepared, $this->milestone());
     }
 
@@ -135,16 +151,22 @@ final class ReleaseDrafterTest extends TestCase
         self::assertStringNotContainsString('PRIVATE-ADVISORY', $github->release->body);
     }
 
-    private function git(PreparedRelease $prepared): InMemoryGitRepository
+    private function git(PreparedRelease $prepared, ?string $branchHead = null): InMemoryGitRepository
     {
+        $branchHead ??= self::SHA;
         $files = [];
         foreach ($prepared->releaseFileDigests as $path => $digest) {
             $files[self::SHA . ':' . $path] = $path === 'appinfo/info.xml' ? '<info />' : $path;
         }
+        $ancestors = [self::SHA => []];
+        if ($branchHead !== self::SHA) {
+            $ancestors[$branchHead] = [self::SHA];
+        }
+
         return new InMemoryGitRepository(
             'LibreSign/libresign',
-            ['stable35' => self::SHA],
-            [self::SHA => []],
+            ['stable35' => $branchHead],
+            $ancestors,
             new PreviousRelease(null, self::SHA, self::SHA),
             $files,
         );
