@@ -60,9 +60,34 @@ final class ReleaseFileUpdater
             $data['packages']['']['version'] = $version;
         }
 
-        return json_encode(
-            $data,
-            JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
-        ) . "\n";
+        $flags = JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES;
+        $indent = $this->detectJsonIndent($content);
+        if ($indent === null) {
+            return json_encode($data, $flags) . (str_ends_with($content, "\n") ? "\n" : "");
+        }
+
+        $encoded = json_encode($data, $flags | JSON_PRETTY_PRINT);
+        if ($indent !== '    ') {
+            $encoded = preg_replace_callback(
+                '/^( +)/m',
+                static function (array $match) use ($indent): string {
+                    $levels = intdiv(strlen($match[1]), 4);
+
+                    return str_repeat($indent, $levels);
+                },
+                $encoded,
+            ) ?? $encoded;
+        }
+
+        return $encoded . (str_ends_with($content, "\n") ? "\n" : "");
+    }
+
+    private function detectJsonIndent(string $content): ?string
+    {
+        if (preg_match('/\n([ \t]+)"[^"]+"\s*:/', $content, $match) !== 1) {
+            return null;
+        }
+
+        return $match[1];
     }
 }
