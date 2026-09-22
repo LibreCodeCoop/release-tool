@@ -108,13 +108,41 @@ final class ReleaseFinalizerTest extends TestCase
         );
 
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('advanced after merge');
+        $this->expectExceptionMessage('no longer contains merged release');
 
         (new ReleaseFinalizer(
             $this->git(),
             $github,
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.4'), 35, 35, [])),
         ))->finalize($this->config(), $this->preparation());
+    }
+
+    public function testAllowsDelayedFinalizationWhenMergedReleaseRemainsAncestor(): void
+    {
+        $advanced = 'dddddddddddddddddddddddddddddddddddddddd';
+        $github = new InMemoryReleaseFinalizationRepository(
+            new FinalizedPullRequest(
+                77,
+                'https://github.com/LibreSign/libresign/pull/77',
+                'stable35',
+                true,
+                self::FINAL,
+                array_map(static fn (FileChange $change): string => $change->path, $this->preparation()->fileChanges),
+            ),
+            ['stable35' => $advanced, 'main' => self::MAIN],
+        );
+
+        $prepared = (new ReleaseFinalizer(
+            $this->git($advanced),
+            $github,
+            new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.4'), 35, 35, [
+                'package.json' => '15.0.4',
+                'package-lock.json' => '15.0.4',
+            ])),
+        ))->finalize($this->config(), $this->preparation());
+
+        self::assertSame(self::FINAL, $prepared->finalSha);
+        self::assertSame('v15.0.4', $prepared->tagName);
     }
 
     public function testSecurityModeSynchronizesPublicSafeHistory(): void
@@ -251,8 +279,9 @@ final class ReleaseFinalizerTest extends TestCase
         }
     }
 
-    private function git(): InMemoryGitRepository
+    private function git(?string $branchHead = null): InMemoryGitRepository
     {
+        $branchHead ??= self::FINAL;
         $files = [
             self::FINAL . ':appinfo/info.xml' => "<info><version>15.0.4</version></info>\n",
             self::FINAL . ':package.json' => "{\"version\":\"15.0.4\",\"human\":true}\n",
@@ -261,10 +290,15 @@ final class ReleaseFinalizerTest extends TestCase
             self::MAIN . ':docs/changelogs/changelog-15.md' => "# Changelog\n\n## 15.0.3 - 2026-09-20\n\n- Previous.\n",
         ];
 
+        $ancestors = [self::FINAL => [self::BASE]];
+        if ($branchHead !== self::FINAL) {
+            $ancestors[$branchHead] = [self::FINAL, self::BASE];
+        }
+
         return new InMemoryGitRepository(
             'LibreSign/libresign',
-            ['stable35' => self::FINAL, 'main' => self::MAIN],
-            [self::FINAL => [self::BASE]],
+            ['stable35' => $branchHead, 'main' => self::MAIN],
+            $ancestors,
             new PreviousRelease('v15.0.3', self::BASE, 'v15.0.3'),
             $files,
         );

@@ -12,7 +12,7 @@ final class ChangelogHistorySynchronizer
     {
         $pattern = '/^## (?:\\[)?' . preg_quote($version, '/') . '(?:\\])?(?:\\s|$)[\\s\\S]*?(?=^## (?:\\[)?\\d+\\.\\d+\\.\\d+|\\z)/m';
         if (preg_match($pattern, $current, $match) === 1) {
-            if (rtrim($match[0]) === rtrim($exactSection)) {
+            if ($this->comparableSection($match[0]) === $this->comparableSection($exactSection)) {
                 return $current;
             }
 
@@ -32,4 +32,11 @@ final class ChangelogHistorySynchronizer
 
         return rtrim($prefix) . "\n\n" . rtrim($exactSection) . "\n\n" . ltrim($suffix, "\n");
     }
+    private function comparableSection(string $section): string
+    {
+        $section = rtrim($section);
+
+        return preg_replace('/^(### .+)\n\n(?=- )/m', "$1\n", $section) ?? $section;
+    }
+
 }
