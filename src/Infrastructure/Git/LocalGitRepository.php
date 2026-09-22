@@ -102,12 +102,13 @@ final readonly class LocalGitRepository implements GitRepository
         string $baseSha,
         string $tagPrefix,
         ?string $initialRef,
+        ?string $excludeTag = null,
     ): PreviousRelease {
         $tags = preg_split('/\R/', trim($this->run(['git', 'tag', '--merged', $baseSha, '--list', $tagPrefix . '*'])));
         $candidates = [];
 
         foreach ($tags ?: [] as $tag) {
-            if ($tag === '' || !str_starts_with($tag, $tagPrefix)) {
+            if ($tag === '' || $tag === $excludeTag || !str_starts_with($tag, $tagPrefix)) {
                 continue;
             }
 
