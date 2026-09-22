@@ -111,21 +111,26 @@ final readonly class PublicationVerifier
             }
         }
 
-        try {
-            $appStoreVisible = $this->appStore->hasRelease(
-                $appStoreApi,
-                $config->appId,
-                $prepared->version,
-            );
-            if (!$appStoreVisible) {
-                $errors[] = sprintf(
-                    'App Store does not expose %s version %s.',
+        // Do not fetch the App Store feed while GitHub-side publication is still
+        // converging. The feed is comparatively large and cannot prove publication
+        // before the publisher has completed and attached the expected asset.
+        if ($releasePublished && $publisherSucceeded && $asset !== null) {
+            try {
+                $appStoreVisible = $this->appStore->hasRelease(
+                    $this->appStoreApiForRelease($appStoreApi, $config, $prepared),
                     $config->appId,
                     $prepared->version,
                 );
+                if (!$appStoreVisible) {
+                    $errors[] = sprintf(
+                        'App Store does not expose %s version %s.',
+                        $config->appId,
+                        $prepared->version,
+                    );
+                }
+            } catch (\Throwable $exception) {
+                $errors[] = 'App Store verification failed: ' . $exception->getMessage();
             }
-        } catch (\Throwable $exception) {
-            $errors[] = 'App Store verification failed: ' . $exception->getMessage();
         }
 
         // Artifact validation is intentionally deferred until all external publication
@@ -180,6 +185,30 @@ final readonly class PublicationVerifier
             $errors,
             $success,
         );
+    }
+
+    private function appStoreApiForRelease(
+        string $apiUrl,
+        ConsumerConfig $config,
+        PreparedRelease $prepared,
+    ): string {
+        $pattern = '~' . str_replace('~', '\\~', $config->stablePattern) . '~';
+        if (preg_match($pattern, $prepared->branch, $matches) !== 1) {
+            return $apiUrl;
+        }
+
+        $nextcloud = $matches['nextcloud'] ?? null;
+        if (!is_string($nextcloud) || !ctype_digit($nextcloud)) {
+            return $apiUrl;
+        }
+
+        $suffix = '/apps.json';
+        if (!str_ends_with($apiUrl, $suffix)) {
+            return $apiUrl;
+        }
+
+        return substr($apiUrl, 0, -strlen($suffix))
+            . sprintf('/platform/%d.0.0/apps.json', (int) $nextcloud);
     }
 
     private function assertIdentity(ConsumerConfig $config, ReleaseDraft $draft, PreparedRelease $prepared): void
