@@ -34,9 +34,9 @@ final readonly class ReleaseDrafter
         }
 
         $branchHead = $this->github->branchHead($prepared->repository, $prepared->branch);
-        if ($branchHead !== $prepared->finalSha) {
+        if ($branchHead !== $prepared->finalSha && !$this->git->isAncestor($prepared->finalSha, $branchHead)) {
             throw new DomainException(sprintf(
-                'Release branch advanced after finalization: expected %s, got %s.',
+                'Release branch no longer contains finalized release %s; current head is %s.',
                 $prepared->finalSha,
                 $branchHead,
             ));
