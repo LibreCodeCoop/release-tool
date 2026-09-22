@@ -208,7 +208,23 @@ if ($path === '/repos/Example/app/milestones') {
     return;
 }
 if ($path === '/repos/Example/app/pulls') {
-    echo json_encode([]);
+    $head = trim((string) shell_exec('git rev-parse HEAD'));
+    echo json_encode([[
+        'number' => 10,
+        'title' => 'fix: deterministic PHAR planning',
+        'body' => '',
+        'base' => ['ref' => 'stable35'],
+        'merge_commit_sha' => $head,
+        'merged_at' => '2026-09-22T00:00:00Z',
+        'html_url' => 'https://example.test/pull/10',
+        'labels' => [],
+        'user' => ['login' => 'contributor'],
+    ]]);
+    return;
+}
+if ($path === '/repos/Example/app/pulls/10/commits') {
+    $head = trim((string) shell_exec('git rev-parse HEAD'));
+    echo json_encode([['sha' => $head]]);
     return;
 }
 
