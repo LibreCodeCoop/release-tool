@@ -30,14 +30,32 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
             $this->json([]),
             $this->json(['number' => 42, 'html_url' => 'https://example.test/pr/42'], 201),
         ];
-        $client = new MockHttpClient($responses, 'https://api.github.test');
+        $requestBodies = [];
+        $client = new MockHttpClient(
+            static function (string $method, string $url, array $options) use (&$responses, &$requestBodies): MockResponse {
+                if ($method === 'POST' && str_ends_with($url, '/pulls')) {
+                    $requestBodies[] = json_decode((string) ($options['body'] ?? '{}'), true, flags: JSON_THROW_ON_ERROR);
+                }
 
-        $result = (new GitHubReleasePreparationPublisher('token', $client, 'https://api.github.test'))
-            ->publish($this->preparation());
+                return array_shift($responses);
+            },
+            'https://api.github.test',
+        );
+
+        $result = (new GitHubReleasePreparationPublisher(
+            'token',
+            $client,
+            'https://api.github.test',
+            'vitormattos',
+        ))->publish($this->preparation());
 
         self::assertSame(42, $result->pullRequestNumber);
         self::assertSame('https://example.test/pr/42', $result->pullRequestUrl);
-        self::assertSame(0, $client->getRequestsCount() - count($responses));
+        self::assertStringContainsString(
+            'Requested by @vitormattos via Prepare release',
+            (string) ($requestBodies[0]['body'] ?? ''),
+        );
+        self::assertSame(8, $client->getRequestsCount());
     }
 
     public function testRerunReusesMatchingGeneratedBranchAndPullRequest(): void
