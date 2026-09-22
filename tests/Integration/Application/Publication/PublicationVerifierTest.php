@@ -314,7 +314,7 @@ final class PublicationVerifierTest extends TestCase
             'Next Patch ({nextcloud})', 'Next RC ({nextcloud})', 'maintain', 'maintain',
             ['make', 'appstore'], ['appinfo'], ['tests'],
             'appstore-build-publish.yml', '{app}-{tag}.tar.gz',
-            'https://apps.nextcloud.com/api/v1/apps.json',
+            'https://apps.nextcloud.com/api/v1/platform/{nextcloud}.0.0/apps.json',
         );
     }
 
