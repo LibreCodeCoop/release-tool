@@ -11,6 +11,27 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class NextcloudAppStoreRepositoryTest extends TestCase
 {
+
+    public function testRequestsFreshAppStoreState(): void
+    {
+        $payload = json_encode([], JSON_THROW_ON_ERROR);
+        $client = new MockHttpClient(static function (string $method, string $url, array $options) use ($payload): MockResponse {
+            self::assertSame('GET', $method);
+            self::assertStringContainsString('release-tool-check=15.0.4', $url);
+            self::assertContains('Cache-Control: no-cache', $options['headers']);
+            self::assertContains('Pragma: no-cache', $options['headers']);
+
+            return new MockResponse($payload);
+        });
+        $repository = new NextcloudAppStoreRepository($client);
+
+        self::assertFalse($repository->hasRelease(
+            'https://apps.example.test/api/v1/apps.json',
+            'libresign',
+            '15.0.4',
+        ));
+    }
+
     public function testFindsExactNonNightlyRelease(): void
     {
         $payload = json_encode([
