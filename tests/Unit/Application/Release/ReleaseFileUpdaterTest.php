@@ -21,6 +21,18 @@ final class ReleaseFileUpdaterTest extends TestCase
         );
     }
 
+    public function testPreservesTwoSpaceJsonFormatting(): void
+    {
+        $input = "{\n  \"name\": \"example\",\n  \"version\": \"1.2.3\",\n  \"nested\": {\n    \"enabled\": true\n  }\n}\n";
+
+        $result = (new ReleaseFileUpdater())->update('package.json', $input, '1.2.4');
+
+        self::assertSame(
+            "{\n  \"name\": \"example\",\n  \"version\": \"1.2.4\",\n  \"nested\": {\n    \"enabled\": true\n  }\n}\n",
+            $result,
+        );
+    }
+
     public function testUpdatesPackageLockRootAndRootPackageVersion(): void
     {
         $input = json_encode([

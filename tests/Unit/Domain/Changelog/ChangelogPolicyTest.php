@@ -40,6 +40,7 @@ final class ChangelogPolicyTest extends TestCase
         self::assertSame(1, substr_count($result->releaseSection, 'Translation updates.'));
         self::assertStringContainsString("### Security\n\n- security hardening (#16)", $result->releaseSection);
         self::assertStringContainsString('## 15.1.0', $result->content);
+        self::assertStringContainsString("- security hardening (#16)\n\n## 15.1.0", $result->content);
     }
 
     public function testRejectsDuplicateVersion(): void

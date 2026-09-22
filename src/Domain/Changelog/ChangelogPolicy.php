@@ -37,7 +37,7 @@ final class ChangelogPolicy
             $content = substr($currentContent, 0, $headerEnd)
                 . (str_ends_with(substr($currentContent, 0, $headerEnd), "\n\n") ? '' : "\n\n")
                 . $section
-                . "\n"
+                . "\n\n"
                 . ltrim(substr($currentContent, $headerEnd), "\n");
         }
 
