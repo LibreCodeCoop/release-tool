@@ -16,6 +16,8 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
         private readonly FinalizedPullRequest $pullRequest,
         private readonly array $branchHeads,
         private readonly ?HistorySynchronization $publishedHistory = null,
+        /** @var array<string, string> */
+        private readonly array $files = [],
     ) {
     }
 
@@ -38,6 +40,16 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
     public function branches(string $repository): array
     {
         return array_keys($this->branchHeads);
+    }
+
+    public function readFile(string $repository, string $sha, string $path): string
+    {
+        $key = $sha . ':' . $path;
+        if (!array_key_exists($key, $this->files)) {
+            throw new \RuntimeException('No GitHub file fixture configured for ' . $key);
+        }
+
+        return $this->files[$key];
     }
 
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
