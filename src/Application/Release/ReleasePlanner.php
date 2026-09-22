@@ -202,8 +202,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $items = [];
         $data = [];
         $warnings = [];
-        $pullRequestCommitShas = [];
-
         $pullRequests = array_values(array_filter(
             $this->github->closedPullRequests($repository, $branch),
             fn (PullRequestInfo $pullRequest): bool => $this->pullRequestInRange($pullRequest, $previousSha, $baseSha),
@@ -228,13 +226,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
                 maintenance: $maintenance,
             );
             $items[] = $item;
-
-            if ($pullRequest->mergeCommitSha !== null) {
-                $pullRequestCommitShas[$pullRequest->mergeCommitSha] = true;
-            }
-            foreach ($this->github->pullRequestCommitShas($repository, $pullRequest->number) as $commitSha) {
-                $pullRequestCommitShas[$commitSha] = true;
-            }
 
             $data[] = [
                 'kind' => $kind,
@@ -261,10 +252,6 @@ final readonly class ReleasePlanner implements ReleasePlanning
 
         $directTranslationSeen = false;
         foreach ($this->git->commitsBetween($previousSha, $baseSha) as $commit) {
-            if (isset($pullRequestCommitShas[$commit->sha])) {
-                continue;
-            }
-
             $parsed = $this->titleParser->parse($commit->subject);
             $kind = $this->directCommitKind($commit->subject, $parsed, $commit->paths);
             if ($kind !== 'translation' || $directTranslationSeen) {
