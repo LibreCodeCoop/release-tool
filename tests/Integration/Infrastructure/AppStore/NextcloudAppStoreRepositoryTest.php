@@ -17,7 +17,7 @@ final class NextcloudAppStoreRepositoryTest extends TestCase
         $payload = json_encode([], JSON_THROW_ON_ERROR);
         $client = new MockHttpClient(static function (string $method, string $url, array $options) use ($payload): MockResponse {
             self::assertSame('GET', $method);
-            self::assertStringContainsString('release-tool-check=15.0.4', $url);
+            self::assertMatchesRegularExpression('/release-tool-check=15\.0\.4-[0-9a-f]{16}/', $url);
             self::assertContains('Cache-Control: no-cache', $options['headers']);
             self::assertContains('Pragma: no-cache', $options['headers']);
 
