@@ -16,6 +16,10 @@ final readonly class ReleaseItem
         public ?string $conventionalType = null,
         public array $labels = [],
         public bool $publicSecurityEntry = false,
+        public ?string $url = null,
+        public ?string $conventionalScope = null,
+        public bool $backport = false,
+        public bool $maintenance = false,
     ) {
     }
 
@@ -27,5 +31,15 @@ final readonly class ReleaseItem
     public function isTranslation(): bool
     {
         return $this->kind === 'translation';
+    }
+
+    public function isBackport(): bool
+    {
+        return $this->backport;
+    }
+
+    public function isMaintenance(): bool
+    {
+        return $this->maintenance;
     }
 }
