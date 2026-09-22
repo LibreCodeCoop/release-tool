@@ -20,11 +20,6 @@ interface GitHubRepository
     public function openPullRequests(string $repository, string $baseBranch): array;
 
     /**
-     * @return list<string>
-     */
-    public function pullRequestCommitShas(string $repository, int $pullRequestNumber): array;
-
-    /**
      * @return list<MilestoneInfo>
      */
     public function openMilestones(string $repository): array;
