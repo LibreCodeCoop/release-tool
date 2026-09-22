@@ -14,5 +14,8 @@ interface ReleaseFinalizationRepository
 
     public function branchHead(string $repository, string $branch): string;
 
+    /** @return list<string> */
+    public function branches(string $repository): array;
+
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization;
 }

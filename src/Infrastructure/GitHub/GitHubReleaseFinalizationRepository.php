@@ -95,6 +95,22 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         return $sha;
     }
 
+    /** @return list<string> */
+    public function branches(string $repository): array
+    {
+        $items = $this->paginate(sprintf('/repos/%s/branches', $repository));
+        $branches = [];
+        foreach ($items as $item) {
+            $name = $item['name'] ?? null;
+            if (!is_string($name) || $name === '') {
+                throw new DomainException('GitHub returned an invalid branch name.');
+            }
+            $branches[] = $name;
+        }
+
+        return $branches;
+    }
+
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
     {
         $currentHead = $this->branchHead($request->repository, $request->targetBranch);
@@ -149,7 +165,7 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
                 'POST',
                 sprintf('/repos/%s/git/commits', $request->repository),
                 [
-                    'message' => sprintf('docs: synchronize release %s history', $request->version),
+                    'message' => sprintf('docs: synchronize release %s history [skip ci]', $request->version),
                     'tree' => $treeSha,
                     'parents' => [$request->expectedBaseSha],
                 ],
@@ -174,7 +190,7 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
                 'POST',
                 sprintf('/repos/%s/pulls', $request->repository),
                 [
-                    'title' => sprintf('docs: synchronize release %s history', $request->version),
+                    'title' => sprintf('docs: synchronize release %s history [skip ci]', $request->version),
                     'head' => $request->generatedBranch,
                     'base' => $request->targetBranch,
                     'body' => $request->marker . "\n\nThis PR synchronizes the exact released changelog section only.",

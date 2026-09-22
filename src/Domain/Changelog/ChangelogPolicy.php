@@ -123,7 +123,6 @@ final class ChangelogPolicy
                 continue;
             }
             $lines[] = '### ' . $category;
-            $lines[] = '';
             foreach ($entries[$category] as $entry) {
                 $lines[] = $entry;
             }

@@ -21,6 +21,9 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
 
     public ?HistorySyncRequest $lastHistoryRequest = null;
 
+    /** @var list<HistorySyncRequest> */
+    public array $historyRequests = [];
+
     public function pullRequest(string $repository, int $number): FinalizedPullRequest
     {
         return $this->pullRequest;
@@ -31,9 +34,16 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
         return $this->branchHeads[$branch];
     }
 
+    /** @return list<string> */
+    public function branches(string $repository): array
+    {
+        return array_keys($this->branchHeads);
+    }
+
     public function publishHistorySynchronization(HistorySyncRequest $request): HistorySynchronization
     {
         $this->lastHistoryRequest = $request;
+        $this->historyRequests[] = $request;
         return $this->publishedHistory ?? throw new \RuntimeException('No history publication fixture configured.');
     }
 }

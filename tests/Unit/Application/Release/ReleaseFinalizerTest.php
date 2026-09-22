@@ -11,6 +11,7 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\ReleaseMetadata;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 use LibreCode\ReleaseTool\Domain\Release\FileChange;
+use LibreCode\ReleaseTool\Domain\Release\HistorySynchronization;
 use LibreCode\ReleaseTool\Domain\Release\HistorySyncState;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePreparation;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
@@ -116,7 +117,7 @@ final class ReleaseFinalizerTest extends TestCase
         ))->finalize($this->config(), $this->preparation());
     }
 
-    public function testSecurityModeDefersPublicHistorySynchronization(): void
+    public function testSecurityModeSynchronizesPublicSafeHistory(): void
     {
         $preparation = $this->preparation(ReleaseMode::Security);
         $github = new InMemoryReleaseFinalizationRepository(
@@ -128,7 +129,15 @@ final class ReleaseFinalizerTest extends TestCase
                 self::FINAL,
                 array_map(static fn (FileChange $change): string => $change->path, $preparation->fileChanges),
             ),
-            ['stable35' => self::FINAL],
+            ['stable35' => self::FINAL, 'main' => self::MAIN],
+            new HistorySynchronization(
+                HistorySyncState::PullRequestOpen,
+                'main',
+                'docs/changelogs/changelog-15.md',
+                'release-tool/history/15.0.4/main/test',
+                88,
+                'https://github.com/LibreSign/libresign/pull/88',
+            ),
         );
 
         $prepared = (new ReleaseFinalizer(
@@ -137,8 +146,109 @@ final class ReleaseFinalizerTest extends TestCase
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.4'), 35, 35, [])),
         ))->finalize($this->config(), $preparation, true);
 
-        self::assertSame(HistorySyncState::DeferredSecurity, $prepared->historySynchronization->state);
-        self::assertNull($github->lastHistoryRequest);
+        self::assertSame(HistorySyncState::PullRequestOpen, $prepared->historySynchronization->state);
+        self::assertNotNull($github->lastHistoryRequest);
+        self::assertSame('main', $github->lastHistoryRequest->targetBranch);
+        self::assertStringContainsString('### Fixed', $github->lastHistoryRequest->content);
+    }
+
+    public function testCascadesHistoryThroughNewerStableBranchesAndMain(): void
+    {
+        $stable34 = '3434343434343434343434343434343434343434';
+        $stable35 = '3535353535353535353535353535353535353535';
+        $main = self::MAIN;
+        $section = "## 13.4.2 - 2026-09-21\n\n### Security\n- Security fixes and other improvements";
+
+        $changes = [];
+        foreach ([
+            'appinfo/info.xml',
+            'docs/changelogs/changelog-13.md',
+            'package-lock.json',
+            'package.json',
+        ] as $path) {
+            $changes[] = new FileChange($path, str_repeat('1', 64), str_repeat('2', 64), null);
+        }
+        $preparation = new ReleasePreparation(
+            'preparation-13',
+            'plan-13',
+            'LibreSign/libresign',
+            'stable33',
+            self::BASE,
+            '13.4.2',
+            ReleaseChannel::Final,
+            ReleaseMode::Security,
+            $changes,
+            $section,
+            hash('sha256', $section),
+            'release-tool/stable33/13.4.2/preparation',
+            '<!-- release-tool:preparation plan=plan-13 version=13.4.2 -->',
+            99,
+            'https://github.com/LibreSign/libresign/pull/99',
+        );
+
+        $files = [
+            self::FINAL . ':appinfo/info.xml' => "<info><version>13.4.2</version></info>\n",
+            self::FINAL . ':package.json' => "{\"version\":\"13.4.2\"}\n",
+            self::FINAL . ':package-lock.json' => "{\"version\":\"13.4.2\"}\n",
+            self::FINAL . ':docs/changelogs/changelog-13.md' => "# Changelog\n\n" . $section . "\n\n## 13.4.1 - 2026-09-20\n- Previous.\n",
+            $stable34 . ':docs/changelogs/changelog-13.md' => "# Changelog\n\n## 13.4.1 - 2026-09-20\n- Previous.\n",
+            $stable35 . ':docs/changelogs/changelog-13.md' => "# Changelog\n\n## 13.4.1 - 2026-09-20\n- Previous.\n",
+            $main . ':docs/changelogs/changelog-13.md' => "# Changelog\n\n## 13.4.1 - 2026-09-20\n- Previous.\n",
+        ];
+        $git = new InMemoryGitRepository(
+            'LibreSign/libresign',
+            [
+                'stable33' => self::FINAL,
+                'stable34' => $stable34,
+                'stable35' => $stable35,
+                'main' => $main,
+            ],
+            [self::FINAL => [self::BASE]],
+            new PreviousRelease('v13.4.1', self::BASE, 'v13.4.1'),
+            $files,
+        );
+
+        $github = new InMemoryReleaseFinalizationRepository(
+            new FinalizedPullRequest(
+                99,
+                'https://github.com/LibreSign/libresign/pull/99',
+                'stable33',
+                true,
+                self::FINAL,
+                array_map(static fn (FileChange $change): string => $change->path, $changes),
+            ),
+            [
+                'stable33' => self::FINAL,
+                'stable34' => $stable34,
+                'stable35' => $stable35,
+                'main' => $main,
+            ],
+            new HistorySynchronization(
+                HistorySyncState::PullRequestOpen,
+                'main',
+                'docs/changelogs/changelog-13.md',
+                'release-tool/history/13.4.2/main/test',
+                100,
+                'https://github.com/LibreSign/libresign/pull/100',
+            ),
+        );
+
+        (new ReleaseFinalizer(
+            $git,
+            $github,
+            new StaticMetadataReader(new ReleaseMetadata(Version::parse('13.4.2'), 33, 33, [
+                'package.json' => '13.4.2',
+                'package-lock.json' => '13.4.2',
+            ])),
+        ))->finalize($this->config(), $preparation, true);
+
+        self::assertSame(
+            ['stable34', 'stable35', 'main'],
+            array_map(static fn ($request): string => $request->targetBranch, $github->historyRequests),
+        );
+        foreach ($github->historyRequests as $request) {
+            self::assertStringContainsString($section, $request->content);
+        }
     }
 
     private function git(): InMemoryGitRepository
