@@ -74,7 +74,7 @@ final class ReleasePlannerTest extends TestCase
                 ),
                 new PullRequestInfo(
                     11,
-                    'feat(release): integrate reusable release tooling',
+                    '[stable35] feat: integrate reusable release tooling',
                     '',
                     'stable35',
                     self::HEAD,
