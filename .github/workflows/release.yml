@@ -27,10 +27,47 @@ jobs:
           set -euo pipefail
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
             echo "Tag ${TAG} already exists."
+          else
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "${TAG}"
+          fi
+
+      - name: Checkout v0.10.8
+        run: git checkout --detach v0.10.8
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: vendor/bin/box validate
+      - run: composer build:phar
+      - run: composer test:phar
+
+      - name: Verify embedded version
+        run: php build/release-tool.phar --version | grep -F "0.10.8"
+
+      - name: Generate checksum
+        run: |
+          cd build
+          sha256sum release-tool.phar > release-tool.phar.sha256
+
+      - name: Publish release-tool 0.10.8
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v0.10.8 >/dev/null 2>&1; then
+            echo "Release v0.10.8 already exists."
             exit 0
           fi
-          git tag "${TAG}" "${GITHUB_SHA}"
-          git push origin "${TAG}"
+          gh release create v0.10.8 \
+            build/release-tool.phar \
+            build/release-tool.phar.sha256 \
+            --verify-tag \
+            --title "release-tool 0.10.8" \
+            --generate-notes
 
   publish:
     permissions:
