@@ -35,6 +35,17 @@ final class ChangelogHistorySynchronizerTest extends TestCase
         );
     }
 
+    public function testTreatsCategorySpacingOnlyAsEquivalent(): void
+    {
+        $current = "# Changelog\n\n## 13.4.2 - 2026-09-21\n\n### Security\n- Security fixes and other improvements\n\n## 13.4.1 - 2026-09-20\n";
+        $released = "## 13.4.2 - 2026-09-21\n\n### Security\n\n- Security fixes and other improvements";
+
+        self::assertSame(
+            $current,
+            (new ChangelogHistorySynchronizer())->synchronize($current, '13.4.2', $released),
+        );
+    }
+
     public function testConflictingExistingSectionFailsClosed(): void
     {
         $current = "# Changelog\n\n## 15.0.4 - 2026-09-21\n\n- Different.\n";
