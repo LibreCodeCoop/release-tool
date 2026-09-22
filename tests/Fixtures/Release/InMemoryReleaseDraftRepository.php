@@ -15,6 +15,7 @@ final class InMemoryReleaseDraftRepository implements ReleaseDraftRepository
         private readonly string $merger = 'maintainer',
         private readonly array $permissions = ['maintainer' => 'maintain'],
         private readonly ?string $tagTarget = null,
+        private readonly array $pullRequestAuthors = [],
         public ?ReleaseDraftInfo $release = null,
     ) {
     }
@@ -40,6 +41,11 @@ final class InMemoryReleaseDraftRepository implements ReleaseDraftRepository
     public function pullRequestMerger(string $repository, int $pullRequestNumber): string
     {
         return $this->merger;
+    }
+
+    public function pullRequestAuthor(string $repository, int $pullRequestNumber): string
+    {
+        return $this->pullRequestAuthors[$pullRequestNumber] ?? 'contributor';
     }
 
     public function permission(string $repository, string $login): string
