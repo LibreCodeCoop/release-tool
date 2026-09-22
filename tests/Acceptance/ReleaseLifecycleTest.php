@@ -153,24 +153,26 @@ final class ReleaseLifecycleTest extends TestCase
         self::assertSame('15.0.4', $preparation->version);
     }
 
-    public function testSecurityLifecycleKeepsPrivateActivityOutOfPublicArtifacts(): void
+    public function testSecurityLabeledPullRequestKeepsPublicTitleInSecurityCategory(): void
     {
-        [$plan, $preparation] = $this->planAndPrepare(
-            mode: ReleaseMode::Security,
-            pullRequestTitle: 'fix: PRIVATE-ADVISORY-DO-NOT-PUBLISH',
+        [, $preparation] = $this->planAndPrepare(
+            pullRequestTitle: 'fix(auth): restrict unauthorized file access',
+            pullRequestLabels: ['security'],
         );
 
-        self::assertSame('This release includes security fixes.', $plan->publicReleaseText->text);
         self::assertStringContainsString('### Security', $preparation->changelogSection);
-        self::assertStringNotContainsString('PRIVATE-ADVISORY-DO-NOT-PUBLISH', $preparation->changelogSection);
-
-        [$prepared, $draft] = $this->finalizeAndDraft(
-            $preparation,
-            mode: ReleaseMode::Security,
+        self::assertStringContainsString(
+            '- restrict unauthorized file access (#10)',
+            $preparation->changelogSection,
         );
+
+        [$prepared, $draft] = $this->finalizeAndDraft($preparation);
 
         self::assertSame('planned', $prepared->historySynchronization->state->value);
-        self::assertStringNotContainsString('PRIVATE-ADVISORY-DO-NOT-PUBLISH', $prepared->changelogSection);
+        self::assertStringContainsString(
+            '- restrict unauthorized file access (#10)',
+            $prepared->changelogSection,
+        );
         self::assertTrue($draft->ready);
     }
 
@@ -327,12 +329,13 @@ final class ReleaseLifecycleTest extends TestCase
         array $openPullRequests = [],
         bool $ignoreOpenBackport = false,
         string $pullRequestTitle = 'fix: correct signature parsing',
+        array $pullRequestLabels = [],
         bool $prepare = true,
     ): array {
         $git = $this->planningGit();
         $planner = new ReleasePlanner(
             $git,
-            $this->planningGitHub($channel, $openPullRequests, $pullRequestTitle),
+            $this->planningGitHub($channel, $openPullRequests, $pullRequestTitle, $pullRequestLabels),
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('15.0.3'), 35, 35, [])),
         );
         $plan = $planner->plan(
@@ -371,6 +374,7 @@ final class ReleaseLifecycleTest extends TestCase
         ReleaseChannel $channel = ReleaseChannel::Final,
         array $openPullRequests = [],
         string $pullRequestTitle = 'fix: correct signature parsing',
+        array $pullRequestLabels = [],
     ): InMemoryGitHubRepository {
         $milestoneTitle = $channel === ReleaseChannel::Final
             ? 'Next Patch (35)'
@@ -385,7 +389,7 @@ final class ReleaseLifecycleTest extends TestCase
                 self::MERGE,
                 '2026-09-20T00:00:00Z',
                 'https://example.test/pull/10',
-                [],
+                $pullRequestLabels,
                 'contributor',
             )],
             open: $openPullRequests,
