@@ -102,8 +102,9 @@ final class PublicationVerifierTest extends TestCase
                 'failure',
                 '2026-09-21T18:01:00Z',
             );
+            $repository = new InMemoryPublicationRepository($release, $run, $bytes);
             $verification = (new PublicationVerifier(
-                new InMemoryPublicationRepository($release, $run, $bytes),
+                $repository,
                 new StaticAppStoreRepository(false),
                 new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify($this->config(), $this->draft(), $this->prepared());
@@ -113,6 +114,50 @@ final class PublicationVerifierTest extends TestCase
             self::assertFalse($verification->appStoreVisible);
             self::assertStringContainsString('Publisher workflow', implode("\n", $verification->errors));
             self::assertStringContainsString('App Store', implode("\n", $verification->errors));
+            self::assertSame(0, $repository->downloadCount);
+        } finally {
+            $this->removeArtifact($artifact);
+        }
+    }
+
+    public function testPendingAppStoreDoesNotDownloadReleaseAsset(): void
+    {
+        $artifact = $this->artifact();
+        try {
+            $bytes = (string) file_get_contents($artifact);
+            $digest = hash('sha256', $bytes);
+            $release = new PublishedRelease(
+                101,
+                'https://example.test/releases/101',
+                'v15.0.4',
+                self::SHA,
+                false,
+                false,
+                '2026-09-21T18:00:00Z',
+                [new PublishedAsset(303, 'libresign-v15.0.4.tar.gz', 'asset', $digest)],
+            );
+            $run = new PublisherRun(
+                202,
+                'https://example.test/actions/runs/202',
+                self::SHA,
+                'release',
+                'completed',
+                'success',
+                '2026-09-21T18:01:00Z',
+            );
+            $repository = new InMemoryPublicationRepository($release, $run, $bytes);
+
+            $verification = (new PublicationVerifier(
+                $repository,
+                new StaticAppStoreRepository(false),
+                new ArtifactValidator(new PharArchiveReaderFactory()),
+            ))->verify($this->config(), $this->draft(), $this->prepared());
+
+            self::assertFalse($verification->success);
+            self::assertTrue($verification->publisherSucceeded);
+            self::assertFalse($verification->appStoreVisible);
+            self::assertFalse($verification->artifactValid);
+            self::assertSame(0, $repository->downloadCount);
         } finally {
             $this->removeArtifact($artifact);
         }
