@@ -29,6 +29,8 @@ final readonly class PreparedRelease implements JsonSerializable
         public string $changelogSha256,
         public array $releaseFileDigests,
         public HistorySynchronization $historySynchronization,
+        /** @var list<HistorySynchronization> */
+        public array $historySynchronizations = [],
     ) {
     }
 
@@ -57,6 +59,7 @@ final readonly class PreparedRelease implements JsonSerializable
             ],
             'release_files' => $this->releaseFileDigests,
             'history_synchronization' => $this->historySynchronization,
+            'history_synchronizations' => $this->historySynchronizations,
         ];
     }
 }
