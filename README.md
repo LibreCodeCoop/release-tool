@@ -32,6 +32,7 @@ If you maintain another Nextcloud app, start with:
 - [Consumer configuration reference](docs/consumer-configuration.md)
 - [Release lifecycle](docs/release-lifecycle.md)
 - [GitHub Actions integration](docs/github-actions.md)
+- [GitHub App setup](docs/github-app.md)
 - [Troubleshooting and operating model](docs/troubleshooting.md)
 
 The recommended GitHub Actions orchestration is maintained separately in [LibreCodeCoop/github-workflows](https://github.com/LibreCodeCoop/github-workflows).
