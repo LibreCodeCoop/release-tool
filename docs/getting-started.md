@@ -59,7 +59,7 @@ Before adoption, your repository should have:
 - an existing or planned GitHub Actions publisher;
 - a GitHub App installed in the consumer repository for short-lived mutation tokens.
 
-The LibreCode GitHub App is not a public credential for third-party repositories. External organizations should create and install their own GitHub App and provide its slug/private key to the reusable actions.
+The LibreCode GitHub App is not a public credential for third-party repositories. External organizations should create and install their own GitHub App and provide its slug/private key to the reusable actions. The exact settings, permissions, installation steps, and Actions secret setup are documented in [Configuring the GitHub App](github-app.md).
 
 ## Adoption path
 
@@ -117,7 +117,7 @@ Do not enable mutations until the read-only plan matches your project policy.
 
 Use the tested actions from `LibreCodeCoop/github-workflows` rather than reimplementing release policy in a large consumer workflow.
 
-See [GitHub Actions integration](github-actions.md).
+See [GitHub Actions integration](github-actions.md) and [Configuring the GitHub App](github-app.md).
 
 ### 5. Run a non-production proof
 
