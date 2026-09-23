@@ -56,6 +56,15 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
     {
         $this->lastHistoryRequest = $request;
         $this->historyRequests[] = $request;
-        return $this->publishedHistory ?? throw new \RuntimeException('No history publication fixture configured.');
+        $published = $this->publishedHistory ?? throw new \RuntimeException('No history publication fixture configured.');
+
+        return new HistorySynchronization(
+            $published->state,
+            $request->targetBranch,
+            $request->targetPath,
+            $request->generatedBranch,
+            $published->pullRequestNumber,
+            $published->pullRequestUrl,
+        );
     }
 }

@@ -104,13 +104,14 @@ final readonly class ReleaseFinalizer
         ];
         $id = hash('sha256', json_encode($identity, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
 
-        $history = $this->historySynchronization(
+        $historySynchronizations = $this->historySynchronizations(
             $config,
             $preparation,
             $id,
             $section,
             $applyHistorySynchronization,
         );
+        $history = $historySynchronizations[array_key_last($historySynchronizations)];
 
         return new PreparedRelease(
             $id,
@@ -130,27 +131,25 @@ final readonly class ReleaseFinalizer
             $sectionDigest,
             $digests,
             $history,
+            $historySynchronizations,
         );
     }
 
-    private function historySynchronization(
+    /** @return list<HistorySynchronization> */
+    private function historySynchronizations(
         ConsumerConfig $config,
         ReleasePreparation $preparation,
         string $preparedId,
         string $exactSection,
         bool $apply,
-    ): HistorySynchronization {
+    ): array {
         $targetPath = $this->changelogTarget($config, (int) explode('.', $preparation->version, 2)[0]);
         if ($preparation->targetBranch === $config->mainBranch) {
-            return new HistorySynchronization(HistorySyncState::NotRequired, $config->mainBranch, $targetPath);
+            return [new HistorySynchronization(HistorySyncState::NotRequired, $config->mainBranch, $targetPath)];
         }
 
         $targets = $this->historyTargets($config, $preparation->repository, $preparation->targetBranch);
-        $mainResult = new HistorySynchronization(
-            HistorySyncState::AlreadySynchronized,
-            $config->mainBranch,
-            $targetPath,
-        );
+        $results = [];
 
         foreach ($targets as $targetBranch) {
             $targetSha = $this->github->branchHead($preparation->repository, $targetBranch);
@@ -206,12 +205,10 @@ final readonly class ReleaseFinalizer
                 }
             }
 
-            if ($targetBranch === $config->mainBranch) {
-                $mainResult = $result;
-            }
+            $results[] = $result;
         }
 
-        return $mainResult;
+        return $results;
     }
 
     /** @return list<string> */

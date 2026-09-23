@@ -304,7 +304,7 @@ final class ReleaseFinalizerTest extends TestCase
             ),
         );
 
-        (new ReleaseFinalizer(
+        $prepared = (new ReleaseFinalizer(
             $git,
             $github,
             new StaticMetadataReader(new ReleaseMetadata(Version::parse('13.4.2'), 33, 33, [
@@ -316,6 +316,13 @@ final class ReleaseFinalizerTest extends TestCase
         self::assertSame(
             ['stable34', 'stable35', 'main'],
             array_map(static fn ($request): string => $request->targetBranch, $github->historyRequests),
+        );
+        self::assertSame(
+            ['stable34', 'stable35', 'main'],
+            array_map(
+                static fn (HistorySynchronization $sync): string => $sync->targetBranch,
+                $prepared->historySynchronizations,
+            ),
         );
         foreach ($github->historyRequests as $request) {
             self::assertStringContainsString($section, $request->content);
