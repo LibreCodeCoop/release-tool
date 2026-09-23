@@ -52,7 +52,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
         self::assertSame(42, $result->pullRequestNumber);
         self::assertSame('https://example.test/pr/42', $result->pullRequestUrl);
         self::assertStringContainsString(
-            'Requested by @vitormattos via Prepare release',
+            'Requested by @vitormattos via [Prepare release](https://github.com/LibreCodeCoop/release-tool)',
             (string) ($requestBodies[0]['body'] ?? ''),
         );
         self::assertSame(8, $client->getRequestsCount());

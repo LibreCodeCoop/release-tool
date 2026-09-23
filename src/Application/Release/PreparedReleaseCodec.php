@@ -27,9 +27,22 @@ final class PreparedReleaseCodec
         $pr = $this->object($data, 'release_pull_request');
         $changelog = $this->object($data, 'changelog');
         $history = $this->object($data, 'history_synchronization');
-        $historyPr = $history['pull_request'] ?? null;
-        if ($historyPr !== null && (!is_array($historyPr) || array_is_list($historyPr))) {
-            throw new InvalidArgumentException('history_synchronization.pull_request must be an object or null.');
+        $historySynchronization = $this->historySynchronization($history);
+        $historySynchronizations = [$historySynchronization];
+        if (isset($data['history_synchronizations'])) {
+            if (!is_array($data['history_synchronizations']) || !array_is_list($data['history_synchronizations'])) {
+                throw new InvalidArgumentException('history_synchronizations must be a list.');
+            }
+            $historySynchronizations = [];
+            foreach ($data['history_synchronizations'] as $entry) {
+                if (!is_array($entry) || array_is_list($entry)) {
+                    throw new InvalidArgumentException('history_synchronizations entries must be objects.');
+                }
+                $historySynchronizations[] = $this->historySynchronization($entry);
+            }
+            if ($historySynchronizations === []) {
+                throw new InvalidArgumentException('history_synchronizations must not be empty.');
+            }
         }
         $files = $this->object($data, 'release_files');
         foreach ($files as $path => $digest) {
@@ -55,14 +68,34 @@ final class PreparedReleaseCodec
             $this->string($changelog, 'section'),
             $this->string($changelog, 'sha256'),
             $files,
-            new HistorySynchronization(
-                HistorySyncState::from($this->string($history, 'state')),
-                $this->string($history, 'target_branch'),
-                $this->string($history, 'target_path'),
-                isset($history['generated_branch']) ? $this->string($history, 'generated_branch') : null,
-                is_array($historyPr) ? $this->int($historyPr, 'number') : null,
-                is_array($historyPr) ? $this->string($historyPr, 'url') : null,
-            ),
+            $historySynchronization,
+            $historySynchronizations,
+        );
+    }
+
+
+    /** @param array<string, mixed> $history */
+    private function historySynchronization(array $history): HistorySynchronization
+    {
+        $historyPr = $history['pull_request'] ?? null;
+        if ($historyPr !== null && (!is_array($historyPr) || array_is_list($historyPr))) {
+            throw new InvalidArgumentException('history synchronization pull_request must be an object or null.');
+        }
+
+        $pullRequestNumber = null;
+        $pullRequestUrl = null;
+        if ($historyPr !== null) {
+            $pullRequestNumber = $this->int($historyPr, 'number');
+            $pullRequestUrl = $this->string($historyPr, 'url');
+        }
+
+        return new HistorySynchronization(
+            HistorySyncState::from($this->string($history, 'state')),
+            $this->string($history, 'target_branch'),
+            $this->string($history, 'target_path'),
+            isset($history['generated_branch']) ? $this->string($history, 'generated_branch') : null,
+            $pullRequestNumber,
+            $pullRequestUrl,
         );
     }
 
