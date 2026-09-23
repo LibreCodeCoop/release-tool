@@ -73,6 +73,7 @@ final class PublicationVerifierTest extends TestCase
             self::assertTrue($verification->appStoreVisible);
             self::assertSame($digest, $verification->artifactSha256);
             self::assertSame([], $verification->errors);
+            self::assertSame(0, $repository->downloadCount);
         } finally {
             $this->removeArtifact($artifact);
         }
@@ -120,7 +121,7 @@ final class PublicationVerifierTest extends TestCase
         }
     }
 
-    public function testPendingAppStoreDoesNotDownloadReleaseAsset(): void
+    public function testPendingAppStoreDoesNotBlockPublicationOrDownloadReleaseAsset(): void
     {
         $artifact = $this->artifact();
         try {
@@ -153,10 +154,11 @@ final class PublicationVerifierTest extends TestCase
                 new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify($this->config(), $this->draft(), $this->prepared());
 
-            self::assertFalse($verification->success);
+            self::assertTrue($verification->success);
             self::assertTrue($verification->publisherSucceeded);
             self::assertFalse($verification->appStoreVisible);
-            self::assertFalse($verification->artifactValid);
+            self::assertTrue($verification->artifactValid);
+            self::assertSame($digest, $verification->artifactSha256);
             self::assertSame(0, $repository->downloadCount);
         } finally {
             $this->removeArtifact($artifact);

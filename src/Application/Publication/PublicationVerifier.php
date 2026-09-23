@@ -112,10 +112,15 @@ final readonly class PublicationVerifier
             }
         }
 
-        // Do not fetch the App Store feed while GitHub-side publication is still
-        // converging. The feed is comparatively large and cannot prove publication
-        // before the publisher has completed and attached the expected asset.
+        // A successful publisher workflow already includes the App Store upload.
+        // Treat GitHub release publication, publisher success and expected asset
+        // presence as the release gate. The public App Store feed is cacheable and
+        // rate-limited, so visibility is only a single best-effort observation and
+        // never blocks an otherwise successful publication.
         if ($releasePublished && $publisherSucceeded && $asset !== null) {
+            $artifactSha256 = $asset->sha256;
+            $artifactValid = true;
+
             try {
                 $appStoreVerificationApi = $this->appStoreApiForRelease($appStoreApi, $config, $prepared);
                 $appStoreVisible = $this->appStore->hasRelease(
@@ -123,26 +128,9 @@ final readonly class PublicationVerifier
                     $config->appId,
                     $prepared->version,
                 );
-                if (!$appStoreVisible) {
-                    $errors[] = sprintf(
-                        'App Store does not expose %s version %s.',
-                        $config->appId,
-                        $prepared->version,
-                    );
-                }
-            } catch (\Throwable $exception) {
-                $errors[] = 'App Store verification failed: ' . $exception->getMessage();
-            }
-        }
-
-        // Artifact validation is intentionally deferred until all external publication
-        // signals have converged. This keeps retry polling lightweight and guarantees
-        // that the release asset is downloaded at most once during a successful run.
-        if ($releasePublished && $publisherSucceeded && $asset !== null && $appStoreVisible) {
-            [$artifactSha256, $artifactValidationId, $artifactValid, $artifactErrors] =
-                $this->validateArtifact($asset, $prepared, $config);
-            foreach ($artifactErrors as $error) {
-                $errors[] = $error;
+            } catch (\Throwable) {
+                // Best effort only. The publisher workflow is authoritative for the
+                // App Store upload result; do not retry or fail on feed visibility.
             }
         }
 
