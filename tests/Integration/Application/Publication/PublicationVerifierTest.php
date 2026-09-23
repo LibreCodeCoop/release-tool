@@ -6,7 +6,6 @@ namespace LibreCode\ReleaseTool\Tests\Integration\Application\Publication;
 
 use DateTimeImmutable;
 use DomainException;
-use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublishedAsset;
 use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublishedRelease;
@@ -18,7 +17,6 @@ use LibreCode\ReleaseTool\Domain\Release\PreparedRelease;
 use LibreCode\ReleaseTool\Domain\Release\ReleaseDraft;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
-use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Tests\Fixtures\Publication\InMemoryPublicationRepository;
 use LibreCode\ReleaseTool\Tests\Fixtures\Publication\StaticAppStoreRepository;
 use Phar;
@@ -59,7 +57,6 @@ final class PublicationVerifierTest extends TestCase
             $verification = (new PublicationVerifier(
                 $repository,
                 new StaticAppStoreRepository(true),
-                new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify(
                 $this->config(),
                 $this->draft(),
@@ -108,7 +105,6 @@ final class PublicationVerifierTest extends TestCase
             $verification = (new PublicationVerifier(
                 $repository,
                 new StaticAppStoreRepository(false),
-                new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify($this->config(), $this->draft(), $this->prepared());
 
             self::assertFalse($verification->success);
@@ -152,7 +148,6 @@ final class PublicationVerifierTest extends TestCase
             $verification = (new PublicationVerifier(
                 $repository,
                 new StaticAppStoreRepository(false),
-                new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify($this->config(), $this->draft(), $this->prepared());
 
             self::assertTrue($verification->success);
@@ -200,7 +195,6 @@ final class PublicationVerifierTest extends TestCase
         $verification = (new PublicationVerifier(
             new InMemoryPublicationRepository($release, $run, ''),
             $appStore,
-            new ArtifactValidator(new PharArchiveReaderFactory()),
         ))->verify($this->config(), $this->draft(), $this->prepared());
 
         self::assertFalse($verification->success);
@@ -246,7 +240,6 @@ final class PublicationVerifierTest extends TestCase
             $verification = (new PublicationVerifier(
                 new InMemoryPublicationRepository($release, $run, $bytes),
                 $appStore,
-                new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify($this->config(), $this->draft(), $this->prepared());
 
             self::assertTrue($verification->success);
@@ -283,7 +276,6 @@ final class PublicationVerifierTest extends TestCase
         (new PublicationVerifier(
             new InMemoryPublicationRepository(null, null, ''),
             new StaticAppStoreRepository(false),
-            new ArtifactValidator(new PharArchiveReaderFactory()),
         ))->verify($this->config(), $badDraft, $prepared);
     }
 
