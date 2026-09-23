@@ -2,17 +2,29 @@
 
 Production-grade PHP CLI and PHAR for planning and automating reproducible software releases.
 
-Release Tool provides one deterministic release engine for local maintainers and GitHub Actions. It keeps release policy in testable PHP code while reusable workflows remain thin orchestration.
+Release Tool keeps release policy in testable PHP code while GitHub Actions remain orchestration. It supports multiple release lines, reviewable preparation pull requests, changelogs, milestones, draft releases, and post-publication verification.
 
-It is designed for projects that maintain multiple release lines and need reviewable release plans, changelogs, milestones, draft releases and post-publication verification without duplicating business logic in workflow YAML.
+LibreSign is the reference consumer; the engine does not depend on LibreSign application code.
 
-LibreSign is the first consumer. The engine is reusable and does not depend on LibreSign application classes.
+## Nextcloud app maintainers
 
-## Start here
+Start with:
 
-- Architecture: `docs/architecture.md`
-- Testing conventions: `docs/testing.md`
+1. [Getting started](docs/getting-started.md)
+2. [Consumer configuration](docs/consumer-configuration.md)
+3. [Release lifecycle](docs/release-lifecycle.md)
+4. [GitHub Actions integration](docs/github-actions.md)
+5. [GitHub App setup](docs/github-app.md)
+6. [Troubleshooting](docs/troubleshooting.md)
+
+Reusable workflow templates and their updater are maintained in [LibreCodeCoop/github-workflows](https://github.com/LibreCodeCoop/github-workflows).
+
+The normal flow has two human gates: merge the generated release preparation PR, then publish the generated GitHub Release draft.
+
+## Project internals
+
+- [Architecture](docs/architecture.md)
+- [Testing conventions](docs/testing.md)
 - CLI help: `php bin/release-tool --help`
-- Release automation architecture: LibreCodeCoop/github-workflows#70
 - Security policy: https://github.com/LibreCodeCoop/.github/blob/main/SECURITY.md
 - Contributing guidance: `AGENTS.md`
