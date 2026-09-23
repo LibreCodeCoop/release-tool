@@ -2,43 +2,24 @@
 
 Production-grade PHP CLI and PHAR for planning and automating reproducible software releases.
 
-Release Tool provides one deterministic release engine for local maintainers and GitHub Actions. It keeps release policy in testable PHP code while reusable workflows remain thin orchestration.
+Release Tool keeps release policy in testable PHP code while GitHub Actions remain orchestration. It supports multiple release lines, reviewable preparation pull requests, changelogs, milestones, draft releases, and post-publication verification.
 
-It is designed for projects that maintain multiple release lines and need reviewable release plans, changelogs, milestones, draft releases and post-publication verification without duplicating business logic in workflow YAML.
+LibreSign is the reference consumer; the engine does not depend on LibreSign application code.
 
-LibreSign is the first consumer. The engine does not depend on LibreSign application classes.
+## Nextcloud app maintainers
 
-## Why this exists
+Start with:
 
-Many Nextcloud apps document releases as a maintainer checklist: decide the version, verify backports, update the changelog, create or rename milestones, create tags and releases, publish artifacts, and verify the App Store.
+1. [Getting started](docs/getting-started.md)
+2. [Consumer configuration](docs/consumer-configuration.md)
+3. [Release lifecycle](docs/release-lifecycle.md)
+4. [GitHub Actions integration](docs/github-actions.md)
+5. [GitHub App setup](docs/github-app.md)
+6. [Troubleshooting](docs/troubleshooting.md)
 
-Release Tool turns the repeatable parts of that checklist into a deterministic contract:
+Reusable workflow templates and their updater are maintained in [LibreCodeCoop/github-workflows](https://github.com/LibreCodeCoop/github-workflows).
 
-1. build a read-only release plan;
-2. create a reviewable preparation pull request;
-3. revalidate the merged state;
-4. synchronize release history;
-5. transition milestones;
-6. create a GitHub Release draft;
-7. verify publication.
-
-Humans still control the important gates: **merge the generated preparation PR** and **publish the generated release draft**.
-
-## For Nextcloud app maintainers
-
-If you maintain another Nextcloud app, start with:
-
-- [Adopting Release Tool for a Nextcloud app](docs/getting-started.md)
-- [Consumer configuration reference](docs/consumer-configuration.md)
-- [Release lifecycle](docs/release-lifecycle.md)
-- [GitHub Actions integration](docs/github-actions.md)
-- [Configuring the GitHub App](docs/github-app.md)
-- [GitHub App setup](docs/github-app.md)
-- [Troubleshooting and operating model](docs/troubleshooting.md)
-
-The recommended GitHub Actions orchestration is maintained separately in [LibreCodeCoop/github-workflows](https://github.com/LibreCodeCoop/github-workflows).
-
-LibreSign is the reference implementation. Its public release-process documentation shows the maintainer experience of a real consumer.
+The normal flow has two human gates: merge the generated release preparation PR, then publish the generated GitHub Release draft.
 
 ## Project internals
 
