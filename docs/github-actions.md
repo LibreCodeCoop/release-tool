@@ -13,7 +13,7 @@ The consumer workflow should orchestrate release stages, not reimplement release
 
 Mutating release steps use short-lived GitHub App installation tokens instead of a long-lived personal access token.
 
-A third-party organization should create and install its own GitHub App in the consumer repository.
+A third-party organization should create and install its own GitHub App in the consumer repository. Follow [Configuring the GitHub App](github-app.md) for the exact registration settings, repository permissions, installation scope, private-key generation, and Actions secret configuration.
 
 At minimum, the release flow needs to be able to create/update release branches and pull requests, create GitHub Releases, and read Actions state. Configure only the permissions required by the actions you adopt.
 
