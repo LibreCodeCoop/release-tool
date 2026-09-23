@@ -92,12 +92,12 @@ Therefore no webhook URL, webhook secret, or subscribed events are required.
 
 ## Repository permissions
 
-Configure only these repository permissions:
+The permissions below match what the current shared actions actually request when minting installation tokens. Configure only these repository permissions:
 
 | Permission | Access | Why |
 | --- | --- | --- |
-| **Contents** | **Read and write** | Create generated branches/commits and create/update GitHub Releases |
-| **Pull requests** | **Read and write** | Create and inspect release preparation/history synchronization pull requests |
+| **Contents** | **Read and write** | Create generated branches/commits and create/update GitHub Release drafts. |
+| **Pull requests** | **Read and write** | Create or reuse release preparation/history synchronization pull requests. |
 | **Metadata** | Read-only | Implicit GitHub App repository metadata access |
 
 All other repository permissions should remain **No access** unless your own integration adds another requirement.
@@ -156,15 +156,7 @@ Treat this file like a production credential:
 - do not store it in repository files;
 - rotate it if it is exposed.
 
-The release workflow needs the complete PEM value, including:
-
-```text
------BEGIN RSA PRIVATE KEY-----
-...
------END RSA PRIVATE KEY-----
-```
-
-GitHub may generate a PKCS#8-style header instead; store the generated PEM exactly as downloaded.
+The release workflow needs the complete PEM value exactly as downloaded, including the `BEGIN RSA PRIVATE KEY` / `END RSA PRIVATE KEY` lines. GitHub currently provides the downloaded key in PKCS#1 RSA private-key format.
 
 ## Install the App
 
@@ -184,13 +176,7 @@ GitHub organization owners can install GitHub Apps. Repository administrators ma
 
 ## Add the private key to Actions secrets
 
-The reference LibreSign workflow uses:
-
-```text
-LIBRECODE_WORKFLOW_APP_PRIVATE_KEY
-```
-
-External consumers should normally choose a project-specific name, for example:
+LibreSign uses an organization-specific secret name. External consumers should choose a neutral/project-specific name, for example:
 
 ```text
 RELEASE_AUTOMATION_APP_PRIVATE_KEY
@@ -217,6 +203,8 @@ Restrict repository access to the repositories that should be allowed to use the
 Do not expose the private key as a variable. It must be a secret.
 
 ## Configure the App slug
+
+The slug is the final path component of the public App URL. For example, `https://github.com/apps/example-org-release-automation` has the slug `example-org-release-automation`.
 
 The shared actions accept the public GitHub App slug separately from the private key.
 
@@ -279,6 +267,21 @@ GitHub App permissions can be changed under:
 If you add permissions after installations already exist, GitHub requires the installed account to approve the new permissions before they become effective.
 
 Keep the permission set minimal and review changes as part of release-tool upgrades.
+
+## Recommended final checklist
+
+Before the first real release, confirm all of the following:
+
+- the App is owned by the intended organization/account;
+- Webhooks are disabled because this integration does not use them;
+- User authorization and Device Flow are disabled;
+- Repository permissions are only **Contents: Read and write** and **Pull requests: Read and write**;
+- Organization/account permissions are **No access**;
+- the App is installed on the consumer repository;
+- installation scope is **Only select repositories** unless broader access is intentional;
+- the PEM is stored as an Actions secret, not a variable;
+- the workflow passes the correct `app-slug` explicitly;
+- the first preparation run can mint the token and create the generated PR.
 
 ## GitHub documentation
 
