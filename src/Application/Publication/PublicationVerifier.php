@@ -6,7 +6,6 @@ namespace LibreCode\ReleaseTool\Application\Publication;
 
 use DateTimeImmutable;
 use DomainException;
-use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Publication\Port\AppStoreRepository;
 use LibreCode\ReleaseTool\Application\Publication\Port\PublicationRepository;
 use LibreCode\ReleaseTool\Application\Publication\ReadModel\PublishedAsset;
@@ -15,14 +14,12 @@ use LibreCode\ReleaseTool\Domain\Release\PreparedRelease;
 use LibreCode\ReleaseTool\Domain\Release\PublicationVerification;
 use LibreCode\ReleaseTool\Domain\Release\ReleaseDraft;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
-use RuntimeException;
 
 final readonly class PublicationVerifier
 {
     public function __construct(
         private PublicationRepository $publication,
         private AppStoreRepository $appStore,
-        private ArtifactValidator $artifactValidator,
     ) {
     }
 
@@ -232,41 +229,4 @@ final readonly class PublicationVerifier
         return $matches[0] ?? null;
     }
 
-    /**
-     * @return array{0:?string,1:?string,2:bool,3:list<string>}
-     */
-    private function validateArtifact(
-        PublishedAsset $asset,
-        PreparedRelease $prepared,
-        ConsumerConfig $config,
-    ): array {
-        $directory = sys_get_temp_dir() . '/release-tool-publication-' . bin2hex(random_bytes(8));
-        if (!mkdir($directory, 0700, true) && !is_dir($directory)) {
-            throw new RuntimeException(sprintf('Could not create temporary directory: %s', $directory));
-        }
-        $path = $directory . '/' . basename($asset->name);
-
-        try {
-            $this->publication->downloadAsset($prepared->repository, $asset->id, $path);
-            $validation = $this->artifactValidator->validate(
-                $path,
-                $config,
-                $config->appId,
-                $prepared->version,
-                $asset->sha256,
-            );
-            $errors = [];
-            foreach ($validation->errors as $error) {
-                $errors[] = 'Artifact validation: ' . $error;
-            }
-            return [$validation->sha256, $validation->id, $validation->valid, $errors];
-        } catch (\Throwable $exception) {
-            return [null, null, false, ['Artifact validation failed: ' . $exception->getMessage()]];
-        } finally {
-            if (is_file($path)) {
-                @unlink($path);
-            }
-            @rmdir($directory);
-        }
-    }
 }
