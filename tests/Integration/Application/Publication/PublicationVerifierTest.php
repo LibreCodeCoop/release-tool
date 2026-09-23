@@ -55,8 +55,9 @@ final class PublicationVerifierTest extends TestCase
                 'success',
                 '2026-09-21T18:01:00Z',
             );
+            $repository = new InMemoryPublicationRepository($release, $run, $bytes);
             $verification = (new PublicationVerifier(
-                new InMemoryPublicationRepository($release, $run, $bytes),
+                $repository,
                 new StaticAppStoreRepository(true),
                 new ArtifactValidator(new PharArchiveReaderFactory()),
             ))->verify(
