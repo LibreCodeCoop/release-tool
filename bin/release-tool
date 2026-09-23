@@ -58,6 +58,5 @@ exit(ApplicationFactory::create(
     new PublicationVerifier(
         GitHubPublicationRepository::fromEnvironment(),
         new NextcloudAppStoreRepository(),
-        new ArtifactValidator(new PharArchiveReaderFactory()),
     ),
 )->run());
