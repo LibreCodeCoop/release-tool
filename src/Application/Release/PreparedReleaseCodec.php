@@ -82,13 +82,20 @@ final class PreparedReleaseCodec
             throw new InvalidArgumentException('history synchronization pull_request must be an object or null.');
         }
 
+        $pullRequestNumber = null;
+        $pullRequestUrl = null;
+        if ($historyPr !== null) {
+            $pullRequestNumber = $this->int($historyPr, 'number');
+            $pullRequestUrl = $this->string($historyPr, 'url');
+        }
+
         return new HistorySynchronization(
             HistorySyncState::from($this->string($history, 'state')),
             $this->string($history, 'target_branch'),
             $this->string($history, 'target_path'),
             isset($history['generated_branch']) ? $this->string($history, 'generated_branch') : null,
-            is_array($historyPr) ? $this->int($historyPr, 'number') : null,
-            is_array($historyPr) ? $this->string($historyPr, 'url') : null,
+            $pullRequestNumber,
+            $pullRequestUrl,
         );
     }
 
