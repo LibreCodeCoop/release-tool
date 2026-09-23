@@ -21,6 +21,12 @@ Keep the App private key as an Actions secret.
 
 The reusable actions accept the App slug and private key; the default LibreCode App slug is only appropriate where that App is installed.
 
+## Install the workflows
+
+Use the managed `prepare-release.yml` template instead of maintaining a private copy of the orchestration. Install `sync-workflow-templates.yml` beside it so updates to managed workflows arrive as reviewable pull requests.
+
+The updater has its own authentication contract and needs **Workflows: write** in addition to Contents and Pull requests write access. Those permissions are not required by the release App itself. See the [workflow synchronization guide](https://github.com/LibreCodeCoop/github-workflows/blob/main/docs/cross-repository-automation.md).
+
 ## Consumer workflow shape
 
 A normal consumer workflow has three entry points:
@@ -87,4 +93,4 @@ These properties are part of the reference integration and should not be weakene
 
 ## Reference
 
-Use the LibreSign `.github/workflows/prepare-release.yml` as a working reference, but prefer copying the architecture rather than freezing a historical snapshot. The shared actions evolve independently and are versioned.
+The managed template in `LibreCodeCoop/github-workflows` is the integration source of truth. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should match that contract.
