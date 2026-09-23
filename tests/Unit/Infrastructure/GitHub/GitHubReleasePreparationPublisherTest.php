@@ -31,8 +31,12 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
             $this->json(['number' => 42, 'html_url' => 'https://example.test/pr/42'], 201),
         ];
         $requestBodies = [];
+        $commitBodies = [];
         $client = new MockHttpClient(
-            static function (string $method, string $url, array $options) use (&$responses, &$requestBodies): MockResponse {
+            static function (string $method, string $url, array $options) use (&$responses, &$requestBodies, &$commitBodies): MockResponse {
+                if ($method === 'POST' && str_ends_with($url, '/git/commits')) {
+                    $commitBodies[] = json_decode((string) ($options['body'] ?? '{}'), true, flags: JSON_THROW_ON_ERROR);
+                }
                 if ($method === 'POST' && str_ends_with($url, '/pulls')) {
                     $requestBodies[] = json_decode((string) ($options['body'] ?? '{}'), true, flags: JSON_THROW_ON_ERROR);
                 }
@@ -49,6 +53,7 @@ final class GitHubReleasePreparationPublisherTest extends TestCase
             'vitormattos',
         ))->publish($this->preparation());
 
+        self::assertSame('chore: prepare release 15.0.4 [skip ci]', $commitBodies[0]['message'] ?? null);
         self::assertSame(42, $result->pullRequestNumber);
         self::assertSame('https://example.test/pr/42', $result->pullRequestUrl);
         self::assertStringContainsString(

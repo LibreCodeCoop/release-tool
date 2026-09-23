@@ -76,7 +76,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
                 'POST',
                 sprintf('/repos/%s/git/commits', $preparation->repository),
                 [
-                    'message' => sprintf('chore: prepare release %s', $preparation->version),
+                    'message' => sprintf('chore: prepare release %s [skip ci]', $preparation->version),
                     'tree' => $tree,
                     'parents' => [$preparation->planningBaseSha],
                 ],
