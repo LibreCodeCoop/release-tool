@@ -113,11 +113,18 @@ Review at least:
 
 Do not enable mutations until the read-only plan matches your project policy.
 
-### 4. Add GitHub Actions orchestration
+### 4. Install the managed workflows
 
-Use the tested actions from `LibreCodeCoop/github-workflows` rather than reimplementing release policy in a large consumer workflow.
+Install these templates from `LibreCodeCoop/.github`:
 
-See [GitHub Actions integration](github-actions.md) and [Configuring the GitHub App](github-app.md).
+- `prepare-release.yml` for the release lifecycle;
+- `sync-workflow-templates.yml` to keep managed workflows current.
+
+Configure the updater authentication described by `LibreCodeCoop/github-workflows`, then run **Update workflows** once and review its pull request. The updater subsequently runs weekly and can be dispatched manually.
+
+The release GitHub App needs **Contents: write** and **Pull requests: write**. A GitHub App used by the workflow updater additionally needs **Workflows: write**.
+
+See [GitHub Actions integration](github-actions.md) for the release workflow and [Configuring the GitHub App](github-app.md) for release credentials. The workflow updater is documented in the [shared workflow adoption guide](https://github.com/LibreCodeCoop/github-workflows/blob/main/docs/cross-repository-automation.md).
 
 ### 5. Run a non-production proof
 
