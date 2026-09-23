@@ -268,7 +268,7 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
         ];
 
         if ($this->requestedBy !== null && trim($this->requestedBy) !== '') {
-            $lines[] = sprintf('Requested by @%s via Prepare release', ltrim(trim($this->requestedBy), '@'));
+            $lines[] = sprintf('Requested by @%s via [Prepare release](https://github.com/LibreCodeCoop/release-tool)', ltrim(trim($this->requestedBy), '@'));
             $lines[] = '';
         }
 
