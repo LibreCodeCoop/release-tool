@@ -45,15 +45,14 @@ Do not run mutation logic for arbitrary pull requests.
 
 ## Actions
 
-The main building blocks are:
+The public building blocks are:
 
-- `actions/prepare`;
-- `actions/post-merge`;
-- `actions/publication`.
+- lifecycle: `actions/prepare`, `actions/post-merge`, `actions/publication`;
+- supporting release operations: `actions/stable-select`, `actions/artifact-validate`, `actions/metadata-inspect`, `actions/release-notes`.
 
-Pin them to an immutable commit SHA and keep a comment with the corresponding release version.
+Consumers should call these Actions instead of downloading the PHAR or duplicating release-tool command bootstrap in workflow YAML. The Actions resolve the matching product version from this repository's `VERSION` file and verify the published PHAR checksum internally.
 
-Do not reference `main` or a floating tag in production release automation.
+Pin Actions to an immutable commit SHA. Do not duplicate the release-tool semantic version in consumer shell, and do not reference `main` or a floating tag in production release automation.
 
 ## Consumer responsibilities
 
@@ -93,4 +92,4 @@ These properties are part of the reference integration and should not be weakene
 
 ## Reference
 
-`LibreCodeCoop/release-tool` is the source of truth for release behavior and the three public lifecycle Actions. `LibreCodeCoop/.github` owns LibreCode's managed workflow templates that orchestrate those Actions. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should be materialized from that catalog rather than becoming a second implementation.
+`LibreCodeCoop/release-tool` is the source of truth for release behavior and its public release Actions. `LibreCodeCoop/.github` owns LibreCode's managed workflow templates that orchestrate those Actions. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should be materialized from that catalog rather than becoming a second implementation.
