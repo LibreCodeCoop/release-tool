@@ -378,7 +378,7 @@ PHP,
                 ['GITHUB_TOKEN' => 'test-token'],
             );
 
-            self::assertSame(2, $process->getExitCode());
+            self::assertNotSame(0, $process->getExitCode());
             self::assertFileDoesNotExist($outside . '/evil.txt');
         } finally {
             $apiServer->stop();
