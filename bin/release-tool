@@ -14,6 +14,7 @@ use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
+use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
 use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
@@ -33,6 +34,7 @@ use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubPublicationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseDraftRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseFinalizationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreparationPublisher;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreflightRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubRepositoryPermissionLookup;
 use LibreCode\ReleaseTool\Infrastructure\GitHubActions\GitHubActionsEnvironment;
 use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
@@ -82,4 +84,5 @@ exit(ApplicationFactory::create(
         GitHubAssociatedPullRequestRepository::fromEnvironment(),
     ),
     new AppStorePublicationWaiter(new NextcloudAppStoreRepository()),
+    new ReleasePreflight(GitHubReleasePreflightRepository::fromEnvironment()),
 )->run());
