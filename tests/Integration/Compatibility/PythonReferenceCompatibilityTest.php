@@ -421,7 +421,7 @@ PHP);
         foreach ($files as $name => $content) {
             $archive->addFromString($name, $content);
         }
-        $archive->compress(\\Phar::GZ);
+        $archive->compress(\Phar::GZ);
         unset($archive);
         @unlink($tar);
     }
