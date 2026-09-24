@@ -17,7 +17,7 @@ Start with:
 5. [GitHub App setup](docs/github-app.md)
 6. [Troubleshooting](docs/troubleshooting.md)
 
-Reusable workflow templates and their updater are maintained in [LibreCodeCoop/github-workflows](https://github.com/LibreCodeCoop/github-workflows).
+Release Tool publishes its release lifecycle Actions from this repository. LibreCode's organization workflow catalog and updater are maintained in [LibreCodeCoop/.github](https://github.com/LibreCodeCoop/.github).
 
 The normal flow has two human gates: merge the generated release preparation PR, then publish the generated GitHub Release draft.
 
