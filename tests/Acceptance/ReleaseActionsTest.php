@@ -172,8 +172,6 @@ final class ReleaseActionsTest extends TestCase
                 'verification-artifact-name',
             ],
         ];
-    }
-
         yield 'release-notes' => [
             'release-notes',
             ['repository', 'branch', 'working-directory', 'from-ref', 'to-ref', 'fallback-limit', 'github-token'],
@@ -184,6 +182,7 @@ final class ReleaseActionsTest extends TestCase
             ['repository', 'branch', 'github-token'],
             ['is-latest', 'current-branch', 'current-major', 'latest-branch', 'latest-major'],
         ];
+    }
 
     /** @return iterable<string, array{string}> */
     public static function publicActions(): iterable
