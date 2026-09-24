@@ -38,6 +38,26 @@ final class ReleaseNotesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
+            $token = getenv('RELEASE_NOTES_GITHUB_TOKEN');
+            if (!is_string($token) || $token === '') {
+                throw new RuntimeException('github token is required');
+            }
+
+            $repository = trim((string) $input->getOption('repository'));
+            if (substr_count($repository, '/') !== 1) {
+                throw new RuntimeException('repository must be in owner/name form');
+            }
+
+            $branch = trim((string) $input->getOption('branch'));
+            if ($branch === '') {
+                throw new RuntimeException('branch is required');
+            }
+
+            $workingDirectory = $this->workingDirectory((string) $input->getOption('working-directory'));
+            if (!is_dir($workingDirectory)) {
+                throw new RuntimeException(sprintf('working directory does not exist: %s', $workingDirectory));
+            }
+
             $fallbackLimitRaw = trim((string) $input->getOption('fallback-limit'));
             if (filter_var($fallbackLimitRaw, FILTER_VALIDATE_INT) === false) {
                 throw new RuntimeException('fallback-limit must be an integer');
@@ -48,9 +68,9 @@ final class ReleaseNotesCommand extends Command
             }
 
             $result = $this->generator->generate(
-                trim((string) $input->getOption('repository')),
-                trim((string) $input->getOption('branch')),
-                $this->workingDirectory((string) $input->getOption('working-directory')),
+                $repository,
+                $branch,
+                $workingDirectory,
                 trim((string) $input->getOption('server-url')),
                 trim((string) $input->getOption('from-ref')),
                 trim((string) $input->getOption('to-ref')),
