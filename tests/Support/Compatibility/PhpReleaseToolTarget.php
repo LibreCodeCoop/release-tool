@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Support\Compatibility;
 
-use LogicException;
 use Symfony\Component\Process\Process;
 
 final readonly class PhpReleaseToolTarget implements ReleaseCompatibilityTarget
@@ -94,7 +93,16 @@ final readonly class PhpReleaseToolTarget implements ReleaseCompatibilityTarget
         int $fallbackLimit,
         array $environment = [],
     ): Process {
-        throw new LogicException('PHP release-note compatibility is implemented in the final #57 slice.');
+        return $this->run([
+            'release:notes',
+            '--repository', $repository,
+            '--branch', $branch,
+            '--working-directory', $workingDirectory,
+            '--from-ref', $fromRef,
+            '--to-ref', $toRef,
+            '--fallback-limit', (string) $fallbackLimit,
+            '--server-url', $serverUrl,
+        ], ['GITHUB_API_URL' => $apiUrl] + $environment);
     }
 
     /** @param list<string> $arguments @param array<string, string> $environment */
