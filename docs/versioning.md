@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # Versioning and compatibility
 
 Release Tool is one product: the PHP CLI/PHAR, its public GitHub Actions, and persisted release contracts are versioned together.
