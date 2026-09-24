@@ -63,10 +63,7 @@ final readonly class ArtifactRestorer
             }
         }
 
-        $temporary = tempnam(sys_get_temp_dir(), 'release-artifact-');
-        if ($temporary === false) {
-            throw new RuntimeException('Could not allocate temporary artifact archive.');
-        }
+        $temporary = sys_get_temp_dir() . '/release-artifact-' . bin2hex(random_bytes(12)) . '.zip';
 
         try {
             $this->artifacts->download($artifact->archiveDownloadUrl, $temporary);
