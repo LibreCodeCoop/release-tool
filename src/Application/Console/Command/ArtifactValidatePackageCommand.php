@@ -25,16 +25,16 @@ final class ArtifactValidatePackageCommand extends Command
         $this
             ->addOption('artifact', null, InputOption::VALUE_REQUIRED)
             ->addOption('app-name', null, InputOption::VALUE_REQUIRED)
-            ->addOption('version', null, InputOption::VALUE_REQUIRED);
+            ->addOption('expected-version', null, InputOption::VALUE_REQUIRED);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $artifact = trim((string) $input->getOption('artifact'));
         $appName = trim((string) $input->getOption('app-name'));
-        $version = trim((string) $input->getOption('version'));
+        $version = trim((string) $input->getOption('expected-version'));
         if ($artifact === '' || $appName === '' || $version === '') {
-            $this->error($output, '--artifact, --app-name and --version are required.');
+            $this->error($output, '--artifact, --app-name and --expected-version are required.');
             return Command::INVALID;
         }
 
