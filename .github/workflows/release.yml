@@ -55,7 +55,10 @@ jobs:
             exit 2
           fi
 
-          existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" --jq '.object.sha' 2>/dev/null || true)"
+          existing_sha=""
+          if ! existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" --jq '.object.sha' 2>/dev/null)"; then
+            existing_sha=""
+          fi
           if [[ -n "${existing_sha}" && "${existing_sha}" != "${GITHUB_SHA}" ]]; then
             echo "::error::tag ${tag} already points to ${existing_sha}, expected ${GITHUB_SHA}"
             exit 2
