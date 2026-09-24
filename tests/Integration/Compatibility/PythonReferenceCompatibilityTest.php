@@ -7,9 +7,11 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Integration\Compatibility;
 
+use LibreCode\ReleaseTool\Tests\Support\Compatibility\PhpReleaseToolTarget;
 use LibreCode\ReleaseTool\Tests\Support\Compatibility\PythonReferenceTarget;
 use LibreCode\ReleaseTool\Tests\Support\Compatibility\ReleaseCompatibilityTarget;
 use PharData;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -17,6 +19,17 @@ final class PythonReferenceCompatibilityTest extends TestCase
 {
     /** @var list<string> */
     private array $paths = [];
+
+    /** @return iterable<string, array{ReleaseCompatibilityTarget}> */
+    public static function authorizationAndStableTargets(): iterable
+    {
+        yield 'python' => [
+            new PythonReferenceTarget(dirname(__DIR__, 2) . '/Fixtures/PythonReference'),
+        ];
+        yield 'php' => [
+            new PhpReleaseToolTarget(dirname(__DIR__, 3)),
+        ];
+    }
 
     protected function tearDown(): void
     {
@@ -29,7 +42,8 @@ final class PythonReferenceCompatibilityTest extends TestCase
         }
     }
 
-    public function testAuthorizationReportsAuthorizedPermissionAsJson(): void
+    #[DataProvider('authorizationAndStableTargets')]
+    public function testAuthorizationReportsAuthorizedPermissionAsJson(ReleaseCompatibilityTarget $target): void
     {
         [$server, $apiUrl, $log] = $this->startServer(<<<'PHP'
 <?php
@@ -44,7 +58,7 @@ echo json_encode(['permission' => 'maintain']);
 PHP);
 
         try {
-            $process = $this->target()->checkAuthorization(
+            $process = $target->checkAuthorization(
                 'LibreSign/libresign',
                 'alice',
                 'write',
@@ -71,7 +85,8 @@ PHP);
         }
     }
 
-    public function testAuthorizationMapsNotFoundToNoneAndExitThree(): void
+    #[DataProvider('authorizationAndStableTargets')]
+    public function testAuthorizationMapsNotFoundToNoneAndExitThree(ReleaseCompatibilityTarget $target): void
     {
         [$server, $apiUrl] = $this->startServer(<<<'PHP'
 <?php
@@ -81,7 +96,7 @@ echo '{}';
 PHP);
 
         try {
-            $process = $this->target()->checkAuthorization(
+            $process = $target->checkAuthorization(
                 'LibreSign/libresign',
                 'outsider',
                 'read',
@@ -98,7 +113,8 @@ PHP);
         }
     }
 
-    public function testStableSelectionWritesActionOutputsAndSummary(): void
+    #[DataProvider('authorizationAndStableTargets')]
+    public function testStableSelectionWritesActionOutputsAndSummary(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('stable-select-');
         $bin = $root . '/bin';
@@ -118,7 +134,7 @@ SH);
 
         $output = $root . '/output';
         $summary = $root . '/summary';
-        $process = $this->target()->selectStable(
+        $process = $target->selectStable(
             'LibreSign/libresign',
             'stable15',
             [
