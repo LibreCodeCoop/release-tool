@@ -189,7 +189,7 @@ SH);
     private function python(string $script, array $arguments, array $environment = []): Process
     {
         $path = dirname(__DIR__, 2) . '/Fixtures/PythonReference/' . $script;
-        $process = new Process(['python3', $path, ...$arguments], null, $environment + $_ENV + $_SERVER);
+        $process = new Process(['python3', $path, ...$arguments], null, $environment);
         $process->run();
 
         return $process;
@@ -210,7 +210,7 @@ SH);
             $process = new Process(
                 ['php', '-S', '127.0.0.1:' . $port, $routerPath],
                 $root,
-                ['REQUEST_LOG' => $log] + $_ENV + $_SERVER,
+                ['REQUEST_LOG' => $log],
             );
             $process->start();
 
@@ -239,7 +239,7 @@ SH);
         foreach ($files as $name => $content) {
             $archive->addFromString($name, $content);
         }
-        $archive->compress(Phar::GZ);
+        $archive->compress(\\Phar::GZ);
         unset($archive);
         @unlink($tar);
     }
