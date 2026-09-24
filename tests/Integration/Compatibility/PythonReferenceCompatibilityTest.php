@@ -114,6 +114,32 @@ PHP);
     }
 
     #[DataProvider('authorizationAndStableTargets')]
+    public function testAuthorizationRejectsMissingTokenBeforeHttp(ReleaseCompatibilityTarget $target): void
+    {
+        [$server, $apiUrl, $log] = $this->startServer(<<<'PHP'
+<?php
+file_put_contents(getenv('REQUEST_LOG'), "requested\n", FILE_APPEND);
+header('Content-Type: application/json');
+echo json_encode(['permission' => 'admin']);
+PHP);
+
+        try {
+            $process = $target->checkAuthorization(
+                'LibreSign/libresign',
+                'alice',
+                'write',
+                $apiUrl,
+                ['GITHUB_TOKEN' => ''],
+            );
+
+            self::assertSame(2, $process->getExitCode());
+            self::assertFileDoesNotExist($log);
+        } finally {
+            $server->stop();
+        }
+    }
+
+    #[DataProvider('authorizationAndStableTargets')]
     public function testStableSelectionWritesActionOutputsAndSummary(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('stable-select-');
