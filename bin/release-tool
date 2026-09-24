@@ -12,16 +12,21 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
+use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
 use LibreCode\ReleaseTool\Infrastructure\AppStore\NextcloudAppStoreRepository;
 use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
+use LibreCode\ReleaseTool\Infrastructure\Git\RemoteStableBranchSource;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubMilestoneRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubPublicationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseDraftRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseFinalizationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleasePreparationPublisher;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubRepositoryPermissionLookup;
+use LibreCode\ReleaseTool\Infrastructure\GitHubActions\GitHubActionsEnvironment;
 use LibreCode\ReleaseTool\Infrastructure\Release\GitReleaseMetadataReader;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -59,4 +64,7 @@ exit(ApplicationFactory::create(
         GitHubPublicationRepository::fromEnvironment(),
         new NextcloudAppStoreRepository(),
     ),
+    new RepositoryAuthorizationChecker(GitHubRepositoryPermissionLookup::fromEnvironment()),
+    new StableBranchSelector(new RemoteStableBranchSource()),
+    GitHubActionsEnvironment::fromEnvironment(),
 )->run());
