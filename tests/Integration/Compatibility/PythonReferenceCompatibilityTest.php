@@ -216,6 +216,42 @@ SH);
     }
 
     #[DataProvider('authorizationAndStableTargets')]
+    public function testReleaseNotesRejectsMissingTokenBeforeGitOrHttp(ReleaseCompatibilityTarget $target): void
+    {
+        $root = $this->temporaryDirectory('release-notes-no-token-');
+        $bin = $root . '/bin';
+        mkdir($bin);
+        $gitLog = $root . '/git.log';
+        $git = $bin . '/git';
+        file_put_contents($git, <<<'SH'
+#!/usr/bin/env bash
+printf '%s\n' called >> "$GIT_LOG"
+exit 2
+SH);
+        chmod($git, 0755);
+
+        $process = $target->releaseNotes(
+            'LibreSign/libresign',
+            'stable15',
+            $root,
+            'https://api.github.test',
+            'https://github.test',
+            '',
+            'HEAD',
+            10,
+            [
+                'RELEASE_NOTES_GITHUB_TOKEN' => '',
+                'GIT_LOG' => $gitLog,
+                'PATH' => $bin . PATH_SEPARATOR . (getenv('PATH') ?: ''),
+            ],
+        );
+
+        self::assertSame(1, $process->getExitCode());
+        self::assertStringContainsString('::error::github token is required', $process->getOutput());
+        self::assertFileDoesNotExist($gitLog);
+    }
+
+    #[DataProvider('authorizationAndStableTargets')]
     public function testReleaseNotesRejectsInvalidFallbackLimitBeforeGitOrHttp(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('release-notes-');
