@@ -103,7 +103,7 @@ final class SafeZipExtractor implements ArchiveExtractor
         $cursor = $offset;
         for ($index = 0; $index < $entries; ++$index) {
             $header = substr($data, $cursor, 46);
-            if (strlen($header) !== 46 || substr($header, 0, 4) !== "PK\x01\x02") {
+            if (strlen($header) !== 46 || !str_starts_with($header, "PK\x01\x02")) {
                 throw new InvalidArgumentException('Malformed artifact ZIP central directory entry.');
             }
 
