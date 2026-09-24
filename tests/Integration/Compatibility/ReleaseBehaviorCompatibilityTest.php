@@ -8,14 +8,13 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Tests\Integration\Compatibility;
 
 use LibreCode\ReleaseTool\Tests\Support\Compatibility\PhpReleaseToolTarget;
-use LibreCode\ReleaseTool\Tests\Support\Compatibility\PythonReferenceTarget;
 use LibreCode\ReleaseTool\Tests\Support\Compatibility\ReleaseCompatibilityTarget;
 use PharData;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
-final class PythonReferenceCompatibilityTest extends TestCase
+final class ReleaseBehaviorCompatibilityTest extends TestCase
 {
     /** @var list<string> */
     private array $paths = [];
@@ -23,9 +22,6 @@ final class PythonReferenceCompatibilityTest extends TestCase
     /** @return iterable<string, array{ReleaseCompatibilityTarget}> */
     public static function authorizationAndStableTargets(): iterable
     {
-        yield 'python' => [
-            new PythonReferenceTarget(dirname(__DIR__, 2) . '/Fixtures/PythonReference'),
-        ];
         yield 'php' => [
             new PhpReleaseToolTarget(dirname(__DIR__, 3)),
         ];
@@ -563,11 +559,6 @@ PHP);
         } finally {
             $server->stop();
         }
-    }
-
-    private function target(): ReleaseCompatibilityTarget
-    {
-        return new PythonReferenceTarget(dirname(__DIR__, 2) . '/Fixtures/PythonReference');
     }
 
     /**
