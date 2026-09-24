@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Inspect release metadata
+description: Validate and expose release metadata for a consumer repository.
+
+inputs:
+  config-path:
+    description: Consumer release configuration path.
+    required: false
+    default: .nextcloud-release.yml
+  root:
+    description: Consumer repository root.
+    required: false
+    default: .
+  ref:
+    description: Git ref to inspect.
+    required: false
+    default: HEAD
+
+outputs:
+  changelog-path:
+    description: Resolved changelog path.
+    value: ${{ steps.inspect.outputs.changelog-path }}
+  version:
+    description: Resolved application version.
+    value: ${{ steps.inspect.outputs.version }}
+  major:
+    description: Resolved application major version.
+    value: ${{ steps.inspect.outputs.major }}
+  development:
+    description: Whether the inspected version is a development version.
+    value: ${{ steps.inspect.outputs.development }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: inspect
+      name: Inspect release metadata
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+        RELEASE_ROOT: ${{ inputs.root }}
+        RELEASE_REF: ${{ inputs.ref }}
+      run: |
+        set -euo pipefail
+        metadata="${RUNNER_TEMP}/release-metadata.json"
+        php "${RELEASE_TOOL_PATH}" metadata:inspect           --config "${RELEASE_CONFIG_PATH}"           --root "${RELEASE_ROOT}"           --ref "${RELEASE_REF}"           --json > "${metadata}"
+        php -r '
+          $m=json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
+          $out=getenv("GITHUB_OUTPUT");
+          $values=[
+            "changelog-path" => $m["changelog_path"] ?? "",
+            "version" => $m["version"] ?? "",
+            "major" => $m["major"] ?? "",
+            "development" => !empty($m["development"]) ? "true" : "false",
+          ];
+          $fh=fopen($out, "ab");
+          foreach ($values as $key => $value) {
+            fwrite($fh, $key . "=" . $value . PHP_EOL);
+          }
+          fclose($fh);
+        ' "${metadata}"
