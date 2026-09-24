@@ -118,6 +118,11 @@ runs:
         php "${RELEASE_TOOL_PATH}" release:authorization           --repository "${RELEASE_REPOSITORY}"           --actor "${RELEASE_ACTOR}"           --minimum "${RELEASE_MINIMUM_PERMISSION}"           > "${result_file}"
         status=$?
         set -e
+        if [[ "${status}" -eq 3 ]]; then
+          actual_permission="$(php -r '$r=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $r["actual_permission"];' "${result_file}")"
+          echo "::error::${RELEASE_ACTOR} has ${actual_permission} permission; ${RELEASE_MINIMUM_PERMISSION} is required."
+          exit 1
+        fi
         if [[ "${status}" -ne 0 ]]; then
           cat "${result_file}" || true
           exit "${status}"
