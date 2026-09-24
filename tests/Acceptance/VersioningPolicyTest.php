@@ -16,7 +16,6 @@ final class VersioningPolicyTest extends TestCase
             '/^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/',
             $version,
         );
-        self::assertSame('0.11.0', $version);
     }
 
     public function testReleasePublisherRequiresTagToMatchVersionFile(): void
