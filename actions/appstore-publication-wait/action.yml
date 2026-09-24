@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Verify App Store publication
+description: Wait until a Nextcloud app release is visible in the App Store API.
+
+inputs:
+  app-name:
+    description: Nextcloud app id.
+    required: true
+  version:
+    description: Published app version.
+    required: true
+  platform:
+    description: Minimum Nextcloud platform version used for App Store lookup.
+    required: true
+  attempts:
+    description: Maximum lookup attempts.
+    required: false
+    default: '12'
+  delay-seconds:
+    description: Delay between attempts.
+    required: false
+    default: '10'
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - name: Verify App Store publication
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_APP_NAME: ${{ inputs.app-name }}
+        RELEASE_VERSION: ${{ inputs.version }}
+        RELEASE_PLATFORM: ${{ inputs.platform }}
+        RELEASE_ATTEMPTS: ${{ inputs.attempts }}
+        RELEASE_DELAY_SECONDS: ${{ inputs.delay-seconds }}
+      run: >-
+        php "${RELEASE_TOOL_PATH}" publication:wait-appstore
+        --app-name "${RELEASE_APP_NAME}"
+        --version "${RELEASE_VERSION}"
+        --platform "${RELEASE_PLATFORM}"
+        --attempts "${RELEASE_ATTEMPTS}"
+        --delay-seconds "${RELEASE_DELAY_SECONDS}"

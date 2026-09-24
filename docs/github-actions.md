@@ -48,7 +48,7 @@ Do not run mutation logic for arbitrary pull requests.
 The public building blocks are:
 
 - lifecycle: `actions/prepare`, `actions/post-merge`, `actions/publication`;
-- supporting release operations: `actions/stable-select`, `actions/artifact-validate`, `actions/metadata-inspect`, `actions/release-notes`.
+- supporting release operations: `actions/stable-select`, `actions/artifact-validate`, `actions/metadata-inspect`, `actions/release-notes`, `actions/release-preflight`, `actions/appstore-publication-wait`.
 
 Consumers should call these Actions instead of downloading the PHAR or duplicating release-tool command bootstrap in workflow YAML. The Actions resolve the matching product version from this repository's `VERSION` file and verify the published PHAR checksum internally.
 
