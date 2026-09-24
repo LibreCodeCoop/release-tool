@@ -210,6 +210,10 @@ PHP,
             <<<'PHP'
 <?php
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/artifact-download') {
+    header('Location: ' . getenv('ARCHIVE_URL'), true, 302);
+    return;
+}
 header('Content-Type: application/json');
 if ($path === '/repos/LibreSign/libresign/actions/artifacts') {
     echo json_encode(['artifacts' => [[
@@ -217,7 +221,7 @@ if ($path === '/repos/LibreSign/libresign/actions/artifacts') {
         'name' => 'release-package',
         'expired' => false,
         'created_at' => '2026-09-23T12:00:00Z',
-        'archive_download_url' => getenv('ARCHIVE_URL'),
+        'archive_download_url' => 'http://' . $_SERVER['HTTP_HOST'] . '/artifact-download',
         'workflow_run' => ['id' => 22, 'head_sha' => str_repeat('a', 40)],
     ]]]);
     return;
