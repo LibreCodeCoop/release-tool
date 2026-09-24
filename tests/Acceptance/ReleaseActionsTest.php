@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-notes', 'stable-select'];
+    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-notes', 'release-preflight', 'stable-select'];
 
     public function testPublicActionSurfaceIsExplicit(): void
     {
@@ -104,6 +104,11 @@ final class ReleaseActionsTest extends TestCase
     /** @return iterable<string, array{string, list<string>, list<string>}> */
     public static function publicActionContracts(): iterable
     {
+        yield 'appstore-publication-wait' => [
+            'appstore-publication-wait',
+            ['app-name', 'version', 'platform', 'attempts', 'delay-seconds'],
+            [],
+        ];
         yield 'artifact-validate' => [
             'artifact-validate',
             ['artifact', 'app-name', 'version'],
@@ -176,6 +181,11 @@ final class ReleaseActionsTest extends TestCase
             'release-notes',
             ['repository', 'branch', 'working-directory', 'from-ref', 'to-ref', 'fallback-limit', 'github-token'],
             ['changes-file', 'change-count', 'pull-request-count', 'commit-fallback-count'],
+        ];
+        yield 'release-preflight' => [
+            'release-preflight',
+            ['version', 'stable-branch', 'current-ref', 'repository', 'appinfo', 'changelog', 'milestone', 'blocker-queries-json', 'github-token'],
+            ['result-file'],
         ];
         yield 'stable-select' => [
             'stable-select',
