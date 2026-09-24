@@ -39,9 +39,12 @@ final readonly class GitHubAssociatedPullRequestRepository implements Associated
 
     public static function fromEnvironment(): self
     {
+        $token = getenv('RELEASE_NOTES_GITHUB_TOKEN');
+        $apiUrl = getenv('GITHUB_API_URL');
+
         return new self(
-            getenv('RELEASE_NOTES_GITHUB_TOKEN') ?: '',
-            apiUrl: getenv('GITHUB_API_URL') ?: 'https://api.github.com',
+            is_string($token) ? $token : '',
+            apiUrl: is_string($apiUrl) && $apiUrl !== '' ? $apiUrl : 'https://api.github.com',
         );
     }
 
