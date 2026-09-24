@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Validate manual release preflight
+description: Validate a simple manual Nextcloud app release before creating its GitHub Release.
+
+inputs:
+  version:
+    description: Release version in MAJOR.MINOR.PATCH form.
+    required: true
+  stable-branch:
+    description: Stable branch to release from.
+    required: true
+  current-ref:
+    description: Ref representing the checked-out release state.
+    required: true
+  repository:
+    description: Repository in owner/name form.
+    required: true
+  appinfo:
+    description: Path to appinfo/info.xml.
+    required: false
+    default: appinfo/info.xml
+  changelog:
+    description: Path to changelog file.
+    required: false
+    default: CHANGELOG.md
+  milestone:
+    description: Optional closed milestone that must have zero open issues.
+    required: false
+    default: ''
+  blocker-queries-json:
+    description: JSON array of GitHub issue search fragments that must return zero open items.
+    required: false
+    default: '[]'
+  github-token:
+    description: GitHub token used for milestone and issue checks.
+    required: true
+
+outputs:
+  result-file:
+    description: JSON file containing the preflight result.
+    value: ${{ steps.preflight.outputs.result-file }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: preflight
+      name: Validate release preflight
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_VERSION: ${{ inputs.version }}
+        RELEASE_STABLE_BRANCH: ${{ inputs.stable-branch }}
+        RELEASE_CURRENT_REF: ${{ inputs.current-ref }}
+        RELEASE_REPOSITORY: ${{ inputs.repository }}
+        RELEASE_APPINFO: ${{ inputs.appinfo }}
+        RELEASE_CHANGELOG: ${{ inputs.changelog }}
+        RELEASE_MILESTONE: ${{ inputs.milestone }}
+        RELEASE_BLOCKER_QUERIES: ${{ inputs.blocker-queries-json }}
+      run: |
+        set -euo pipefail
+        result="${RUNNER_TEMP}/release-preflight.json"
+        php "${RELEASE_TOOL_PATH}" release:preflight           --version "${RELEASE_VERSION}"           --stable-branch "${RELEASE_STABLE_BRANCH}"           --current-ref "${RELEASE_CURRENT_REF}"           --repository "${RELEASE_REPOSITORY}"           --appinfo "${RELEASE_APPINFO}"           --changelog "${RELEASE_CHANGELOG}"           --milestone "${RELEASE_MILESTONE}"           --blocker-queries-json "${RELEASE_BLOCKER_QUERIES}"           --json | tee "${result}"
+        echo "result-file=${result}" >> "${GITHUB_OUTPUT}"
+        {
+          echo "## Release preflight"
+          echo
+          echo '~~~json'
+          cat "${result}"
+          echo '~~~'
+        } >> "${GITHUB_STEP_SUMMARY}"
