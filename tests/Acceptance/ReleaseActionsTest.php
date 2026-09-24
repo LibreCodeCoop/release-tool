@@ -10,9 +10,9 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['post-merge', 'prepare', 'publication'];
+    private const array PUBLIC_ACTIONS = ['artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-notes', 'stable-select'];
 
-    public function testPublicActionSurfaceContainsOnlyLifecycleStages(): void
+    public function testPublicActionSurfaceIsExplicit(): void
     {
         $paths = glob($this->root() . '/actions/*/action.yml');
         self::assertIsArray($paths);
@@ -27,7 +27,7 @@ final class ReleaseActionsTest extends TestCase
     }
 
     #[DataProvider('publicActions')]
-    public function testPublicActionsArePhpOrchestrationWithoutLegacyHelpers(string $name): void
+    public function testPublicActionsAreReleaseToolOrchestrationWithoutLegacyHelpers(string $name): void
     {
         $path = $this->root() . '/actions/' . $name . '/action.yml';
         $content = (string) file_get_contents($path);
@@ -104,6 +104,16 @@ final class ReleaseActionsTest extends TestCase
     /** @return iterable<string, array{string, list<string>, list<string>}> */
     public static function publicActionContracts(): iterable
     {
+        yield 'artifact-validate' => [
+            'artifact-validate',
+            ['artifact', 'app-name', 'version'],
+            [],
+        ];
+        yield 'metadata-inspect' => [
+            'metadata-inspect',
+            ['config-path', 'root', 'ref'],
+            ['changelog-path', 'version', 'major', 'development'],
+        ];
         yield 'prepare' => [
             'prepare',
             [
@@ -161,6 +171,16 @@ final class ReleaseActionsTest extends TestCase
                 'verification-id',
                 'verification-artifact-name',
             ],
+        ];
+        yield 'release-notes' => [
+            'release-notes',
+            ['repository', 'branch', 'working-directory', 'from-ref', 'to-ref', 'fallback-limit', 'github-token'],
+            ['changes-file', 'change-count', 'pull-request-count', 'commit-fallback-count'],
+        ];
+        yield 'stable-select' => [
+            'stable-select',
+            ['repository', 'branch', 'github-token'],
+            ['is-latest', 'current-branch', 'current-major', 'latest-branch', 'latest-major'],
         ];
     }
 

@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Validate release artifact
+description: Validate a packaged Nextcloud app artifact using release-tool.
+
+inputs:
+  artifact:
+    description: Path to the packaged tar.gz artifact.
+    required: true
+  app-name:
+    description: Expected Nextcloud app id.
+    required: true
+  version:
+    description: Expected app version.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - name: Validate packaged app
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_ARTIFACT: ${{ inputs.artifact }}
+        RELEASE_APP_NAME: ${{ inputs.app-name }}
+        RELEASE_VERSION: ${{ inputs.version }}
+      run: >-
+        php "${RELEASE_TOOL_PATH}" artifact:validate-package
+        --artifact "${RELEASE_ARTIFACT}"
+        --app-name "${RELEASE_APP_NAME}"
+        --expected-version "${RELEASE_VERSION}"

@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Resolve stable release line
+description: Resolve whether the current stable<N> branch is the latest supported stable release line.
+
+inputs:
+  repository:
+    description: Repository in owner/name form. Defaults to the current repository.
+    required: false
+    default: ''
+  branch:
+    description: Stable branch to compare. Defaults to the current ref name.
+    required: false
+    default: ''
+  github-token:
+    description: GitHub token used to inspect repository branches.
+    required: true
+
+outputs:
+  is-latest:
+    description: Whether the selected branch is the latest stable release line.
+    value: ${{ steps.select.outputs.is_latest }}
+  current-branch:
+    description: Current branch.
+    value: ${{ steps.select.outputs.current_branch }}
+  current-major:
+    description: Current stable major.
+    value: ${{ steps.select.outputs.current_major }}
+  latest-branch:
+    description: Latest stable branch.
+    value: ${{ steps.select.outputs.latest_branch }}
+  latest-major:
+    description: Latest stable major.
+    value: ${{ steps.select.outputs.latest_major }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: select
+      name: Resolve stable release line
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_REPOSITORY: ${{ inputs.repository }}
+        RELEASE_BRANCH: ${{ inputs.branch }}
+      run: |
+        set -euo pipefail
+        repository="${RELEASE_REPOSITORY:-${GITHUB_REPOSITORY}}"
+        branch="${RELEASE_BRANCH:-${GITHUB_REF_NAME}}"
+        php "${RELEASE_TOOL_PATH}" release:stable-select --repository "${repository}" --branch "${branch}"
