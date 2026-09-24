@@ -18,7 +18,9 @@ final readonly class AppStorePublicationWaiter
         private AppStoreRepository $appStore,
         ?Closure $sleep = null,
     ) {
-        $this->sleep = $sleep ?? static fn (int $seconds): mixed => sleep($seconds);
+        $this->sleep = $sleep ?? static function (int $seconds): void {
+            sleep($seconds);
+        };
     }
 
     public function wait(
