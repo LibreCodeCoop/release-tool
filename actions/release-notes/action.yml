@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Build release note changes
+description: Build release-note entries from commits and associated pull requests.
+
+inputs:
+  repository:
+    description: Repository in owner/name form.
+    required: true
+  branch:
+    description: Release branch.
+    required: true
+  working-directory:
+    description: Git working directory used to resolve commits and tags.
+    required: false
+    default: .
+  from-ref:
+    description: Optional starting ref. When omitted, the latest non-nightly tag is used.
+    required: false
+    default: ''
+  to-ref:
+    description: Ending ref.
+    required: false
+    default: HEAD
+  fallback-limit:
+    description: Number of direct commits to include when no starting tag exists.
+    required: false
+    default: '10'
+  github-token:
+    description: GitHub token used to resolve pull requests.
+    required: true
+
+outputs:
+  changes-file:
+    description: Markdown file containing generated change entries.
+    value: ${{ steps.notes.outputs.changes-file }}
+  change-count:
+    description: Total number of change entries.
+    value: ${{ steps.notes.outputs.change-count }}
+  pull-request-count:
+    description: Number of pull-request-backed entries.
+    value: ${{ steps.notes.outputs.pull-request-count }}
+  commit-fallback-count:
+    description: Number of direct-commit fallback entries.
+    value: ${{ steps.notes.outputs.commit-fallback-count }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: notes
+      name: Build release note changes
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_NOTES_GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_REPOSITORY: ${{ inputs.repository }}
+        RELEASE_BRANCH: ${{ inputs.branch }}
+        RELEASE_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        RELEASE_FROM_REF: ${{ inputs.from-ref }}
+        RELEASE_TO_REF: ${{ inputs.to-ref }}
+        RELEASE_FALLBACK_LIMIT: ${{ inputs.fallback-limit }}
+      run: |
+        set -euo pipefail
+        from_ref="${RELEASE_FROM_REF}"
+        if [[ -z "${from_ref}" ]]; then
+          from_ref="$(git -C "${RELEASE_WORKING_DIRECTORY}" tag --list --sort=-version:refname | grep -v '^nightly$' | head -1 || true)"
+        fi
+        php "${RELEASE_TOOL_PATH}" release:notes           --repository "${RELEASE_REPOSITORY}"           --branch "${RELEASE_BRANCH}"           --working-directory "${RELEASE_WORKING_DIRECTORY}"           --from-ref "${from_ref}"           --to-ref "${RELEASE_TO_REF}"           --fallback-limit "${RELEASE_FALLBACK_LIMIT}"
