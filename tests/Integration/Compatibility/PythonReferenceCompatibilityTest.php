@@ -274,6 +274,60 @@ PHP,
         }
     }
 
+    public function testArtifactRestoreRejectsZipTraversal(): void
+    {
+        $root = $this->temporaryDirectory('artifact-restore-traversal-');
+        $zip = $root . '/unsafe.zip';
+        $this->createUnsafeZip($zip);
+
+        [$server, $apiUrl] = $this->startServer(
+            <<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/artifact-download') {
+    header('Content-Type: application/zip');
+    readfile(getenv('ARCHIVE_FILE'));
+    return;
+}
+header('Content-Type: application/json');
+if ($path === '/repos/LibreSign/libresign/actions/artifacts') {
+    echo json_encode(['artifacts' => [[
+        'id' => 31,
+        'name' => 'unsafe-package',
+        'expired' => false,
+        'created_at' => '2026-09-23T12:00:00Z',
+        'archive_download_url' => 'http://' . $_SERVER['HTTP_HOST'] . '/artifact-download',
+        'workflow_run' => ['id' => 32, 'head_sha' => str_repeat('b', 40)],
+    ]]]);
+    return;
+}
+http_response_code(404);
+echo '{}';
+PHP,
+            ['ARCHIVE_FILE' => $zip],
+        );
+
+        try {
+            $process = $this->python(
+                'restore_release_artifact.py',
+                [
+                    '--repository', 'LibreSign/libresign',
+                    '--name', 'unsafe-package',
+                    '--expected-head-sha', str_repeat('b', 40),
+                    '--destination', $root . '/restored',
+                    '--api-url', $apiUrl,
+                ],
+                ['GITHUB_TOKEN' => 'test-token'],
+            );
+
+            self::assertNotSame(0, $process->getExitCode());
+            self::assertStringContainsString('unsafe artifact path: ../evil.txt', $process->getErrorOutput());
+            self::assertFileDoesNotExist($root . '/evil.txt');
+        } finally {
+            $server->stop();
+        }
+    }
+
     public function testReleaseNotesPreferPullRequestsDeduplicateAndSanitizeContributorText(): void
     {
         $root = $this->temporaryDirectory('release-notes-success-');
@@ -441,6 +495,19 @@ with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(name, content)
 PY;
         $process = new Process(['python3', '-c', $code, $path, $payload]);
+        $process->mustRun();
+    }
+
+    private function createUnsafeZip(string $path): void
+    {
+        $code = <<<'PY'
+import sys
+import zipfile
+
+with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as archive:
+    archive.writestr("../evil.txt", "evil")
+PY;
+        $process = new Process(['python3', '-c', $code, $path]);
         $process->mustRun();
     }
 
