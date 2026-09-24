@@ -31,12 +31,12 @@ final class StableSelectCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $repository = trim((string) ($input->getOption('repository') ?? ''));
+        $repository = trim($input->getOption('repository') ?? '');
         if ($repository === '') {
             $repository = trim((string) (getenv('GITHUB_REPOSITORY') ?: ''));
         }
 
-        $branch = trim((string) ($input->getOption('branch') ?? ''));
+        $branch = trim($input->getOption('branch') ?? '');
         if ($branch === '') {
             $branch = trim((string) (getenv('GITHUB_REF_NAME') ?: ''));
         }
