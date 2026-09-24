@@ -55,6 +55,22 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('../_internal/setup.sh', $content);
     }
 
+    #[DataProvider('publicActionContracts')]
+    public function testPublicActionContractsAreExplicit(
+        string $name,
+        array $expectedInputs,
+        array $expectedOutputs,
+    ): void {
+        $action = Yaml::parseFile($this->root() . '/actions/' . $name . '/action.yml');
+        self::assertIsArray($action);
+
+        $inputs = array_keys(is_array($action['inputs'] ?? null) ? $action['inputs'] : []);
+        $outputs = array_keys(is_array($action['outputs'] ?? null) ? $action['outputs'] : []);
+
+        self::assertSame($expectedInputs, $inputs);
+        self::assertSame($expectedOutputs, $outputs);
+    }
+
     public function testPrepareDelegatesAuthorizationAndPlanningToPhp(): void
     {
         $content = $this->action('prepare');
@@ -94,6 +110,69 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString("--proto '=https'", $setup);
         self::assertStringNotContainsString('latest', $version);
         self::assertStringNotContainsString('stable', $version);
+    }
+
+    /** @return iterable<string, array{string, list<string>, list<string>}> */
+    public static function publicActionContracts(): iterable
+    {
+        yield 'prepare' => [
+            'prepare',
+            [
+                'branch',
+                'ref',
+                'version',
+                'channel',
+                'ignore-open-backport',
+                'create-follow-up-milestone',
+                'config-path',
+                'actor',
+                'github-token',
+                'app-slug',
+                'app-private-key',
+            ],
+            [
+                'preparation-id',
+                'pull-request-number',
+                'pull-request-url',
+                'artifact-name',
+                'tool-version',
+            ],
+        ];
+        yield 'post-merge' => [
+            'post-merge',
+            [
+                'pull-request-number',
+                'merger',
+                'config-path',
+                'prepare-workflow-path',
+                'github-token',
+                'app-slug',
+                'app-private-key',
+            ],
+            [
+                'prepared-release-id',
+                'release-draft-id',
+                'github-release-id',
+                'github-release-url',
+                'state-artifact-name',
+            ],
+        ];
+        yield 'publication' => [
+            'publication',
+            [
+                'github-release-id',
+                'config-path',
+                'post-merge-workflow-path',
+                'post-merge-event',
+                'attempts',
+                'delay-seconds',
+                'github-token',
+            ],
+            [
+                'verification-id',
+                'verification-artifact-name',
+            ],
+        ];
     }
 
     /** @return iterable<string, array{string}> */
