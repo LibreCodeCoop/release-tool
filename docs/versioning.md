@@ -22,7 +22,7 @@ Public GitHub Actions use the same `VERSION` to select the PHAR release they exe
 Consumers should pin public Actions by immutable commit SHA. A readable release comment may be kept beside the pin, for example:
 
 ```yaml
-uses: LibreCodeCoop/release-tool/actions/prepare@<40-character-commit-sha> # v0.11.0
+uses: LibreCodeCoop/release-tool/actions/prepare@<40-character-commit-sha> # vX.Y.Z
 ```
 
 The pinned commit and its `VERSION` identify the product release. Organization templates may update these pins centrally and materialize the full workflow into consumers.
