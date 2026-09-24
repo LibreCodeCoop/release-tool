@@ -25,6 +25,7 @@ The normal flow has two human gates: merge the generated release preparation PR,
 
 - [Architecture](docs/architecture.md)
 - [Testing conventions](docs/testing.md)
+- [Versioning and compatibility](docs/versioning.md)
 - CLI help: `php bin/release-tool --help`
 - Security policy: https://github.com/LibreCodeCoop/.github/blob/main/SECURITY.md
 - Contributing guidance: `AGENTS.md`
