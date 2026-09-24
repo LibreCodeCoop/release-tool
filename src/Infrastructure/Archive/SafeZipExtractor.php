@@ -25,6 +25,10 @@ final class SafeZipExtractor implements ArchiveExtractor
         if (!is_dir($destination) && !mkdir($destination, 0777, true) && !is_dir($destination)) {
             throw new RuntimeException(sprintf('Could not create artifact destination: %s', $destination));
         }
+        $root = realpath($destination);
+        if ($root === false) {
+            throw new RuntimeException(sprintf('Could not resolve artifact destination: %s', $destination));
+        }
 
         try {
             $zip = new PharData($archive, 0, null, \Phar::ZIP);
@@ -42,7 +46,7 @@ final class SafeZipExtractor implements ArchiveExtractor
             if ($relative === '') {
                 continue;
             }
-            $target = $destination . '/' . $relative;
+            $target = $this->safeTarget($root, $relative);
             if ($directoryEntry) {
                 if (!is_dir($target) && !mkdir($target, 0777, true) && !is_dir($target)) {
                     throw new RuntimeException(sprintf('Could not create artifact directory: %s', $target));
@@ -69,6 +73,28 @@ final class SafeZipExtractor implements ArchiveExtractor
                 throw new RuntimeException(sprintf('Could not write artifact file: %s', $target));
             }
         }
+    }
+
+    private function safeTarget(string $root, string $relative): string
+    {
+        $current = $root;
+        foreach (explode('/', $relative) as $segment) {
+            $next = $current . '/' . $segment;
+            if (is_link($next)) {
+                throw new InvalidArgumentException(sprintf('unsafe artifact path through symlink: %s', $relative));
+            }
+
+            if (file_exists($next)) {
+                $resolved = realpath($next);
+                if ($resolved === false || ($resolved !== $root && !str_starts_with($resolved, $root . DIRECTORY_SEPARATOR))) {
+                    throw new InvalidArgumentException(sprintf('unsafe artifact path: %s', $relative));
+                }
+            }
+
+            $current = $next;
+        }
+
+        return $current;
     }
 
     /** @return list<string> */
