@@ -12,7 +12,7 @@ This repository owns the reusable PHP release engine used by LibreCode/LibreSign
 - Do not add a parallel Python release engine.
 - Consumer-specific paths and naming belong in versioned consumer configuration.
 
-Authoritative cross-repository contracts are tracked in LibreCodeCoop/github-workflows#70, #78 and #82 until fully represented here.
+Authoritative release behavior, public Action contracts, persisted schemas, and architecture are documented and tested in this repository. Organization workflow templates are maintained separately in `LibreCodeCoop/.github` and must remain orchestration-only consumers of this product.
 
 ## Generated artifacts
 
