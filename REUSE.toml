@@ -25,6 +25,7 @@ path = [
     ".php-cs-fixer.dist.php",
     "rector.php",
     "README.md",
+    "VERSION",
     "AGENTS.md",
     "bin/release-tool",
     "resources/**",
