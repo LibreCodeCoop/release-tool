@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
-use LibreCode\ReleaseTool\Infrastructure\GitHubActions\GitHubActionsEnvironment;
+use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +17,7 @@ final class StableSelectCommand extends Command
 {
     public function __construct(
         private readonly StableBranchSelector $selector,
-        private readonly GitHubActionsEnvironment $actions,
+        private readonly ActionEnvironment $actions,
     ) {
         parent::__construct();
     }
