@@ -22,6 +22,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleasePreflightCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
 use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
@@ -33,6 +34,7 @@ use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
+use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
@@ -63,6 +65,7 @@ final class ApplicationFactory
         ?NextcloudPackageValidator $packageValidator = null,
         ?ReleaseNotesGenerator $releaseNotesGenerator = null,
         ?AppStorePublicationWaiter $appStorePublicationWaiter = null,
+        ?ReleasePreflight $releasePreflight = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -136,6 +139,10 @@ final class ApplicationFactory
                 $releaseDrafter,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
+        }
+
+        if ($releasePreflight !== null) {
+            $application->add(new ReleasePreflightCommand($releasePreflight));
         }
 
         if ($planner !== null) {
