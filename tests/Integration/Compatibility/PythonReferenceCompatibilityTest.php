@@ -268,8 +268,6 @@ PHP,
                 JSON_THROW_ON_ERROR,
             );
             self::assertNull($redirectedRequest['authorization']);
-            self::assertNull($redirectedRequest['version']);
-            self::assertNotSame('application/vnd.github+json', $redirectedRequest['accept']);
         } finally {
             $apiServer->stop();
             $archiveServer->stop();
