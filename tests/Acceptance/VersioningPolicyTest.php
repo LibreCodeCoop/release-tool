@@ -26,6 +26,8 @@ final class VersioningPolicyTest extends TestCase
         self::assertStringContainsString('< VERSION', $workflow);
         self::assertStringContainsString('tag="v${version}"', $workflow);
         self::assertStringContainsString('"${tag}" != "v${version}"', $workflow);
+        self::assertStringContainsString('if ! existing_sha="$(gh api', $workflow);
+        self::assertStringContainsString('existing_sha=""', $workflow);
         self::assertStringContainsString('tag ${tag} already points to ${existing_sha}', $workflow);
         self::assertStringContainsString('gh release view "${tag}"', $workflow);
         self::assertStringContainsString('Verify embedded version', $workflow);
