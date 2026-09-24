@@ -15,15 +15,18 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
+use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
 use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
 use LibreCode\ReleaseTool\Infrastructure\AppStore\NextcloudAppStoreRepository;
 use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Infrastructure\Archive\SafeZipExtractor;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Infrastructure\Git\LocalGitRepository;
+use LibreCode\ReleaseTool\Infrastructure\Git\LocalReleaseNotesGitRepositoryFactory;
 use LibreCode\ReleaseTool\Infrastructure\Git\RemoteStableBranchSource;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubActionsArtifactRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubApiRepository;
+use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubAssociatedPullRequestRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubMilestoneRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubPublicationRepository;
 use LibreCode\ReleaseTool\Infrastructure\GitHub\GitHubReleaseDraftRepository;
@@ -73,4 +76,8 @@ exit(ApplicationFactory::create(
     GitHubActionsEnvironment::fromEnvironment(),
     new ArtifactRestorer(GitHubActionsArtifactRepository::fromEnvironment(), new SafeZipExtractor()),
     new NextcloudPackageValidator(new PharArchiveReaderFactory()),
+    new ReleaseNotesGenerator(
+        new LocalReleaseNotesGitRepositoryFactory(),
+        GitHubAssociatedPullRequestRepository::fromEnvironment(),
+    ),
 )->run());

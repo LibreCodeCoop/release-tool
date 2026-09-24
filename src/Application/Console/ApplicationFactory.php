@@ -19,6 +19,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand
 use LibreCode\ReleaseTool\Application\Console\Command\PublicationVerifyCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
@@ -33,6 +34,7 @@ use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
+use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
 use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
 use Symfony\Component\Console\Application;
 
@@ -57,6 +59,7 @@ final class ApplicationFactory
         ?ActionEnvironment $actionEnvironment = null,
         ?ArtifactRestorer $artifactRestorer = null,
         ?NextcloudPackageValidator $packageValidator = null,
+        ?ReleaseNotesGenerator $releaseNotesGenerator = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -79,6 +82,10 @@ final class ApplicationFactory
 
         if ($packageValidator !== null) {
             $application->add(new ArtifactValidatePackageCommand($packageValidator));
+        }
+
+        if ($releaseNotesGenerator !== null && $actionEnvironment !== null) {
+            $application->add(new ReleaseNotesCommand($releaseNotesGenerator, $actionEnvironment));
         }
 
         if ($artifactValidator !== null) {
