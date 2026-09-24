@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Integration\Compatibility;
 
+use LibreCode\ReleaseTool\Tests\Support\Compatibility\PythonReferenceTarget;
+use LibreCode\ReleaseTool\Tests\Support\Compatibility\ReleaseCompatibilityTarget;
 use PharData;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
@@ -42,9 +44,11 @@ echo json_encode(['permission' => 'maintain']);
 PHP);
 
         try {
-            $process = $this->python(
-                'check_release_authorization.py',
-                ['--repository', 'LibreSign/libresign', '--actor', 'alice', '--minimum', 'write', '--api-url', $apiUrl],
+            $process = $this->target()->checkAuthorization(
+                'LibreSign/libresign',
+                'alice',
+                'write',
+                $apiUrl,
                 ['GITHUB_TOKEN' => 'test-token'],
             );
 
@@ -77,9 +81,11 @@ echo '{}';
 PHP);
 
         try {
-            $process = $this->python(
-                'check_release_authorization.py',
-                ['--repository', 'LibreSign/libresign', '--actor', 'outsider', '--minimum', 'read', '--api-url', $apiUrl],
+            $process = $this->target()->checkAuthorization(
+                'LibreSign/libresign',
+                'outsider',
+                'read',
+                $apiUrl,
                 ['GITHUB_TOKEN' => 'test-token'],
             );
 
@@ -112,12 +118,10 @@ SH);
 
         $output = $root . '/output';
         $summary = $root . '/summary';
-        $process = $this->python(
-            'release_stable_select.py',
-            [],
+        $process = $this->target()->selectStable(
+            'LibreSign/libresign',
+            'stable15',
             [
-                'INPUT_REPOSITORY' => 'LibreSign/libresign',
-                'INPUT_BRANCH' => 'stable15',
                 'GITHUB_OUTPUT' => $output,
                 'GITHUB_STEP_SUMMARY' => $summary,
                 'PATH' => $bin . PATH_SEPARATOR . (getenv('PATH') ?: ''),
@@ -143,10 +147,7 @@ SH);
             'libresign/CHANGELOG.md' => '# Changelog',
         ]);
 
-        $process = $this->python(
-            'validate_release_artifact.py',
-            ['--artifact', $tar, '--app-name', 'libresign', '--version', '15.0.4'],
-        );
+        $process = $this->target()->validateArtifact($tar, 'libresign', '15.0.4');
 
         self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
         self::assertStringContainsString('Validated release artifact:', $process->getOutput());
@@ -158,10 +159,7 @@ SH);
         $tar = $root . '/unsafe.tar.gz';
         $this->createUnsafeTarGz($tar);
 
-        $process = $this->python(
-            'validate_release_artifact.py',
-            ['--artifact', $tar, '--app-name', 'libresign', '--version', '15.0.4'],
-        );
+        $process = $this->target()->validateArtifact($tar, 'libresign', '15.0.4');
 
         self::assertSame(2, $process->getExitCode());
         self::assertStringContainsString('unsafe archive path: ../evil.txt', $process->getErrorOutput());
@@ -170,16 +168,16 @@ SH);
     public function testReleaseNotesRejectsInvalidFallbackLimitBeforeGitOrHttp(): void
     {
         $root = $this->temporaryDirectory('release-notes-');
-        $process = $this->python(
-            'release_notes_from_pull_requests.py',
-            [],
-            [
-                'RELEASE_NOTES_GITHUB_TOKEN' => 'test-token',
-                'RELEASE_NOTES_REPOSITORY' => 'LibreSign/libresign',
-                'RELEASE_NOTES_BRANCH' => 'stable15',
-                'RELEASE_NOTES_WORKING_DIRECTORY' => $root,
-                'RELEASE_NOTES_FALLBACK_LIMIT' => '0',
-            ],
+        $process = $this->target()->releaseNotes(
+            'LibreSign/libresign',
+            'stable15',
+            $root,
+            'https://api.github.test',
+            'https://github.test',
+            '',
+            'HEAD',
+            0,
+            ['RELEASE_NOTES_GITHUB_TOKEN' => 'test-token'],
         );
 
         self::assertSame(1, $process->getExitCode());
@@ -241,17 +239,14 @@ PHP,
 
         try {
             $destination = $root . '/restored';
-            $process = $this->python(
-                'restore_release_artifact.py',
-                [
-                    '--repository', 'LibreSign/libresign',
-                    '--name', 'release-package',
-                    '--expected-head-sha', str_repeat('a', 40),
-                    '--destination', $destination,
-                    '--expected-event', 'workflow_dispatch',
-                    '--expected-workflow-path', '.github/workflows/build.yml',
-                    '--api-url', $apiUrl,
-                ],
+            $process = $this->target()->restoreArtifact(
+                'LibreSign/libresign',
+                'release-package',
+                str_repeat('a', 40),
+                $destination,
+                $apiUrl,
+                'workflow_dispatch',
+                '.github/workflows/build.yml',
                 ['GITHUB_TOKEN' => 'top-secret-test-token'],
             );
 
@@ -308,16 +303,13 @@ PHP,
         );
 
         try {
-            $process = $this->python(
-                'restore_release_artifact.py',
-                [
-                    '--repository', 'LibreSign/libresign',
-                    '--name', 'unsafe-package',
-                    '--expected-head-sha', str_repeat('b', 40),
-                    '--destination', $root . '/restored',
-                    '--api-url', $apiUrl,
-                ],
-                ['GITHUB_TOKEN' => 'test-token'],
+            $process = $this->target()->restoreArtifact(
+                'LibreSign/libresign',
+                'unsafe-package',
+                str_repeat('b', 40),
+                $root . '/restored',
+                $apiUrl,
+                environment: ['GITHUB_TOKEN' => 'test-token'],
             );
 
             self::assertNotSame(0, $process->getExitCode());
@@ -381,18 +373,17 @@ PHP);
             $output = $root . '/output';
             $runnerTemp = $root . '/runner';
             mkdir($runnerTemp);
-            $process = $this->python(
-                'release_notes_from_pull_requests.py',
-                [],
+            $process = $this->target()->releaseNotes(
+                'LibreSign/libresign',
+                'stable15',
+                $root,
+                $apiUrl,
+                'https://github.example.test',
+                'v15.0.3',
+                'HEAD',
+                10,
                 [
                     'RELEASE_NOTES_GITHUB_TOKEN' => 'test-token',
-                    'RELEASE_NOTES_REPOSITORY' => 'LibreSign/libresign',
-                    'RELEASE_NOTES_BRANCH' => 'stable15',
-                    'RELEASE_NOTES_WORKING_DIRECTORY' => $root,
-                    'RELEASE_NOTES_FROM_REF' => 'v15.0.3',
-                    'RELEASE_NOTES_TO_REF' => 'HEAD',
-                    'GITHUB_SERVER_URL' => 'https://github.example.test',
-                    'GITHUB_API_URL' => $apiUrl,
                     'GITHUB_OUTPUT' => $output,
                     'RUNNER_TEMP' => $runnerTemp,
                     'PATH' => $bin . PATH_SEPARATOR . (getenv('PATH') ?: ''),
@@ -420,13 +411,9 @@ PHP);
         }
     }
 
-    private function python(string $script, array $arguments, array $environment = []): Process
+    private function target(): ReleaseCompatibilityTarget
     {
-        $path = dirname(__DIR__, 2) . '/Fixtures/PythonReference/' . $script;
-        $process = new Process(['python3', $path, ...$arguments], null, $environment);
-        $process->run();
-
-        return $process;
+        return new PythonReferenceTarget(dirname(__DIR__, 2) . '/Fixtures/PythonReference');
     }
 
     /**
