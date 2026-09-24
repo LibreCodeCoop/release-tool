@@ -120,11 +120,11 @@ Install these templates from `LibreCodeCoop/.github`:
 - `prepare-release.yml` for the release lifecycle;
 - `sync-workflow-templates.yml` to keep managed workflows current.
 
-Configure the updater authentication described by `LibreCodeCoop/github-workflows`, then run **Update workflows** once and review its pull request. The updater subsequently runs weekly and can be dispatched manually.
+Configure the updater authentication documented by `LibreCodeCoop/.github`, then run **Update workflows** once and review its pull request. The updater subsequently runs weekly and can be dispatched manually.
 
 The release GitHub App needs **Contents: write** and **Pull requests: write**. A GitHub App used by the workflow updater additionally needs **Workflows: write**.
 
-See [GitHub Actions integration](github-actions.md) for the release workflow and [Configuring the GitHub App](github-app.md) for release credentials. The workflow updater is documented in the [shared workflow adoption guide](https://github.com/LibreCodeCoop/github-workflows/blob/main/docs/cross-repository-automation.md).
+See [GitHub Actions integration](github-actions.md) for the release workflow and [Configuring the GitHub App](github-app.md) for release credentials. The workflow updater is documented in the [shared workflow adoption guide](https://github.com/LibreCodeCoop/.github/blob/main/docs/cross-repository-automation.md).
 
 ### 5. Run a non-production proof
 
