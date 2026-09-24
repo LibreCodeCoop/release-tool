@@ -13,20 +13,20 @@ final class AppStorePublicationWaiterTest extends TestCase
 {
     public function testReturnsWhenReleaseBecomesVisible(): void
     {
-        $calls = 0;
+        $state = (object) ['calls' => 0];
         $sleeps = [];
-        $repository = new class($calls) implements AppStoreRepository {
-            public function __construct(private int &$calls)
+        $repository = new class($state) implements AppStoreRepository {
+            public function __construct(private object $state)
             {
             }
 
             public function hasRelease(string $apiUrl, string $appId, string $version): bool
             {
-                ++$this->calls;
+                ++$this->state->calls;
                 TestCase::assertSame('https://example.invalid/apps.json', $apiUrl);
                 TestCase::assertSame('example', $appId);
                 TestCase::assertSame('1.2.3', $version);
-                return $this->calls === 3;
+                return $this->state->calls === 3;
             }
         };
 
@@ -39,7 +39,7 @@ final class AppStorePublicationWaiterTest extends TestCase
 
         $waiter->wait('https://example.invalid/apps.json', 'example', '1.2.3', 3, 7);
 
-        self::assertSame(3, $calls);
+        self::assertSame(3, $state->calls);
         self::assertSame([7, 7], $sleeps);
     }
 
