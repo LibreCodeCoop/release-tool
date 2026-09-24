@@ -186,6 +186,184 @@ SH);
         self::assertStringContainsString('::error::fallback-limit must be greater than zero', $process->getOutput());
     }
 
+    public function testArtifactRestoreValidatesRunAndStripsCredentialsOnRedirect(): void
+    {
+        $root = $this->temporaryDirectory('artifact-restore-');
+        $zip = $root . '/artifact.zip';
+        $this->createZip($zip, ['payload/release.json' => '{"version":"15.0.4"}']);
+
+        [$archiveServer, $archiveUrl, $archiveLog] = $this->startServer(
+            <<<'PHP'
+<?php
+file_put_contents(getenv('REQUEST_LOG'), json_encode([
+    'authorization' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+    'accept' => $_SERVER['HTTP_ACCEPT'] ?? null,
+    'version' => $_SERVER['HTTP_X_GITHUB_API_VERSION'] ?? null,
+]) . PHP_EOL, FILE_APPEND);
+header('Content-Type: application/zip');
+readfile(getenv('ARCHIVE_FILE'));
+PHP,
+            ['ARCHIVE_FILE' => $zip],
+        );
+
+        [$apiServer, $apiUrl] = $this->startServer(
+            <<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+header('Content-Type: application/json');
+if ($path === '/repos/LibreSign/libresign/actions/artifacts') {
+    echo json_encode(['artifacts' => [[
+        'id' => 11,
+        'name' => 'release-package',
+        'expired' => false,
+        'created_at' => '2026-09-23T12:00:00Z',
+        'archive_download_url' => getenv('ARCHIVE_URL'),
+        'workflow_run' => ['id' => 22, 'head_sha' => str_repeat('a', 40)],
+    ]]]);
+    return;
+}
+if ($path === '/repos/LibreSign/libresign/actions/runs/22') {
+    echo json_encode([
+        'event' => 'workflow_dispatch',
+        'path' => '.github/workflows/build.yml',
+    ]);
+    return;
+}
+http_response_code(404);
+echo '{}';
+PHP,
+            ['ARCHIVE_URL' => $archiveUrl . '/artifact.zip'],
+        );
+
+        try {
+            $destination = $root . '/restored';
+            $process = $this->python(
+                'restore_release_artifact.py',
+                [
+                    '--repository', 'LibreSign/libresign',
+                    '--name', 'release-package',
+                    '--expected-head-sha', str_repeat('a', 40),
+                    '--destination', $destination,
+                    '--expected-event', 'workflow_dispatch',
+                    '--expected-workflow-path', '.github/workflows/build.yml',
+                    '--api-url', $apiUrl,
+                ],
+                ['GITHUB_TOKEN' => 'top-secret-test-token'],
+            );
+
+            self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+            self::assertSame('{"version":"15.0.4"}', file_get_contents($destination . '/payload/release.json'));
+            $payload = json_decode(trim($process->getOutput()), true, 512, JSON_THROW_ON_ERROR);
+            self::assertSame(11, $payload['artifact_id']);
+            self::assertSame(22, $payload['workflow_run_id']);
+
+            $redirectedRequest = json_decode(
+                trim((string) file_get_contents($archiveLog)),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+            self::assertNull($redirectedRequest['authorization']);
+            self::assertNull($redirectedRequest['version']);
+            self::assertNotSame('application/vnd.github+json', $redirectedRequest['accept']);
+        } finally {
+            $apiServer->stop();
+            $archiveServer->stop();
+        }
+    }
+
+    public function testReleaseNotesPreferPullRequestsDeduplicateAndSanitizeContributorText(): void
+    {
+        $root = $this->temporaryDirectory('release-notes-success-');
+        $bin = $root . '/bin';
+        mkdir($bin);
+        $git = $bin . '/git';
+        file_put_contents($git, <<<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+if [ "$1" = "rev-list" ]; then
+    printf '%s\n' sha1111111111111111111111111111111111111 sha2222222222222222222222222222222222222 sha3333333333333333333333333333333333333
+    exit 0
+fi
+if [ "$1" = "show" ]; then
+    case "${4:-}" in
+        sha3333333333333333333333333333333333333) printf '%s\n' 'direct @bob _change_' ;;
+        *) printf '%s\n' 'unused subject' ;;
+    esac
+    exit 0
+fi
+exit 2
+SH);
+        chmod($git, 0755);
+
+        [$server, $apiUrl] = $this->startServer(<<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+header('Content-Type: application/json');
+if (str_contains($path, '/sha1111111111111111111111111111111111111/pulls')) {
+    echo json_encode([[
+        'number' => 10,
+        'title' => 'Fix @alice *release*',
+        'merged_at' => '2026-09-23T10:00:00Z',
+        'base' => ['ref' => 'stable15'],
+    ]]);
+    return;
+}
+if (str_contains($path, '/sha2222222222222222222222222222222222222/pulls')) {
+    echo json_encode([[
+        'number' => 10,
+        'title' => 'Fix @alice *release*',
+        'merged_at' => '2026-09-23T10:00:00Z',
+        'base' => ['ref' => 'stable15'],
+    ]]);
+    return;
+}
+echo '[]';
+PHP);
+
+        try {
+            $output = $root . '/output';
+            $runnerTemp = $root . '/runner';
+            mkdir($runnerTemp);
+            $process = $this->python(
+                'release_notes_from_pull_requests.py',
+                [],
+                [
+                    'RELEASE_NOTES_GITHUB_TOKEN' => 'test-token',
+                    'RELEASE_NOTES_REPOSITORY' => 'LibreSign/libresign',
+                    'RELEASE_NOTES_BRANCH' => 'stable15',
+                    'RELEASE_NOTES_WORKING_DIRECTORY' => $root,
+                    'RELEASE_NOTES_FROM_REF' => 'v15.0.3',
+                    'RELEASE_NOTES_TO_REF' => 'HEAD',
+                    'GITHUB_SERVER_URL' => 'https://github.example.test',
+                    'GITHUB_API_URL' => $apiUrl,
+                    'GITHUB_OUTPUT' => $output,
+                    'RUNNER_TEMP' => $runnerTemp,
+                    'PATH' => $bin . PATH_SEPARATOR . (getenv('PATH') ?: ''),
+                ],
+            );
+
+            self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+            self::assertStringContainsString('Generated 2 change entries (1 pull requests, 1 direct commits).', $process->getOutput());
+
+            $outputs = [];
+            foreach (file($output, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                [$name, $value] = explode('=', $line, 2);
+                $outputs[$name] = $value;
+            }
+            self::assertSame('2', $outputs['change-count']);
+            self::assertSame('1', $outputs['pull-request-count']);
+            self::assertSame('1', $outputs['commit-fallback-count']);
+
+            $changes = (string) file_get_contents($outputs['changes-file']);
+            self::assertStringContainsString('- Fix @​alice \\*release\\* ([#10](https://github.example.test/LibreSign/libresign/pull/10))', $changes);
+            self::assertStringContainsString('- direct @​bob \\_change\\_ (`sha3333`)', $changes);
+            self::assertSame(2, substr_count($changes, PHP_EOL));
+        } finally {
+            $server->stop();
+        }
+    }
+
     private function python(string $script, array $arguments, array $environment = []): Process
     {
         $path = dirname(__DIR__, 2) . '/Fixtures/PythonReference/' . $script;
@@ -198,7 +376,7 @@ SH);
     /**
      * @return array{0: Process, 1: string, 2?: string}
      */
-    private function startServer(string $router): array
+    private function startServer(string $router, array $environment = []): array
     {
         $root = $this->temporaryDirectory('fake-github-');
         $routerPath = $root . '/router.php';
@@ -210,7 +388,7 @@ SH);
             $process = new Process(
                 ['php', '-S', '127.0.0.1:' . $port, $routerPath],
                 $root,
-                ['REQUEST_LOG' => $log],
+                ['REQUEST_LOG' => $log] + $environment,
             );
             $process->start();
 
@@ -242,6 +420,26 @@ SH);
         $archive->compress(\\Phar::GZ);
         unset($archive);
         @unlink($tar);
+    }
+
+    /**
+     * @param array<string, string> $files
+     */
+    private function createZip(string $path, array $files): void
+    {
+        $payload = json_encode($files, JSON_THROW_ON_ERROR);
+        $code = <<<'PY'
+import json
+import sys
+import zipfile
+
+files = json.loads(sys.argv[2])
+with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as archive:
+    for name, content in files.items():
+        archive.writestr(name, content)
+PY;
+        $process = new Process(['python3', '-c', $code, $path, $payload]);
+        $process->mustRun();
     }
 
     private function createUnsafeTarGz(string $path): void
