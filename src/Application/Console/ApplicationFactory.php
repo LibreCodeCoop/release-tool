@@ -19,8 +19,8 @@ use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand
 use LibreCode\ReleaseTool\Application\Console\Command\PublicationVerifyCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
-use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
 use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
