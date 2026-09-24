@@ -77,7 +77,7 @@ final readonly class ReleasePreflight
             'version' => $version,
             'stable_branch' => $stableBranch,
             'repository' => $repository,
-            'ready' => array_all($checks, static fn (array $check): bool => $check['ok']),
+            'ready' => !in_array(false, array_column($checks, 'ok'), true),
             'checks' => $checks,
         ];
     }
