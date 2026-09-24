@@ -31,6 +31,12 @@ final class PythonReferenceCompatibilityTest extends TestCase
         ];
     }
 
+    /** @return iterable<string, array{ReleaseCompatibilityTarget}> */
+    public static function artifactTargets(): iterable
+    {
+        yield from self::authorizationAndStableTargets();
+    }
+
     protected function tearDown(): void
     {
         foreach (array_reverse($this->paths) as $path) {
@@ -180,7 +186,8 @@ SH);
         self::assertStringContainsString('- Publish nightly: `true`', (string) file_get_contents($summary));
     }
 
-    public function testArtifactValidationAcceptsMatchingNextcloudArchive(): void
+    #[DataProvider('artifactTargets')]
+    public function testArtifactValidationAcceptsMatchingNextcloudArchive(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('artifact-valid-');
         $tar = $root . '/libresign-v15.0.4.tar.gz';
@@ -189,22 +196,23 @@ SH);
             'libresign/CHANGELOG.md' => '# Changelog',
         ]);
 
-        $process = $this->target()->validateArtifact($tar, 'libresign', '15.0.4');
+        $process = $target->validateArtifact($tar, 'libresign', '15.0.4');
 
         self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
         self::assertStringContainsString('Validated release artifact:', $process->getOutput());
     }
 
-    public function testArtifactValidationRejectsTraversal(): void
+    #[DataProvider('artifactTargets')]
+    public function testArtifactValidationRejectsTraversal(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('artifact-traversal-');
         $tar = $root . '/unsafe.tar.gz';
         $this->createUnsafeTarGz($tar);
 
-        $process = $this->target()->validateArtifact($tar, 'libresign', '15.0.4');
+        $process = $target->validateArtifact($tar, 'libresign', '15.0.4');
 
         self::assertSame(2, $process->getExitCode());
-        self::assertStringContainsString('unsafe archive path: ../evil.txt', $process->getErrorOutput());
+        self::assertStringContainsStringIgnoringCase('unsafe archive path: ../evil.txt', $process->getErrorOutput());
     }
 
     public function testReleaseNotesRejectsInvalidFallbackLimitBeforeGitOrHttp(): void
@@ -226,7 +234,8 @@ SH);
         self::assertStringContainsString('::error::fallback-limit must be greater than zero', $process->getOutput());
     }
 
-    public function testArtifactRestoreValidatesRunAndStripsCredentialsOnRedirect(): void
+    #[DataProvider('artifactTargets')]
+    public function testArtifactRestoreValidatesRunAndStripsCredentialsOnRedirect(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('artifact-restore-');
         $zip = $root . '/artifact.zip';
@@ -281,7 +290,7 @@ PHP,
 
         try {
             $destination = $root . '/restored';
-            $process = $this->target()->restoreArtifact(
+            $process = $target->restoreArtifact(
                 'LibreSign/libresign',
                 'release-package',
                 str_repeat('a', 40),
@@ -311,7 +320,8 @@ PHP,
         }
     }
 
-    public function testArtifactRestoreRejectsZipTraversal(): void
+    #[DataProvider('artifactTargets')]
+    public function testArtifactRestoreRejectsZipTraversal(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('artifact-restore-traversal-');
         $zip = $root . '/unsafe.zip';
@@ -345,7 +355,7 @@ PHP,
         );
 
         try {
-            $process = $this->target()->restoreArtifact(
+            $process = $target->restoreArtifact(
                 'LibreSign/libresign',
                 'unsafe-package',
                 str_repeat('b', 40),
