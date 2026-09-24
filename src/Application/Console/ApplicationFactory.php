@@ -9,6 +9,7 @@ use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Artifact\NextcloudPackageValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
+use LibreCode\ReleaseTool\Application\Console\Command\AppStorePublicationWaitCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactRestoreCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidatePackageCommand;
@@ -24,6 +25,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
 use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
+use LibreCode\ReleaseTool\Application\Publication\AppStorePublicationWaiter;
 use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
@@ -60,6 +62,7 @@ final class ApplicationFactory
         ?ArtifactRestorer $artifactRestorer = null,
         ?NextcloudPackageValidator $packageValidator = null,
         ?ReleaseNotesGenerator $releaseNotesGenerator = null,
+        ?AppStorePublicationWaiter $appStorePublicationWaiter = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -93,6 +96,10 @@ final class ApplicationFactory
                 $artifactValidator,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
+        }
+
+        if ($appStorePublicationWaiter !== null) {
+            $application->add(new AppStorePublicationWaitCommand($appStorePublicationWaiter));
         }
 
         if ($publicationVerifier !== null) {
