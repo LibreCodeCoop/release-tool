@@ -15,17 +15,21 @@ final readonly class GitHubRepositoryPermissionLookup implements RepositoryPermi
 {
     private HttpClientInterface $client;
 
+    private bool $hasToken;
+
     public function __construct(
         ?string $token = null,
         ?HttpClientInterface $client = null,
         string $apiUrl = 'https://api.github.com',
     ) {
+        $this->hasToken = $token !== null && trim($token) !== '';
+
         $headers = [
             'Accept' => 'application/vnd.github+json',
             'X-GitHub-Api-Version' => '2022-11-28',
             'User-Agent' => 'LibreCode-release-tool',
         ];
-        if ($token !== null && trim($token) !== '') {
+        if ($this->hasToken) {
             $headers['Authorization'] = 'Bearer ' . $token;
         }
 
@@ -45,6 +49,9 @@ final readonly class GitHubRepositoryPermissionLookup implements RepositoryPermi
 
     public function permission(string $repository, string $actor): RepositoryPermission
     {
+        if (!$this->hasToken) {
+            throw new InvalidArgumentException('GitHub token must not be empty.');
+        }
         if (preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository) !== 1) {
             throw new InvalidArgumentException('Repository must use owner/name form.');
         }
