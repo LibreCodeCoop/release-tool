@@ -33,12 +33,12 @@ final class StableSelectCommand extends Command
     {
         $repository = trim($input->getOption('repository') ?? '');
         if ($repository === '') {
-            $repository = trim((string) (getenv('GITHUB_REPOSITORY') ?: ''));
+            $repository = trim(getenv('GITHUB_REPOSITORY') ?: '');
         }
 
         $branch = trim($input->getOption('branch') ?? '');
         if ($branch === '') {
-            $branch = trim((string) (getenv('GITHUB_REF_NAME') ?: ''));
+            $branch = trim(getenv('GITHUB_REF_NAME') ?: '');
         }
 
         if ($repository === '') {
