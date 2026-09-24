@@ -54,8 +54,13 @@ final class AppStorePublicationWaitCommand extends Command
     private function normalizePlatform(string $platform): string
     {
         $parts = explode('.', trim($platform));
-        if ($parts === [] || count($parts) > 3 || array_any($parts, static fn (string $part): bool => $part === '' || !ctype_digit($part))) {
+        if ($parts === [] || count($parts) > 3) {
             throw new \DomainException(sprintf('Invalid Nextcloud platform version: %s', $platform));
+        }
+        foreach ($parts as $part) {
+            if ($part === '' || !ctype_digit($part)) {
+                throw new \DomainException(sprintf('Invalid Nextcloud platform version: %s', $platform));
+            }
         }
 
         while (count($parts) < 3) {
