@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # GitHub Actions integration
 
-The recommended integration uses the tested composite actions published by `LibreCodeCoop/github-workflows`.
+The recommended integration uses the tested composite actions published by `LibreCodeCoop/release-tool`.
 
 The consumer workflow should orchestrate release stages, not reimplement release policy.
 
@@ -25,7 +25,7 @@ The reusable actions accept the App slug and private key; the default LibreCode 
 
 Use the managed `prepare-release.yml` template instead of maintaining a private copy of the orchestration. Install `sync-workflow-templates.yml` beside it so updates to managed workflows arrive as reviewable pull requests.
 
-The updater has its own authentication contract and needs **Workflows: write** in addition to Contents and Pull requests write access. Those permissions are not required by the release App itself. See the [workflow synchronization guide](https://github.com/LibreCodeCoop/github-workflows/blob/main/docs/cross-repository-automation.md).
+The updater has its own authentication contract and needs **Workflows: write** in addition to Contents and Pull requests write access. Those permissions are not required by the release App itself. See the [workflow synchronization guide](https://github.com/LibreCodeCoop/.github/blob/main/docs/cross-repository-automation.md).
 
 ## Consumer workflow shape
 
@@ -47,9 +47,9 @@ Do not run mutation logic for arbitrary pull requests.
 
 The main building blocks are:
 
-- `actions/release-prepare`;
-- `actions/release-post-merge`;
-- `actions/release-publication`.
+- `actions/prepare`;
+- `actions/post-merge`;
+- `actions/publication`.
 
 Pin them to an immutable commit SHA and keep a comment with the corresponding release version.
 
@@ -93,4 +93,4 @@ These properties are part of the reference integration and should not be weakene
 
 ## Reference
 
-The managed template in `LibreCodeCoop/github-workflows` is the integration source of truth. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should match that contract.
+`LibreCodeCoop/release-tool` is the source of truth for release behavior and the three public lifecycle Actions. `LibreCodeCoop/.github` owns LibreCode's managed workflow templates that orchestrate those Actions. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should be materialized from that catalog rather than becoming a second implementation.
