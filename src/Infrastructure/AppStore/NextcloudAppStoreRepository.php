@@ -35,7 +35,10 @@ final readonly class NextcloudAppStoreRepository implements AppStoreRepository
         if ($status < 200 || $status >= 300) {
             throw new DomainException(sprintf('Nextcloud App Store API request failed (%d).', $status));
         }
-        $apps = $response->toArray(false);
+        $payload = $response->toArray(false);
+        $apps = isset($payload['data']) && is_array($payload['data'])
+            ? $payload['data']
+            : $payload;
 
         foreach ($apps as $app) {
             if (!is_array($app) || ($app['id'] ?? null) !== $appId) {
