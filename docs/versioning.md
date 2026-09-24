@@ -25,7 +25,7 @@ Consumers should pin public Actions by immutable commit SHA. A readable release 
 uses: LibreCodeCoop/release-tool/actions/prepare@<40-character-commit-sha> # vX.Y.Z
 ```
 
-The pinned commit and its `VERSION` identify the product release. Organization templates may update these pins centrally and materialize the full workflow into consumers.
+Consumers should pin the immutable commit referenced by a published release tag. That tagged commit and its `VERSION` identify the product release. A development commit that merely carries the same `VERSION` is not a published release. Organization templates may update these pins centrally and materialize the full workflow into consumers.
 
 ## Compatibility policy
 
