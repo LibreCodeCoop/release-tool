@@ -321,6 +321,72 @@ PHP,
     }
 
     #[DataProvider('artifactTargets')]
+    public function testArtifactRestoreRejectsPreexistingSymlinkEscape(ReleaseCompatibilityTarget $target): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            self::markTestSkipped('Symlink fixture is Unix-oriented.');
+        }
+
+        $root = $this->temporaryDirectory('artifact-restore-symlink-');
+        $outside = $this->temporaryDirectory('artifact-restore-outside-');
+        $destination = $root . '/restored';
+        mkdir($destination);
+        self::assertTrue(symlink($outside, $destination . '/link'));
+
+        $zip = $root . '/symlink-escape.zip';
+        $this->createZip($zip, ['link/evil.txt' => 'evil']);
+
+        [$archiveServer, $archiveUrl] = $this->startServer(
+            <<<'PHP'
+<?php
+header('Content-Type: application/zip');
+readfile(getenv('ARCHIVE_FILE'));
+PHP,
+            ['ARCHIVE_FILE' => $zip],
+        );
+
+        [$apiServer, $apiUrl] = $this->startServer(
+            <<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+header('Content-Type: application/json');
+if ($path === '/repos/LibreSign/libresign/actions/artifacts') {
+    echo json_encode(['artifacts' => [[
+        'id' => 31,
+        'name' => 'symlink-package',
+        'expired' => false,
+        'created_at' => '2026-09-23T12:00:00Z',
+        'archive_download_url' => getenv('ARCHIVE_URL'),
+        'workflow_run' => ['id' => 32, 'head_sha' => str_repeat('c', 40)],
+    ]]]);
+    return;
+}
+echo '{}';
+PHP,
+            ['ARCHIVE_URL' => $archiveUrl . '/artifact.zip'],
+        );
+
+        try {
+            $process = $target->restoreArtifact(
+                'LibreSign/libresign',
+                'symlink-package',
+                str_repeat('c', 40),
+                $destination,
+                null,
+                null,
+                $apiUrl,
+                ['GITHUB_TOKEN' => 'test-token'],
+            );
+
+            self::assertSame(2, $process->getExitCode());
+            self::assertFileDoesNotExist($outside . '/evil.txt');
+        } finally {
+            $apiServer->stop();
+            $archiveServer->stop();
+        }
+    }
+
+    #[DataProvider('artifactTargets')]
     public function testArtifactRestoreRejectsZipTraversal(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('artifact-restore-traversal-');
