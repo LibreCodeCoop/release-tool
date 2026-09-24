@@ -50,7 +50,7 @@ final readonly class PhpReleaseToolTarget implements ReleaseCompatibilityTarget
             'artifact:validate-package',
             '--artifact', $artifact,
             '--app-name', $appName,
-            '--version', $version,
+            '--expected-version', $version,
         ], $environment);
     }
 
