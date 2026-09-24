@@ -40,12 +40,12 @@ After 1.0, semantic versioning applies normally:
 Public compatibility covers:
 
 - the documented CLI behavior used by consumers;
-- inputs and outputs of `actions/prepare`, `actions/post-merge`, and `actions/publication`;
+- inputs and outputs of every documented public Action under `actions/`, including lifecycle and purpose-specific Actions;
 - persisted release contracts whose schema is documented and consumed across lifecycle stages.
 
 Internal PHP classes, private scripts under `actions/_internal`, and implementation details are not public APIs.
 
-A change to a public Action input/output or persisted contract must update tests and documentation in the same change. Internal helper refactors do not create a supported public Action path.
+A change to a public Action input/output or persisted contract must update tests and documentation in the same change. The explicit public Action surface is tested by the acceptance suite; directories under `actions/_internal` remain implementation details and are not supported integration paths.
 
 ## Release procedure
 
