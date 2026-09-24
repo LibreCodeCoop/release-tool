@@ -1,0 +1,301 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Prepare release
+description: Build a ReleasePlan v1, authorize the actor, create or reuse the deterministic release PR and persist its contracts.
+
+inputs:
+  branch:
+    description: Release branch to prepare.
+    required: true
+  ref:
+    description: Optional planning ref or commit SHA.
+    required: false
+    default: ''
+  version:
+    description: Optional explicit release version override.
+    required: false
+    default: ''
+  channel:
+    description: Release channel (alpha, beta, rc or final).
+    required: false
+    default: final
+  ignore-open-backport:
+    description: Explicitly override matching open backport blockers.
+    required: false
+    default: 'false'
+  create-follow-up-milestone:
+    description: Preserve the maintainer decision for post-merge milestone transition.
+    required: false
+    default: 'false'
+  config-path:
+    description: Consumer release configuration path.
+    required: false
+    default: .nextcloud-release.yml
+  actor:
+    description: GitHub login that requested mutating release preparation.
+    required: true
+  github-token:
+    description: Read-only caller token used for planning and permission lookup.
+    required: true
+  app-slug:
+    description: Public GitHub App slug used to resolve its client id.
+    required: false
+    default: librecode-workflow-automation
+  app-private-key:
+    description: GitHub App private key used for the short-lived mutation token.
+    required: true
+
+outputs:
+  preparation-id:
+    description: ReleasePreparation v1 id.
+    value: ${{ steps.prepare.outputs.preparation-id }}
+  pull-request-number:
+    description: Generated release pull request number.
+    value: ${{ steps.prepare.outputs.pull-request-number }}
+  pull-request-url:
+    description: Generated release pull request URL.
+    value: ${{ steps.prepare.outputs.pull-request-url }}
+  artifact-name:
+    description: Deterministic Actions artifact containing ReleasePlan v1 and ReleasePreparation v1.
+    value: ${{ steps.prepare.outputs.artifact-name }}
+  tool-version:
+    description: Exact release-tool version used.
+    value: ${{ steps.setup.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate GitHub App credentials
+      shell: bash
+      env:
+        RELEASE_APP_SLUG: ${{ inputs.app-slug }}
+        RELEASE_APP_PRIVATE_KEY: ${{ inputs.app-private-key }}
+      run: |
+        set -euo pipefail
+        if [[ -z "${RELEASE_APP_SLUG}" ]]; then
+          echo "::error::GitHub App slug is empty."
+          exit 1
+        fi
+        if [[ -z "${RELEASE_APP_PRIVATE_KEY}" ]]; then
+          echo "::error::GitHub App private key is empty. Configure LIBRECODE_WORKFLOW_APP_PRIVATE_KEY as an Actions secret in the consumer repository or organization."
+          exit 1
+        fi
+
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: plan
+      name: Build release plan
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_TOOL_VERSION: ${{ steps.setup.outputs.version }}
+        RELEASE_BRANCH: ${{ inputs.branch }}
+        RELEASE_REF: ${{ inputs.ref }}
+        RELEASE_VERSION: ${{ inputs.version }}
+        RELEASE_CHANNEL: ${{ inputs.channel }}
+        RELEASE_IGNORE_OPEN_BACKPORT: ${{ inputs.ignore-open-backport }}
+        RELEASE_CREATE_FOLLOW_UP_MILESTONE: ${{ inputs.create-follow-up-milestone }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+      run: |
+        set -euo pipefail
+        args=(
+          release:plan
+          --config "${RELEASE_CONFIG_PATH}"
+          --root .
+          --branch "${RELEASE_BRANCH}"
+          --channel "${RELEASE_CHANNEL}"
+          --json
+        )
+        if [[ -n "${RELEASE_REF}" ]]; then
+          args+=(--ref "${RELEASE_REF}")
+        fi
+        if [[ -n "${RELEASE_VERSION}" ]]; then
+          args+=(--release-version "${RELEASE_VERSION}")
+        fi
+        if [[ "${RELEASE_IGNORE_OPEN_BACKPORT}" == "true" ]]; then
+          args+=(--ignore-open-backport)
+        fi
+        if [[ "${RELEASE_CREATE_FOLLOW_UP_MILESTONE}" == "true" ]]; then
+          args+=(--create-follow-up-milestone)
+        fi
+
+        plan_file="${RUNNER_TEMP}/release-plan.json"
+        set +e
+        php "${RELEASE_TOOL_PATH}" "${args[@]}" > "${plan_file}"
+        exit_code=$?
+        set -e
+        if [[ "${exit_code}" -ne 0 && "${exit_code}" -ne 3 ]]; then
+          cat "${plan_file}"
+          exit "${exit_code}"
+        fi
+
+        ready="$(php -r '$plan=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo !empty($plan["ready"]) ? "true" : "false";' "${plan_file}")"
+        {
+          echo "ready=${ready}"
+          echo "plan-path=${plan_file}"
+        } >> "${GITHUB_OUTPUT}"
+
+        {
+          echo "## Release plan"
+          echo
+          php -r '
+            $plan=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+            printf("- Tool: release-tool %s\n", $argv[2]);
+            printf("- Plan: `%s`\n", $plan["id"]);
+            printf("- Branch: `%s`\n", $plan["branch"]);
+            printf("- Planning base: `%s`\n", $plan["planning_base_sha"]);
+            printf("- Version: `%s` -> `%s`\n", $plan["current_version"], $plan["proposed_version"]);
+            printf("- Channel: `%s`\n", $plan["channel"]);
+            printf("- Ready: **%s**\n", !empty($plan["ready"]) ? "yes" : "no");
+            foreach ($plan["warnings"] as $warning) {
+              printf("- Warning: %s\n", str_replace(["\r","\n"], " ", (string) $warning));
+            }
+          ' "${plan_file}" "${RELEASE_TOOL_VERSION}"
+        } >> "${GITHUB_STEP_SUMMARY}"
+
+        if [[ "${exit_code}" -eq 3 ]]; then
+          echo "::warning::Release plan is not ready; see the step summary and persisted state for details."
+        fi
+        exit "${exit_code}"
+
+    - id: authorization-config
+      name: Read preparation authorization policy
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+      run: |
+        set -euo pipefail
+        config_file="${RUNNER_TEMP}/release-consumer-config.json"
+        php "${RELEASE_TOOL_PATH}" config:validate --config "${RELEASE_CONFIG_PATH}" --root . --json > "${config_file}"
+        minimum_permission="$(php -r '$c=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $c["authorization"]["prepare_min_permission"];' "${config_file}")"
+        echo "minimum-permission=${minimum_permission}" >> "${GITHUB_OUTPUT}"
+
+    - name: Authorize preparation actor
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_REPOSITORY: ${{ github.repository }}
+        RELEASE_ACTOR: ${{ inputs.actor }}
+        RELEASE_MINIMUM_PERMISSION: ${{ steps.authorization-config.outputs.minimum-permission }}
+      run: |
+        set -euo pipefail
+        result_file="${RUNNER_TEMP}/release-authorization.json"
+        set +e
+        php "${RELEASE_TOOL_PATH}" release:authorization           --repository "${RELEASE_REPOSITORY}"           --actor "${RELEASE_ACTOR}"           --minimum "${RELEASE_MINIMUM_PERMISSION}"           > "${result_file}"
+        status=$?
+        set -e
+        if [[ "${status}" -ne 0 ]]; then
+          cat "${result_file}" || true
+          exit "${status}"
+        fi
+
+    - id: repository
+      name: Resolve repository identity
+      shell: bash
+      env:
+        RELEASE_REPOSITORY: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        echo "owner=${RELEASE_REPOSITORY%%/*}" >> "${GITHUB_OUTPUT}"
+        echo "name=${RELEASE_REPOSITORY#*/}" >> "${GITHUB_OUTPUT}"
+
+    - id: app-identity
+      name: Resolve GitHub App client id
+      shell: bash
+      env:
+        RELEASE_APP_SLUG: ${{ inputs.app-slug }}
+        RELEASE_GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_GITHUB_API_URL: ${{ github.api_url }}
+      run: |
+        set -euo pipefail
+        app_json="$(curl --fail --silent --show-error --location           -H "Accept: application/vnd.github+json"           -H "Authorization: Bearer ${RELEASE_GITHUB_TOKEN}"           -H "X-GitHub-Api-Version: 2022-11-28"           "${RELEASE_GITHUB_API_URL}/apps/${RELEASE_APP_SLUG}")"
+        client_id="$(php -r '$d=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR); echo $d["client_id"] ?? "";' <<< "${app_json}")"
+        if [[ -z "${client_id}" ]]; then
+          echo "::error::GitHub App metadata did not contain a client_id for ${RELEASE_APP_SLUG}."
+          exit 1
+        fi
+        echo "client-id=${client_id}" >> "${GITHUB_OUTPUT}"
+
+    - id: app-token
+      name: Create scoped GitHub App token
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      with:
+        client-id: ${{ steps.app-identity.outputs.client-id }}
+        private-key: ${{ inputs.app-private-key }}
+        owner: ${{ steps.repository.outputs.owner }}
+        repositories: ${{ steps.repository.outputs.name }}
+        permission-contents: write
+        permission-pull-requests: write
+
+    - id: prepare
+      name: Create or reuse release preparation pull request
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_PLAN_PATH: ${{ steps.plan.outputs.plan-path }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+        RELEASE_REQUESTED_BY: ${{ inputs.actor }}
+        RELEASE_TOOL_VERSION: ${{ steps.setup.outputs.version }}
+      run: |
+        set -euo pipefail
+        state_dir="${RUNNER_TEMP}/release-preparation-state"
+        mkdir -p "${state_dir}"
+        cp "${RELEASE_PLAN_PATH}" "${state_dir}/release-plan.json"
+
+        php "${RELEASE_TOOL_PATH}" release:prepare           --plan "${RELEASE_PLAN_PATH}"           --config "${RELEASE_CONFIG_PATH}"           --root .           --apply           --json           > "${state_dir}/release-preparation.json"
+
+        preparation_id="$(php -r '$p=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $p["id"];' "${state_dir}/release-preparation.json")"
+        pr_number="$(php -r '$p=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $p["pull_request"]["number"];' "${state_dir}/release-preparation.json")"
+        pr_url="$(php -r '$p=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $p["pull_request"]["url"];' "${state_dir}/release-preparation.json")"
+        artifact_name="release-preparation-pr-${pr_number}"
+
+        {
+          echo "preparation-id=${preparation_id}"
+          echo "pull-request-number=${pr_number}"
+          echo "pull-request-url=${pr_url}"
+          echo "artifact-name=${artifact_name}"
+          echo "state-dir=${state_dir}"
+        } >> "${GITHUB_OUTPUT}"
+
+        {
+          echo "## Release preparation"
+          echo
+          printf -- '- Requested by: `%s`\n' "${RELEASE_REQUESTED_BY}"
+          printf -- '- release-tool: `%s`\n' "${RELEASE_TOOL_VERSION}"
+          printf -- '- ReleasePreparation: `%s`\n' "${preparation_id}"
+          echo "- Pull request: ${pr_url}"
+          printf -- '- State artifact: `%s`\n' "${artifact_name}"
+        } >> "${GITHUB_STEP_SUMMARY}"
+
+    - name: Apply release pull request metadata
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        RELEASE_REPOSITORY: ${{ github.repository }}
+        RELEASE_ACTOR: ${{ inputs.actor }}
+        RELEASE_PLAN_PATH: ${{ steps.plan.outputs.plan-path }}
+        RELEASE_PR_NUMBER: ${{ steps.prepare.outputs.pull-request-number }}
+      run: |
+        set -euo pipefail
+        milestone_number="$(php -r '$p=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR); echo $p["milestone"]["number"] ?? "";' "${RELEASE_PLAN_PATH}")"
+        if [[ -z "${milestone_number}" ]]; then
+          echo "::error::ReleasePlan does not contain a milestone number."
+          exit 1
+        fi
+        payload="$(php -r 'echo json_encode(["assignees"=>[$argv[1]],"milestone"=>(int)$argv[2]],JSON_THROW_ON_ERROR);' "${RELEASE_ACTOR}" "${milestone_number}")"
+        printf '%s' "${payload}" | gh api --method PATCH "repos/${RELEASE_REPOSITORY}/issues/${RELEASE_PR_NUMBER}" --input - >/dev/null
+
+    - name: Persist release preparation contracts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ steps.prepare.outputs.artifact-name }}
+        path: ${{ steps.prepare.outputs.state-dir }}
+        if-no-files-found: error
