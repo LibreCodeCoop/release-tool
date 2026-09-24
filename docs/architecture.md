@@ -24,4 +24,4 @@ GitHub Actions is orchestration only. Workflows may check out code, provide cred
 
 Machine-readable stage artifacts and consumer configuration are versioned. A mutating stage consumes the artifact from the preceding stage and may revalidate external state, but must not silently recalculate values already finalized upstream.
 
-See LibreCodeCoop/github-workflows#70 and #78 for the cross-repository contract while implementation is being completed.
+The public integration boundary is the CLI plus `actions/prepare`, `actions/post-merge`, and `actions/publication`. Organization workflow templates may consume those Actions, but they do not own release policy or release runtime code.
