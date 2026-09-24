@@ -8,6 +8,7 @@ use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\AuthorizationCheckCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand;
@@ -16,6 +17,8 @@ use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
+use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
 use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
 use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
@@ -25,6 +28,8 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
+use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
 use Symfony\Component\Console\Application;
 
 final class ApplicationFactory
@@ -43,6 +48,9 @@ final class ApplicationFactory
         ?ReleaseDrafter $releaseDrafter = null,
         ?ArtifactValidator $artifactValidator = null,
         ?PublicationVerifier $publicationVerifier = null,
+        ?RepositoryAuthorizationChecker $authorizationChecker = null,
+        ?StableBranchSelector $stableBranchSelector = null,
+        ?ActionEnvironment $actionEnvironment = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -50,6 +58,14 @@ final class ApplicationFactory
         $application->add(new ConfigValidateCommand(
             contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
         ));
+
+        if ($authorizationChecker !== null) {
+            $application->add(new AuthorizationCheckCommand($authorizationChecker));
+        }
+
+        if ($stableBranchSelector !== null && $actionEnvironment !== null) {
+            $application->add(new StableSelectCommand($stableBranchSelector, $actionEnvironment));
+        }
 
         if ($artifactValidator !== null) {
             $application->add(new ArtifactValidateCommand(
