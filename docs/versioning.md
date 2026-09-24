@@ -49,9 +49,10 @@ A change to a public Action input/output or persisted contract must update tests
 
 ## Release procedure
 
-1. Set `VERSION` to the intended release version in a reviewed change.
-2. Merge all code, Action, test, and documentation changes that belong to that product release.
-3. Create tag `v<VERSION>` on that exact commit.
-4. The release workflow verifies the tag against `VERSION`, builds and tests the PHAR, verifies the embedded version, generates the checksum, and publishes the GitHub release.
+1. Set `VERSION` to the intended release version in the reviewed change that completes that product release.
+2. Merge all code, Action, test, and documentation changes that belong to the release.
+3. The release workflow resolves `v<VERSION>` from the exact default-branch commit, creates the tag when it does not exist, and refuses to move an existing tag that points elsewhere.
+4. The same run builds and tests the PHAR, verifies the embedded version, generates the checksum, and publishes the GitHub release.
+5. Re-running publication for an already published tag is a no-op.
 
-Do not create a release tag from a commit whose `VERSION` differs from the tag.
+A maintainer may also push the exact `v<VERSION>` tag explicitly. The workflow applies the same tag/version validation before publication. Do not move or recreate a published release tag.
