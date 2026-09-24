@@ -46,7 +46,12 @@ final readonly class PhpReleaseToolTarget implements ReleaseCompatibilityTarget
         string $version,
         array $environment = [],
     ): Process {
-        throw new LogicException('PHP artifact validation compatibility is implemented in the next #57 slice.');
+        return $this->run([
+            'artifact:validate-package',
+            '--artifact', $artifact,
+            '--app-name', $appName,
+            '--expected-version', $version,
+        ], $environment);
     }
 
     public function restoreArtifact(
@@ -59,7 +64,23 @@ final readonly class PhpReleaseToolTarget implements ReleaseCompatibilityTarget
         ?string $expectedWorkflowPath = null,
         array $environment = [],
     ): Process {
-        throw new LogicException('PHP artifact restore compatibility is implemented in the next #57 slice.');
+        $arguments = [
+            'artifact:restore',
+            '--repository', $repository,
+            '--name', $name,
+            '--expected-head-sha', $expectedHeadSha,
+            '--destination', $destination,
+        ];
+        if ($expectedEvent !== null) {
+            $arguments[] = '--expected-event';
+            $arguments[] = $expectedEvent;
+        }
+        if ($expectedWorkflowPath !== null) {
+            $arguments[] = '--expected-workflow-path';
+            $arguments[] = $expectedWorkflowPath;
+        }
+
+        return $this->run($arguments, ['GITHUB_API_URL' => $apiUrl] + $environment);
     }
 
     public function releaseNotes(

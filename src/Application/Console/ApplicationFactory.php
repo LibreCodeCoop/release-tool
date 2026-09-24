@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console;
 
+use LibreCode\ReleaseTool\Application\Artifact\ArtifactRestorer;
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
+use LibreCode\ReleaseTool\Application\Artifact\NextcloudPackageValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
+use LibreCode\ReleaseTool\Application\Console\Command\ArtifactRestoreCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidatePackageCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\AuthorizationCheckCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
@@ -51,6 +55,8 @@ final class ApplicationFactory
         ?RepositoryAuthorizationChecker $authorizationChecker = null,
         ?StableBranchSelector $stableBranchSelector = null,
         ?ActionEnvironment $actionEnvironment = null,
+        ?ArtifactRestorer $artifactRestorer = null,
+        ?NextcloudPackageValidator $packageValidator = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -65,6 +71,14 @@ final class ApplicationFactory
 
         if ($stableBranchSelector !== null && $actionEnvironment !== null) {
             $application->add(new StableSelectCommand($stableBranchSelector, $actionEnvironment));
+        }
+
+        if ($artifactRestorer !== null) {
+            $application->add(new ArtifactRestoreCommand($artifactRestorer));
+        }
+
+        if ($packageValidator !== null) {
+            $application->add(new ArtifactValidatePackageCommand($packageValidator));
         }
 
         if ($artifactValidator !== null) {
