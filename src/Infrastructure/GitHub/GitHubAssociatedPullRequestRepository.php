@@ -70,7 +70,7 @@ final readonly class GitHubAssociatedPullRequestRepository implements Associated
         }
 
         $payload = $response->toArray(false);
-        if (!is_array($payload) || !array_is_list($payload)) {
+        if (!array_is_list($payload)) {
             throw new RuntimeException(sprintf('unexpected pull request response for commit %s', $sha));
         }
 
