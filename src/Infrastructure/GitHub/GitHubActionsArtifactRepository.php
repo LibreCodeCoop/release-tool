@@ -16,26 +16,35 @@ final readonly class GitHubActionsArtifactRepository implements ActionsArtifactR
 {
     private HttpClientInterface $client;
 
+    private HttpClientInterface $anonymousClient;
+
+    private bool $hasToken;
+
+    private string $apiOrigin;
+
     public function __construct(
         string $token,
         ?HttpClientInterface $client = null,
         string $apiUrl = 'https://api.github.com',
     ) {
-        if (trim($token) === '') {
-            throw new InvalidArgumentException('GitHub token must not be empty.');
+        $this->hasToken = trim($token) !== '';
+        $options = [
+            'headers' => [
+                'Accept' => 'application/vnd.github+json',
+                'X-GitHub-Api-Version' => '2022-11-28',
+                'User-Agent' => 'LibreCode-release-tool',
+            ],
+        ];
+        if ($this->hasToken) {
+            $options['auth_bearer'] = $token;
         }
 
         $this->client = $client ?? HttpClient::createForBaseUri(
             rtrim($apiUrl, '/') . '/',
-            [
-                'auth_bearer' => $token,
-                'headers' => [
-                    'Accept' => 'application/vnd.github+json',
-                    'X-GitHub-Api-Version' => '2022-11-28',
-                    'User-Agent' => 'LibreCode-release-tool',
-                ],
-            ],
+            $options,
         );
+        $this->anonymousClient = HttpClient::create();
+        $this->apiOrigin = $this->origin($apiUrl);
     }
 
     public static function fromEnvironment(): self
@@ -48,6 +57,7 @@ final readonly class GitHubActionsArtifactRepository implements ActionsArtifactR
 
     public function artifacts(string $repository, string $name): array
     {
+        $this->assertToken();
         $this->assertRepository($repository);
         $response = $this->client->request(
             'GET',
@@ -93,6 +103,7 @@ final readonly class GitHubActionsArtifactRepository implements ActionsArtifactR
 
     public function workflowRun(string $repository, int $runId): ActionsWorkflowRun
     {
+        $this->assertToken();
         $this->assertRepository($repository);
         $response = $this->client->request(
             'GET',
@@ -117,17 +128,46 @@ final readonly class GitHubActionsArtifactRepository implements ActionsArtifactR
 
     public function download(string $url, string $destination): void
     {
-        $response = $this->client->request('GET', $url);
-        if ($response->getStatusCode() !== 200) {
-            throw new RuntimeException(sprintf(
-                'GitHub artifact download failed with HTTP %d.',
-                $response->getStatusCode(),
-            ));
+        $this->assertToken();
+        $current = $url;
+
+        for ($redirects = 0; $redirects <= 20; ++$redirects) {
+            $client = $this->origin($current) === $this->apiOrigin
+                ? $this->client
+                : $this->anonymousClient;
+            $response = $client->request('GET', $current, ['max_redirects' => 0]);
+            $status = $response->getStatusCode();
+
+            if ($status >= 300 && $status < 400) {
+                $headers = $response->getHeaders(false);
+                $location = $headers['location'][0] ?? null;
+                if (!is_string($location) || $location === '') {
+                    throw new RuntimeException('Artifact download redirect did not include a location.');
+                }
+                $current = $this->resolveRedirect($current, $location);
+                continue;
+            }
+
+            if ($status !== 200) {
+                throw new RuntimeException(sprintf(
+                    'GitHub artifact download failed with HTTP %d.',
+                    $status,
+                ));
+            }
+
+            if (file_put_contents($destination, $response->getContent()) === false) {
+                throw new RuntimeException(sprintf('Could not write downloaded artifact: %s', $destination));
+            }
+            return;
         }
 
-        $content = $response->getContent();
-        if (file_put_contents($destination, $content) === false) {
-            throw new RuntimeException(sprintf('Could not write downloaded artifact: %s', $destination));
+        throw new RuntimeException('GitHub artifact download exceeded the redirect limit.');
+    }
+
+    private function assertToken(): void
+    {
+        if (!$this->hasToken) {
+            throw new InvalidArgumentException('GitHub token must not be empty.');
         }
     }
 
@@ -136,5 +176,34 @@ final readonly class GitHubActionsArtifactRepository implements ActionsArtifactR
         if (preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $repository) !== 1) {
             throw new InvalidArgumentException('Repository must use owner/name form.');
         }
+    }
+
+    private function origin(string $url): string
+    {
+        $parts = parse_url($url);
+        $scheme = is_array($parts) && is_string($parts['scheme'] ?? null) ? strtolower($parts['scheme']) : '';
+        $host = is_array($parts) && is_string($parts['host'] ?? null) ? strtolower($parts['host']) : '';
+        $port = is_array($parts) && is_int($parts['port'] ?? null) ? ':' . $parts['port'] : '';
+        if ($scheme === '' || $host === '') {
+            throw new InvalidArgumentException(sprintf('Invalid absolute URL: %s', $url));
+        }
+
+        return $scheme . '://' . $host . $port;
+    }
+
+    private function resolveRedirect(string $current, string $location): string
+    {
+        if (parse_url($location, PHP_URL_SCHEME) !== null) {
+            return $location;
+        }
+
+        $origin = $this->origin($current);
+        if (str_starts_with($location, '/')) {
+            return $origin . $location;
+        }
+
+        $path = parse_url($current, PHP_URL_PATH);
+        $directory = is_string($path) ? rtrim(dirname($path), '/') : '';
+        return $origin . ($directory === '' ? '/' : $directory . '/') . $location;
     }
 }
