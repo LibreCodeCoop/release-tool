@@ -39,7 +39,7 @@
   "scripts": {
     "test": "phpunit",
     "test:coverage": "XDEBUG_MODE=coverage phpunit --coverage-clover build/coverage.xml",
-    "infection": "infection --threads=max --min-msi=0 --min-covered-msi=0",
+    "infection": "infection --threads=max --min-msi=75 --min-covered-msi=75",
     "phpstan": "phpstan analyse --no-progress",
     "psalm": "psalm --no-cache",
     "phpmd": "phpmd src text phpmd.xml",
