@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Infrastructure\GitHubActions;
 
+use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
 use RuntimeException;
 
-final readonly class GitHubActionsEnvironment
+final readonly class GitHubActionsEnvironment implements ActionEnvironment
 {
     public function __construct(
         private ?string $outputPath,
