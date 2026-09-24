@@ -18,13 +18,16 @@ final class VersioningPolicyTest extends TestCase
         );
     }
 
-    public function testReleasePublisherRequiresTagToMatchVersionFile(): void
+    public function testReleasePublisherDerivesAndValidatesTagFromVersionFile(): void
     {
         $workflow = (string) file_get_contents($this->root() . '/.github/workflows/release.yml');
 
-        self::assertStringContainsString('Verify release tag matches VERSION', $workflow);
+        self::assertStringContainsString('Resolve and validate release tag', $workflow);
         self::assertStringContainsString('< VERSION', $workflow);
-        self::assertStringContainsString('"${TAG}" != "v${version}"', $workflow);
+        self::assertStringContainsString('tag="v${version}"', $workflow);
+        self::assertStringContainsString('"${tag}" != "v${version}"', $workflow);
+        self::assertStringContainsString('tag ${tag} already points to ${existing_sha}', $workflow);
+        self::assertStringContainsString('gh release view "${tag}"', $workflow);
         self::assertStringContainsString('Verify embedded version', $workflow);
     }
 
