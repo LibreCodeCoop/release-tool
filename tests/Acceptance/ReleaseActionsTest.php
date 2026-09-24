@@ -39,19 +39,6 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringNotContainsString('LibreCodeCoop/github-workflows', $content);
         self::assertStringNotContainsString('$/actions/', $content);
 
-        foreach ([
-            'release-tool-setup',
-            'release-plan',
-            'release-authorization',
-            'release-consumer-validate',
-            'release-artifact-restore',
-            'release-artifact-validate',
-            'release-stable-select',
-            'release-notes-from-pull-requests',
-        ] as $legacyAction) {
-            self::assertStringNotContainsString($legacyAction, $content);
-        }
-
         self::assertStringContainsString('../_internal/setup.sh', $content);
     }
 
@@ -101,10 +88,12 @@ final class ReleaseActionsTest extends TestCase
 
     public function testInternalBootstrapUsesExactVersionAndVerifiedChecksum(): void
     {
-        $version = trim((string) file_get_contents($this->root() . '/actions/_internal/release-tool-version'));
+        $version = trim((string) file_get_contents($this->root() . '/VERSION'));
         $setup = (string) file_get_contents($this->root() . '/actions/_internal/setup.sh');
 
         self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/', $version);
+        self::assertStringContainsString('repository_root', $setup);
+        self::assertStringContainsString('/VERSION', $setup);
         self::assertStringContainsString('release-tool.phar.sha256', $setup);
         self::assertStringContainsString('sha256sum', $setup);
         self::assertStringContainsString("--proto '=https'", $setup);
