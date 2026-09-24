@@ -215,10 +215,11 @@ SH);
         self::assertStringContainsStringIgnoringCase('unsafe archive path: ../evil.txt', $process->getErrorOutput());
     }
 
-    public function testReleaseNotesRejectsInvalidFallbackLimitBeforeGitOrHttp(): void
+    #[DataProvider('authorizationAndStableTargets')]
+    public function testReleaseNotesRejectsInvalidFallbackLimitBeforeGitOrHttp(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('release-notes-');
-        $process = $this->target()->releaseNotes(
+        $process = $target->releaseNotes(
             'LibreSign/libresign',
             'stable15',
             $root,
@@ -436,7 +437,8 @@ PHP,
         }
     }
 
-    public function testReleaseNotesPreferPullRequestsDeduplicateAndSanitizeContributorText(): void
+    #[DataProvider('authorizationAndStableTargets')]
+    public function testReleaseNotesPreferPullRequestsDeduplicateAndSanitizeContributorText(ReleaseCompatibilityTarget $target): void
     {
         $root = $this->temporaryDirectory('release-notes-success-');
         $bin = $root . '/bin';
@@ -489,7 +491,7 @@ PHP);
             $output = $root . '/output';
             $runnerTemp = $root . '/runner';
             mkdir($runnerTemp);
-            $process = $this->target()->releaseNotes(
+            $process = $target->releaseNotes(
                 'LibreSign/libresign',
                 'stable15',
                 $root,
