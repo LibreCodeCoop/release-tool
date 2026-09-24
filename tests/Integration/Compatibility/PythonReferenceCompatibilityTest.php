@@ -368,14 +368,12 @@ PHP,
 
         try {
             $process = $target->restoreArtifact(
-                'LibreSign/libresign',
-                'symlink-package',
-                str_repeat('c', 40),
-                $destination,
-                null,
-                null,
-                $apiUrl,
-                ['GITHUB_TOKEN' => 'test-token'],
+                repository: 'LibreSign/libresign',
+                name: 'symlink-package',
+                expectedHeadSha: str_repeat('c', 40),
+                destination: $destination,
+                apiUrl: $apiUrl,
+                environment: ['GITHUB_TOKEN' => 'test-token'],
             );
 
             self::assertNotSame(0, $process->getExitCode());
