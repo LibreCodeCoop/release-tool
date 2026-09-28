@@ -118,18 +118,55 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
         return $login;
     }
 
-    public function pullRequestAuthor(string $repository, int $pullRequestNumber): string
+    public function pullRequestContributor(string $repository, int $pullRequestNumber): string
     {
-        $data = $this->request(
-            'GET',
-            sprintf('/repos/%s/pulls/%d', $repository, $pullRequestNumber),
-        );
-        $login = $data['user']['login'] ?? null;
-        if (!is_string($login) || $login === '') {
-            throw new DomainException('GitHub returned no identifiable pull request author.');
+        $visited = [];
+
+        for ($depth = 0; $depth < 10; ++$depth) {
+            if (isset($visited[$pullRequestNumber])) {
+                break;
+            }
+            $visited[$pullRequestNumber] = true;
+
+            $data = $this->request(
+                'GET',
+                sprintf('/repos/%s/pulls/%d', $repository, $pullRequestNumber),
+            );
+            $login = $data['user']['login'] ?? null;
+            if (!is_string($login) || $login === '') {
+                throw new DomainException('GitHub returned no identifiable pull request author.');
+            }
+
+            $body = $data['body'] ?? '';
+            if (!is_string($body)) {
+                $body = '';
+            }
+
+            $origin = $this->backportOriginPullRequest($repository, $body);
+            if ($origin === null || isset($visited[$origin])) {
+                return $login;
+            }
+
+            $pullRequestNumber = $origin;
         }
 
-        return $login;
+        throw new DomainException('Backport pull request chain is too deep.');
+    }
+
+    private function backportOriginPullRequest(string $repository, string $body): ?int
+    {
+        if (preg_match(
+            '/\\bBackport of(?: PR)?\\s+(?:#(?<short>\\d+)|https:\\/\\/github\\.com\\/' .
+            preg_quote($repository, '/') . '\\/pull\\/(?<url>\\d+))/i',
+            $body,
+            $matches,
+        ) !== 1) {
+            return null;
+        }
+
+        $number = $matches['short'] !== '' ? $matches['short'] : $matches['url'];
+
+        return (int) $number;
     }
 
     public function permission(string $repository, string $login): string
