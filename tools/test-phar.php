@@ -38,6 +38,7 @@ foreach ([
     ['release:finalize', '--help'],
     ['milestone:transition', '--help'],
     ['release:draft', '--help'],
+    ['release:validate-identity', '--help'],
 ] as $arguments) {
     $run([PHP_BINARY, $phar, ...$arguments]);
 }
@@ -134,6 +135,38 @@ YAML);
     );
     if ($sourceMetadata->getOutput() !== $pharMetadata->getOutput()) {
         throw new RuntimeException('Source CLI and PHAR metadata inspection differ.');
+    }
+
+    $sourceIdentity = $run(
+        [
+            PHP_BINARY,
+            dirname(__DIR__) . '/bin/release-tool',
+            'release:validate-identity',
+            '--tag', 'v1.0.0',
+            '--config', $root . '/.nextcloud-release.yml',
+            '--ref', 'v1.0.0',
+            '--require-tag-exists',
+            '--json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    $pharIdentity = $run(
+        [
+            PHP_BINARY,
+            $phar,
+            'release:validate-identity',
+            '--tag', 'v1.0.0',
+            '--config', $root . '/.nextcloud-release.yml',
+            '--ref', 'v1.0.0',
+            '--require-tag-exists',
+            '--json',
+        ],
+        $root,
+        ['GITHUB_REPOSITORY' => 'Example/app'],
+    );
+    if ($sourceIdentity->getOutput() !== $pharIdentity->getOutput()) {
+        throw new RuntimeException('Source CLI and PHAR release identity validation differ.');
     }
 
     $artifactPath = $root . '/example.tar';
