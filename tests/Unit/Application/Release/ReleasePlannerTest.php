@@ -160,6 +160,24 @@ final class ReleasePlannerTest extends TestCase
         self::assertStringContainsString('Explicit override', implode("\n", $plan->warnings));
     }
 
+    public function testDecoratedMilestoneTitleIsAccepted(): void
+    {
+        $planner = $this->planner(
+            closed: [new PullRequestInfo(10, 'fix: patch', '', 'stable35', self::MERGE, '2026-09-20T00:00:00Z', 'https://example.test/10', [], 'contributor')],
+            milestones: [new MilestoneInfo(150, '💚 Next Patch (35)', 'https://example.test/m150')],
+        );
+
+        $plan = $planner->plan($this->config(), $this->input());
+
+        self::assertTrue($plan->ready);
+        self::assertSame(150, $plan->milestone['number']);
+        self::assertSame('💚 Next Patch (35)', $plan->milestone['title']);
+        self::assertStringContainsString(
+            'Matched decorated milestone title',
+            implode("\n", $plan->warnings),
+        );
+    }
+
     public function testMissingExpectedMilestoneProducesNotReadyPlan(): void
     {
         $planner = $this->planner(
