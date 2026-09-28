@@ -9,6 +9,7 @@ use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
+use LibreCode\ReleaseTool\Application\Release\ReleasePlanReporter;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
@@ -27,6 +28,7 @@ final class ReleasePlanCommand extends Command
         private readonly ReleasePlanning $planner,
         private readonly ConsumerConfigLoader $configLoader = new ConsumerConfigLoader(),
         private readonly ConsumerConfigContextValidator $contextValidator = new NoopConsumerConfigContextValidator(),
+        private readonly ReleasePlanReporter $reporter = new ReleasePlanReporter(),
     ) {
         parent::__construct();
     }
@@ -44,7 +46,12 @@ final class ReleasePlanCommand extends Command
             ->addOption('safe-public-text', null, InputOption::VALUE_REQUIRED, 'Explicitly public-safe release text.')
             ->addOption('ignore-open-backport', null, InputOption::VALUE_NONE, 'Explicitly override open backport blockers.')
             ->addOption('create-follow-up-milestone', null, InputOption::VALUE_NONE, 'Request explicit follow-up milestone creation downstream.')
-            ->addOption('json', null, InputOption::VALUE_NONE, 'Emit ReleasePlan v1 JSON.');
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Emit ReleasePlan v1 JSON.')
+            ->addOption('output-file', null, InputOption::VALUE_REQUIRED, 'Write ReleasePlan v1 JSON to this file.')
+            ->addOption('github-output', null, InputOption::VALUE_REQUIRED, 'Write GitHub Actions outputs to this file.')
+            ->addOption('github-step-summary', null, InputOption::VALUE_REQUIRED, 'Write a GitHub Actions step summary to this file.')
+            ->addOption('github-annotations', null, InputOption::VALUE_NONE, 'Emit GitHub Actions annotations for a plan that is not ready.')
+            ->addOption('tool-version', null, InputOption::VALUE_REQUIRED, 'Release-tool version used in CI reporting.', 'unknown');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -84,9 +91,45 @@ final class ReleasePlanCommand extends Command
             return $this->error($output, $input, $exception->getMessage());
         }
 
-        $input->getOption('json')
-            ? $this->renderJson($output, $plan)
-            : $this->renderHuman($output, $plan);
+        $json = (string) json_encode(
+            $plan,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT,
+        );
+
+        $outputFile = trim((string) $input->getOption('output-file'));
+        if ($outputFile !== '') {
+            file_put_contents($outputFile, $json . "\n", LOCK_EX);
+        }
+
+        $githubOutput = trim((string) $input->getOption('github-output'));
+        if ($githubOutput !== '') {
+            file_put_contents(
+                $githubOutput,
+                sprintf("ready=%s\nplan-path=%s\n", $plan->ready ? 'true' : 'false', $outputFile),
+                FILE_APPEND | LOCK_EX,
+            );
+        }
+
+        $githubStepSummary = trim((string) $input->getOption('github-step-summary'));
+        if ($githubStepSummary !== '') {
+            file_put_contents(
+                $githubStepSummary,
+                $this->reporter->summary($plan, (string) $input->getOption('tool-version')),
+                FILE_APPEND | LOCK_EX,
+            );
+        }
+
+        if ((bool) $input->getOption('github-annotations')) {
+            foreach ($this->reporter->githubAnnotations($plan) as $annotation) {
+                $output->writeln($annotation);
+            }
+        }
+
+        if ((bool) $input->getOption('json')) {
+            $output->writeln($json);
+        } elseif ($outputFile === '') {
+            $this->renderHuman($output, $plan);
+        }
 
         return $plan->ready ? Command::SUCCESS : self::EXIT_NOT_READY;
     }
