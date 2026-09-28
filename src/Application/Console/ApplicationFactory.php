@@ -22,6 +22,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleaseResumeContextCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePreflightCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseValidateIdentityCommand;
@@ -39,6 +40,7 @@ use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Application\Release\ReleaseResumeContextResolver;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
 use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
 use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
@@ -69,6 +71,7 @@ final class ApplicationFactory
         ?AppStorePublicationWaiter $appStorePublicationWaiter = null,
         ?ReleasePreflight $releasePreflight = null,
         ?ReleaseIdentityValidator $releaseIdentityValidator = null,
+        ?ReleaseResumeContextResolver $releaseResumeContextResolver = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -146,6 +149,10 @@ final class ApplicationFactory
 
         if ($releasePreflight !== null) {
             $application->add(new ReleasePreflightCommand($releasePreflight));
+        }
+
+        if ($releaseResumeContextResolver !== null) {
+            $application->add(new ReleaseResumeContextCommand($releaseResumeContextResolver));
         }
 
         if ($releaseIdentityValidator !== null) {
