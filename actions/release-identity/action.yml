@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Validate release identity
+description: Validate a release tag against the configured app version before expensive publication work.
+
+inputs:
+  tag:
+    description: Release tag to validate, for example v13.4.3.
+    required: true
+  working-directory:
+    description: Consumer repository checkout directory.
+    required: false
+    default: .
+  config-path:
+    description: Consumer release configuration path relative to the working directory.
+    required: false
+    default: .nextcloud-release.yml
+  ref:
+    description: Git ref whose metadata must match the release tag.
+    required: false
+    default: HEAD
+  require-tag-exists:
+    description: Require the release tag to already exist in the local checkout.
+    required: false
+    default: 'false'
+
+outputs:
+  tag:
+    description: Validated release tag.
+    value: ${{ steps.validate.outputs.tag }}
+  version:
+    description: Validated app version without the tag prefix.
+    value: ${{ steps.validate.outputs.version }}
+  sha:
+    description: Immutable commit SHA used for metadata validation.
+    value: ${{ steps.validate.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: validate
+      name: Validate release identity
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        RELEASE_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+        RELEASE_REF: ${{ inputs.ref }}
+        RELEASE_REQUIRE_TAG_EXISTS: ${{ inputs.require-tag-exists }}
+      run: |
+        set -euo pipefail
+
+        case "${RELEASE_REQUIRE_TAG_EXISTS}" in
+          true)
+            require_tag_exists='--require-tag-exists'
+            ;;
+          false)
+            require_tag_exists=''
+            ;;
+          *)
+            echo "::error::require-tag-exists must be either 'true' or 'false'."
+            exit 2
+            ;;
+        esac
+
+        cd "${RELEASE_WORKING_DIRECTORY}"
+        result="$(php "${RELEASE_TOOL_PATH}" release:validate-identity           --tag "${RELEASE_TAG}"           --config "${RELEASE_CONFIG_PATH}"           --ref "${RELEASE_REF}"           ${require_tag_exists}           --json)"
+
+        valid="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo ($d["valid"] ?? false) ? "true" : "false";' "${result}")"
+        if [ "${valid}" != "true" ]; then
+          error="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["error"] ?? "Release identity validation failed."; ' "${result}")"
+          echo "::error::${error}"
+          exit 2
+        fi
+
+        tag="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["tag"];' "${result}")"
+        version="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["version"];' "${result}")"
+        sha="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["sha"];' "${result}")"
+
+        echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+        echo "version=${version}" >> "${GITHUB_OUTPUT}"
+        echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
+
+        {
+          echo "## Release identity"
+          echo
+          printf -- '- Tag: `%s`\n' "${tag}"
+          printf -- '- App version: `%s`\n' "${version}"
+          printf -- '- Metadata SHA: `%s`\n' "${sha}"
+          echo "- Result: **valid**"
+        } >> "${GITHUB_STEP_SUMMARY}"
