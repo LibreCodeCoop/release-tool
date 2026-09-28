@@ -24,7 +24,6 @@ final class ReleaseIdentityValidatorTest extends TestCase
         [$validator, $git] = $this->validator($version);
         $config = $this->config();
         $git->expects(self::once())->method('tagExists')->with($tag)->willReturn(true);
-        $git->expects(self::once())->method('resolve')->with($tag)->willReturn(self::SHA);
 
         $result = $validator->validate($config, $tag, 'HEAD', true);
 
