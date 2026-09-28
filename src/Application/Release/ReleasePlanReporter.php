@@ -8,6 +8,24 @@ use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 
 final class ReleasePlanReporter
 {
+    public function human(ReleasePlan $plan): string
+    {
+        $lines = [
+            sprintf('Release plan: %s', $plan->id),
+            sprintf('Repository: %s', $plan->repository),
+            sprintf('Branch: %s @ %s', $plan->branch, $plan->planningBaseSha),
+            sprintf('Version: %s -> %s (%s)', $plan->currentVersion, $plan->proposedVersion, $plan->channel->value),
+            sprintf('Changelog: %s', $plan->changelogTarget),
+            sprintf('Ready: %s', $plan->ready ? 'yes' : 'no'),
+        ];
+
+        foreach ($plan->warnings as $warning) {
+            $lines[] = 'Warning: ' . $this->singleLine($warning);
+        }
+
+        return implode("\n", $lines);
+    }
+
     public function summary(ReleasePlan $plan, string $toolVersion): string
     {
         $lines = [
