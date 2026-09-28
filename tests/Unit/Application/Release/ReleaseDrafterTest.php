@@ -63,7 +63,7 @@ final class ReleaseDrafterTest extends TestCase
 MD);
         $github = new InMemoryReleaseDraftRepository(
             ['stable35' => self::SHA],
-            pullRequestAuthors: [
+            pullRequestContributors: [
                 10 => 'alice',
                 11 => 'bob',
                 12 => 'dependabot[bot]',

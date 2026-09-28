@@ -180,7 +180,7 @@ final readonly class ReleaseDrafter
 
         $contributors = [];
         foreach ($matches['number'] as $number) {
-            $login = $this->github->pullRequestAuthor($prepared->repository, (int) $number);
+            $login = $this->github->pullRequestContributor($prepared->repository, (int) $number);
             if ($this->isBot($login) || in_array($login, $contributors, true)) {
                 continue;
             }

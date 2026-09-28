@@ -73,6 +73,60 @@ final class GitHubReleaseDraftRepositoryTest extends TestCase
         self::assertSame('maintain', $repo->permission('LibreSign/libresign', 'alice'));
     }
 
+    public function testResolvesContributorFromBackportOrigin(): void
+    {
+        $client = new MockHttpClient([
+            $this->json([
+                'user' => ['login' => 'backportbot-libresign[bot]'],
+                'body' => 'Backport of #8740.',
+            ]),
+            $this->json([
+                'user' => ['login' => 'alice'],
+                'body' => 'Original pull request.',
+            ]),
+        ], 'https://api.github.test');
+
+        $repo = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        self::assertSame('alice', $repo->pullRequestContributor('LibreSign/libresign', 8748));
+    }
+
+    public function testResolvesContributorThroughNestedBackportChain(): void
+    {
+        $client = new MockHttpClient([
+            $this->json([
+                'user' => ['login' => 'backportbot-libresign[bot]'],
+                'body' => 'Backport of PR #200.',
+            ]),
+            $this->json([
+                'user' => ['login' => 'backportbot-libresign[bot]'],
+                'body' => 'Backport of https://github.com/LibreSign/libresign/pull/100',
+            ]),
+            $this->json([
+                'user' => ['login' => 'alice'],
+                'body' => 'Original pull request.',
+            ]),
+        ], 'https://api.github.test');
+
+        $repo = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        self::assertSame('alice', $repo->pullRequestContributor('LibreSign/libresign', 300));
+    }
+
+    public function testDoesNotFollowIncidentalPullRequestReferences(): void
+    {
+        $client = new MockHttpClient([
+            $this->json([
+                'user' => ['login' => 'bob'],
+                'body' => 'Fixes #123 and follows up on PR #456.',
+            ]),
+        ], 'https://api.github.test');
+
+        $repo = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        self::assertSame('bob', $repo->pullRequestContributor('LibreSign/libresign', 789));
+    }
+
     /** @param array<mixed> $data */
     private function json(array $data, int $status = 200): MockResponse
     {
