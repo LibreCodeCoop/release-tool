@@ -24,6 +24,7 @@ final class ReleaseIdentityValidatorTest extends TestCase
         [$validator, $git] = $this->validator($version);
         $config = $this->config();
         $git->expects(self::once())->method('tagExists')->with($tag)->willReturn(true);
+        $git->expects(self::once())->method('resolve')->with($tag)->willReturn(self::SHA);
 
         $result = $validator->validate($config, $tag, 'HEAD', true);
 
@@ -104,6 +105,22 @@ final class ReleaseIdentityValidatorTest extends TestCase
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage("Release tag 'v13.4.3' does not exist in the repository.");
+
+        $validator->validate($this->config(), 'v13.4.3', 'HEAD', true);
+    }
+
+    public function testRejectsWhenTagPointsToDifferentCommitThanValidatedRef(): void
+    {
+        [$validator, $git] = $this->validator('13.4.3');
+        $tagSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+        $git->expects(self::once())->method('tagExists')->with('v13.4.3')->willReturn(true);
+        $git->expects(self::once())->method('resolve')->with('v13.4.3')->willReturn($tagSha);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage(
+            "Release tag 'v13.4.3' points to commit '{$tagSha}', but ref 'HEAD' resolves to '" . self::SHA . "'. Build the release from the tag commit.",
+        );
 
         $validator->validate($this->config(), 'v13.4.3', 'HEAD', true);
     }
