@@ -50,11 +50,15 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
+        RELEASE_REF: ${{ inputs.ref }}
+        RELEASE_REQUIRE_TAG_EXISTS: ${{ inputs.require-tag-exists }}
       run: >-
         php "${RELEASE_TOOL_PATH}" release:validate-identity
-        --tag "${{ inputs.tag }}"
-        --config "${{ inputs.config-path }}"
-        --ref "${{ inputs.ref }}"
-        --require-tag-exists "${{ inputs.require-tag-exists }}"
+        --tag "${RELEASE_TAG}"
+        --config "${RELEASE_CONFIG_PATH}"
+        --ref "${RELEASE_REF}"
+        --require-tag-exists "${RELEASE_REQUIRE_TAG_EXISTS}"
         --github-output "${GITHUB_OUTPUT}"
         --github-step-summary "${GITHUB_STEP_SUMMARY}"
