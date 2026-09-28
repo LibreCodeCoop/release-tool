@@ -65,9 +65,11 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('release:plan', $content);
         self::assertStringContainsString('release:authorization', $content);
         self::assertStringContainsString('release:prepare', $content);
-        self::assertStringContainsString('Release plan is not ready', $content);
-        self::assertStringContainsString('Open backport blocker', $content);
-        self::assertStringContainsString('backport-blockers=', $content);
+        self::assertStringContainsString('--github-annotations', $content);
+        self::assertStringContainsString('--github-step-summary', $content);
+        self::assertStringNotContainsString('Release plan is not ready', $content);
+        self::assertStringNotContainsString('Open backport blocker', $content);
+        self::assertStringNotContainsString('json_decode(file_get_contents($argv[1])', $content);
     }
 
     public function testPostMergeDelegatesRestoreAuthorizationAndFinalizationToPhp(): void
