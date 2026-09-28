@@ -13,6 +13,7 @@ use LibreCode\ReleaseTool\Application\Release\LocalReleaseMetadataInspector;
 use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
+use LibreCode\ReleaseTool\Application\Release\ReleaseIdentityValidator;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
@@ -85,4 +86,5 @@ exit(ApplicationFactory::create(
     ),
     new AppStorePublicationWaiter(new NextcloudAppStoreRepository()),
     new ReleasePreflight(GitHubReleasePreflightRepository::fromEnvironment()),
+    new ReleaseIdentityValidator($git, new GitReleaseMetadataReader($git)),
 )->run());

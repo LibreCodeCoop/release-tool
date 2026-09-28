@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-notes', 'release-preflight', 'stable-select'];
+    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'stable-select'];
 
     public function testPublicActionSurfaceIsExplicit(): void
     {
@@ -76,6 +76,15 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('release:finalize', $content);
         self::assertStringContainsString('milestone:transition', $content);
         self::assertStringContainsString('release:draft', $content);
+    }
+
+    public function testReleaseIdentityDelegatesValidationToPhp(): void
+    {
+        $content = $this->action('release-identity');
+
+        self::assertStringContainsString('release:validate-identity', $content);
+        self::assertStringNotContainsString('=~', $content);
+        self::assertStringNotContainsString('git ls-remote', $content);
     }
 
     public function testPublicationDelegatesRestoreAndVerificationToPhp(): void
@@ -176,6 +185,11 @@ final class ReleaseActionsTest extends TestCase
                 'verification-id',
                 'verification-artifact-name',
             ],
+        ];
+        yield 'release-identity' => [
+            'release-identity',
+            ['tag', 'working-directory', 'config-path', 'ref', 'require-tag-exists'],
+            ['tag', 'version', 'sha'],
         ];
         yield 'release-notes' => [
             'release-notes',

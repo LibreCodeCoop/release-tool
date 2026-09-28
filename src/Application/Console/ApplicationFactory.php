@@ -24,6 +24,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePreflightCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleaseValidateIdentityCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\StableSelectCommand;
 use LibreCode\ReleaseTool\Application\Console\Port\ActionEnvironment;
 use LibreCode\ReleaseTool\Application\Publication\AppStorePublicationWaiter;
@@ -33,6 +34,7 @@ use LibreCode\ReleaseTool\Application\Release\MilestoneTransitioner;
 use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
+use LibreCode\ReleaseTool\Application\Release\ReleaseIdentityValidator;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
@@ -66,6 +68,7 @@ final class ApplicationFactory
         ?ReleaseNotesGenerator $releaseNotesGenerator = null,
         ?AppStorePublicationWaiter $appStorePublicationWaiter = null,
         ?ReleasePreflight $releasePreflight = null,
+        ?ReleaseIdentityValidator $releaseIdentityValidator = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -143,6 +146,13 @@ final class ApplicationFactory
 
         if ($releasePreflight !== null) {
             $application->add(new ReleasePreflightCommand($releasePreflight));
+        }
+
+        if ($releaseIdentityValidator !== null) {
+            $application->add(new ReleaseValidateIdentityCommand(
+                $releaseIdentityValidator,
+                $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
         }
 
         if ($planner !== null) {
