@@ -16,7 +16,7 @@ interface ReleaseDraftRepository
 
     public function pullRequestMerger(string $repository, int $pullRequestNumber): string;
 
-    public function pullRequestAuthor(string $repository, int $pullRequestNumber): string;
+    public function pullRequestContributor(string $repository, int $pullRequestNumber): string;
 
     public function permission(string $repository, string $login): string;
 
