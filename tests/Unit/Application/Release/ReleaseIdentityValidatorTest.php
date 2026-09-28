@@ -21,15 +21,15 @@ final class ReleaseIdentityValidatorTest extends TestCase
     #[DataProvider('validIdentityProvider')]
     public function testAcceptsMatchingReleaseIdentity(string $tag, string $version): void
     {
-        [$validator, $git] = $this->validator($version, true);
+        [$validator, $git] = $this->validator($version);
         $config = $this->config();
+        $git->expects(self::once())->method('tagExists')->with($tag)->willReturn(true);
 
         $result = $validator->validate($config, $tag, 'HEAD', true);
 
         self::assertSame($tag, $result['tag']);
         self::assertSame($version, $result['version']);
         self::assertSame(self::SHA, $result['sha']);
-        $git->expects(self::once())->method('tagExists')->with($tag)->willReturn(true);
     }
 
     /** @return iterable<string, array{string,string}> */
@@ -49,7 +49,7 @@ final class ReleaseIdentityValidatorTest extends TestCase
         string $version,
         string $expectedMessage,
     ): void {
-        [$validator] = $this->validator($version, true);
+        [$validator] = $this->validator($version);
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage($expectedMessage);
@@ -99,7 +99,7 @@ final class ReleaseIdentityValidatorTest extends TestCase
 
     public function testRejectsMissingTagWhenExistenceIsRequired(): void
     {
-        [$validator, $git] = $this->validator('13.4.3', false);
+        [$validator, $git] = $this->validator('13.4.3');
         $git->expects(self::once())->method('tagExists')->with('v13.4.3')->willReturn(false);
 
         $this->expectException(DomainException::class);
@@ -110,7 +110,7 @@ final class ReleaseIdentityValidatorTest extends TestCase
 
     public function testDoesNotQueryTagExistenceWhenNotRequired(): void
     {
-        [$validator, $git] = $this->validator('13.4.3', true);
+        [$validator, $git] = $this->validator('13.4.3');
         $git->expects(self::never())->method('tagExists');
 
         $result = $validator->validate($this->config(), 'v13.4.3');
@@ -128,12 +128,10 @@ final class ReleaseIdentityValidatorTest extends TestCase
     /**
      * @return array{ReleaseIdentityValidator, GitRepository}
      */
-    private function validator(string $version, bool $tagExists): array
+    private function validator(string $version): array
     {
         $git = $this->createMock(GitRepository::class);
         $git->method('resolve')->with('HEAD')->willReturn(self::SHA);
-        $git->method('tagExists')->willReturn($tagExists);
-
         $metadataReader = $this->createMock(ReleaseMetadataReader::class);
         $metadataReader
             ->method('read')
