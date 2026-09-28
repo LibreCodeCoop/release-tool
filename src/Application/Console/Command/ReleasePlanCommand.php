@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
+use DomainException;
+use InvalidArgumentException;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
@@ -57,7 +59,7 @@ final class ReleasePlanCommand extends Command
             $this->contextValidator->validate($config, $request->root);
             $plan = $this->planner->plan($config, $request->planInput);
             $this->publisher->publish($plan, $request->output, $output);
-        } catch (\Throwable $exception) {
+        } catch (InvalidArgumentException|DomainException $exception) {
             return $this->error($output, $input, $exception->getMessage());
         }
 
