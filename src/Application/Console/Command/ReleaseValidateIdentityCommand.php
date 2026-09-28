@@ -30,8 +30,10 @@ final class ReleaseValidateIdentityCommand extends Command
             ->addOption('tag', null, InputOption::VALUE_REQUIRED, 'Release tag to validate.')
             ->addOption('config', null, InputOption::VALUE_REQUIRED, 'Consumer configuration path.', '.nextcloud-release.yml')
             ->addOption('ref', null, InputOption::VALUE_REQUIRED, 'Git ref whose app metadata must match the tag.', 'HEAD')
-            ->addOption('require-tag-exists', null, InputOption::VALUE_NONE, 'Require the release tag to already exist locally.')
-            ->addOption('json', null, InputOption::VALUE_NONE, 'Emit machine-readable JSON.');
+            ->addOption('require-tag-exists', null, InputOption::VALUE_REQUIRED, 'Require the release tag to already exist locally.', 'false')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Emit machine-readable JSON.')
+            ->addOption('github-output', null, InputOption::VALUE_REQUIRED, 'Write GitHub Actions outputs to this file.')
+            ->addOption('github-step-summary', null, InputOption::VALUE_REQUIRED, 'Write a GitHub Actions step summary to this file.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -40,11 +42,20 @@ final class ReleaseValidateIdentityCommand extends Command
             $config = $this->configLoader->load((string) $input->getOption('config'));
             $this->contextValidator->validate($config, '.');
 
+            $requireTagExists = filter_var(
+                (string) $input->getOption('require-tag-exists'),
+                FILTER_VALIDATE_BOOLEAN,
+                FILTER_NULL_ON_FAILURE,
+            );
+            if ($requireTagExists === null) {
+                throw new \DomainException("require-tag-exists must be either 'true' or 'false'.");
+            }
+
             $result = $this->validator->validate(
                 $config,
                 (string) $input->getOption('tag'),
                 (string) $input->getOption('ref'),
-                (bool) $input->getOption('require-tag-exists'),
+                $requireTagExists,
             );
         } catch (\Throwable $exception) {
             if ((bool) $input->getOption('json')) {
@@ -58,6 +69,26 @@ final class ReleaseValidateIdentityCommand extends Command
             }
 
             return Command::INVALID;
+        }
+
+        $githubOutput = trim((string) $input->getOption('github-output'));
+        if ($githubOutput !== '') {
+            file_put_contents($githubOutput, sprintf(
+                "tag=%s\nversion=%s\nsha=%s\n",
+                $result['tag'],
+                $result['version'],
+                $result['sha'],
+            ), FILE_APPEND | LOCK_EX);
+        }
+
+        $githubStepSummary = trim((string) $input->getOption('github-step-summary'));
+        if ($githubStepSummary !== '') {
+            file_put_contents($githubStepSummary, sprintf(
+                "## Release identity\n\n- Tag: `%s`\n- App version: `%s`\n- Metadata SHA: `%s`\n- Result: **valid**\n",
+                $result['tag'],
+                $result['version'],
+                $result['sha'],
+            ), FILE_APPEND | LOCK_EX);
         }
 
         if ((bool) $input->getOption('json')) {
