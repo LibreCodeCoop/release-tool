@@ -17,6 +17,7 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseIdentityValidator;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
+use LibreCode\ReleaseTool\Application\Release\ReleaseResumeContextResolver;
 use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
 use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
 use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
@@ -49,6 +50,7 @@ $planner = new ReleasePlanner(
     GitHubApiRepository::fromEnvironment(),
     new GitReleaseMetadataReader($git),
 );
+$finalizationRepository = GitHubReleaseFinalizationRepository::fromEnvironment();
 
 exit(ApplicationFactory::create(
     $planner,
@@ -59,7 +61,7 @@ exit(ApplicationFactory::create(
     new LocalReleaseMetadataInspector($git, new GitReleaseMetadataReader($git)),
     new ReleaseFinalizer(
         $git,
-        GitHubReleaseFinalizationRepository::fromEnvironment(),
+        $finalizationRepository,
         new GitReleaseMetadataReader($git),
     ),
     new MilestoneTransitioner(
@@ -87,4 +89,5 @@ exit(ApplicationFactory::create(
     new AppStorePublicationWaiter(new NextcloudAppStoreRepository()),
     new ReleasePreflight(GitHubReleasePreflightRepository::fromEnvironment()),
     new ReleaseIdentityValidator($git, new GitReleaseMetadataReader($git)),
+    new ReleaseResumeContextResolver($finalizationRepository),
 )->run());
