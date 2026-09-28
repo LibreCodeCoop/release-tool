@@ -21,7 +21,11 @@ final class ReleaseValidateIdentityCommandTest extends TestCase
     public function testWritesGitHubOutputsAndSummary(): void
     {
         $git = $this->createMock(GitRepository::class);
-        $git->method('resolve')->with('HEAD')->willReturn(self::SHA);
+        $git->method('resolve')->willReturnCallback(
+            static fn (string $ref): string => in_array($ref, ['HEAD', 'v13.4.3'], true)
+                ? self::SHA
+                : throw new \LogicException("Unexpected ref: {$ref}"),
+        );
         $git->expects(self::once())->method('tagExists')->with('v13.4.3')->willReturn(true);
 
         $metadata = $this->createMock(ReleaseMetadataReader::class);

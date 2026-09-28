@@ -67,11 +67,24 @@ final readonly class ReleaseIdentityValidator
             ));
         }
 
-        if ($requireTagExists && !$this->git->tagExists($tag)) {
-            throw new DomainException(sprintf(
-                "Release tag '%s' does not exist in the repository.",
-                $tag,
-            ));
+        if ($requireTagExists) {
+            if (!$this->git->tagExists($tag)) {
+                throw new DomainException(sprintf(
+                    "Release tag '%s' does not exist in the repository.",
+                    $tag,
+                ));
+            }
+
+            $tagSha = $this->git->resolve($tag);
+            if ($tagSha !== $sha) {
+                throw new DomainException(sprintf(
+                    "Release tag '%s' points to commit '%s', but ref '%s' resolves to '%s'. Build the release from the tag commit.",
+                    $tag,
+                    $tagSha,
+                    $ref,
+                    $sha,
+                ));
+            }
         }
 
         return [

@@ -108,6 +108,21 @@ final class ReleaseIdentityValidatorTest extends TestCase
         $validator->validate($this->config(), 'v13.4.3', 'HEAD', true);
     }
 
+    public function testRejectsWhenTagPointsToDifferentCommitThanValidatedRef(): void
+    {
+        $tagSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        [$validator, $git] = $this->validator('13.4.3', $tagSha);
+
+        $git->expects(self::once())->method('tagExists')->with('v13.4.3')->willReturn(true);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage(
+            "Release tag 'v13.4.3' points to commit '{$tagSha}', but ref 'HEAD' resolves to '" . self::SHA . "'. Build the release from the tag commit.",
+        );
+
+        $validator->validate($this->config(), 'v13.4.3', 'HEAD', true);
+    }
+
     public function testDoesNotQueryTagExistenceWhenNotRequired(): void
     {
         [$validator, $git] = $this->validator('13.4.3');
@@ -128,10 +143,12 @@ final class ReleaseIdentityValidatorTest extends TestCase
     /**
      * @return array{ReleaseIdentityValidator, GitRepository}
      */
-    private function validator(string $version): array
+    private function validator(string $version, string $tagSha = self::SHA): array
     {
         $git = $this->createMock(GitRepository::class);
-        $git->method('resolve')->with('HEAD')->willReturn(self::SHA);
+        $git->method('resolve')->willReturnCallback(
+            static fn (string $ref): string => $ref === 'HEAD' ? self::SHA : $tagSha,
+        );
         $metadataReader = $this->createMock(ReleaseMetadataReader::class);
         $metadataReader
             ->method('read')
