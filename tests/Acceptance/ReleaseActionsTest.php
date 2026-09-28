@@ -65,6 +65,9 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('release:plan', $content);
         self::assertStringContainsString('release:authorization', $content);
         self::assertStringContainsString('release:prepare', $content);
+        self::assertStringContainsString('Release plan is not ready', $content);
+        self::assertStringContainsString('Open backport blocker', $content);
+        self::assertStringContainsString('backport-blockers=', $content);
     }
 
     public function testPostMergeDelegatesRestoreAuthorizationAndFinalizationToPhp(): void
