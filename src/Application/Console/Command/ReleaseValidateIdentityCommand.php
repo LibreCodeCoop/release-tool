@@ -29,7 +29,6 @@ final class ReleaseValidateIdentityCommand extends Command
         $this
             ->addOption('tag', null, InputOption::VALUE_REQUIRED, 'Release tag to validate.')
             ->addOption('config', null, InputOption::VALUE_REQUIRED, 'Consumer configuration path.', '.nextcloud-release.yml')
-            ->addOption('root', null, InputOption::VALUE_REQUIRED, 'Consumer repository root.', '.')
             ->addOption('ref', null, InputOption::VALUE_REQUIRED, 'Git ref whose app metadata must match the tag.', 'HEAD')
             ->addOption('require-tag-exists', null, InputOption::VALUE_NONE, 'Require the release tag to already exist locally.')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Emit machine-readable JSON.');
@@ -38,9 +37,8 @@ final class ReleaseValidateIdentityCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $root = (string) $input->getOption('root');
             $config = $this->configLoader->load((string) $input->getOption('config'));
-            $this->contextValidator->validate($config, $root);
+            $this->contextValidator->validate($config, '.');
 
             $result = $this->validator->validate(
                 $config,
