@@ -140,7 +140,7 @@ final class ReleasePlanReporterTest extends TestCase
             false,
             true,
             ReleaseMode::Normal,
-            new PublicReleaseText('', false),
+            new PublicReleaseText('Public release', false),
             $warnings,
             $ready,
         );
