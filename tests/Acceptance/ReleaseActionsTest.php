@@ -110,6 +110,17 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringNotContainsString('git ls-remote', $content);
     }
 
+    public function testPublicationDefaultsToPullRequestTargetPostMergeEvent(): void
+    {
+        $action = Yaml::parseFile($this->root() . '/actions/publication/action.yml');
+        self::assertIsArray($action);
+
+        self::assertSame(
+            'pull_request_target',
+            $action['inputs']['post-merge-event']['default'] ?? null,
+        );
+    }
+
     public function testPublicationDelegatesRestoreAndVerificationToPhp(): void
     {
         $content = $this->action('publication');

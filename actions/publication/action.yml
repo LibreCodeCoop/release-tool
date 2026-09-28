@@ -19,7 +19,7 @@ inputs:
   post-merge-event:
     description: Workflow event that produced the finalized release-state artifact.
     required: false
-    default: pull_request
+    default: pull_request_target
   attempts:
     description: Maximum PublicationVerification attempts while publisher and App Store state converge.
     required: false
