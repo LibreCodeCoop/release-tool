@@ -159,7 +159,33 @@ runs:
         } >> "${GITHUB_STEP_SUMMARY}"
 
         if [[ "${exit_code}" -eq 3 ]]; then
-          echo "::warning::Release plan is not ready; see the step summary and persisted state for details."
+          php -r '
+            $plan=json_decode(file_get_contents($argv[1]),true,512,JSON_THROW_ON_ERROR);
+            $milestone=$plan["milestone"] ?? null;
+            $blockers=$plan["backport_blockers"] ?? [];
+            $warnings=$plan["warnings"] ?? [];
+
+            $parts=[];
+            $parts[]=$milestone === null ? "milestone=missing" : sprintf("milestone=%s (#%s)", $milestone["title"], $milestone["number"]);
+            $parts[]="backport-blockers=" . count($blockers);
+
+            printf("::error::Release plan is not ready (%s).\n", implode(", ", $parts));
+
+            foreach ($blockers as $blocker) {
+              printf(
+                "::error::Open backport blocker #%s: %s\n",
+                $blocker["number"],
+                str_replace(["\r","\n"], " ", (string) $blocker["title"]),
+              );
+            }
+
+            foreach ($warnings as $warning) {
+              printf(
+                "::warning::%s\n",
+                str_replace(["\r","\n"], " ", (string) $warning),
+              );
+            }
+          ' "${plan_file}"
         fi
         exit "${exit_code}"
 
