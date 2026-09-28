@@ -143,7 +143,7 @@ final readonly class MilestoneTransitioner
 
         $open = $this->milestones->openMilestones($plan->repository);
         $source = $this->findByNumber($open, $plan->releasedMilestoneNumber);
-        if ($source === null || $source->title !== $plan->currentTitle) {
+        if ($source === null || !$this->naming->matches($plan->currentTitle, $source->title)) {
             throw new DomainException('Milestone state changed after planning; rerun dry-run before applying.');
         }
 
@@ -190,7 +190,7 @@ final readonly class MilestoneTransitioner
     private function findByTitle(array $milestones, string $title): ?\LibreCode\ReleaseTool\Application\Release\ReadModel\MilestoneInfo
     {
         foreach ($milestones as $milestone) {
-            if ($milestone->title === $title) {
+            if ($this->naming->matches($title, $milestone->title)) {
                 return $milestone;
             }
         }

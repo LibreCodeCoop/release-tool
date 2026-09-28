@@ -51,6 +51,25 @@ final class MilestoneTransitionerTest extends TestCase
         self::assertSame('Next Patch (35)', $repo->open[0]->title);
     }
 
+    public function testPlansAndAppliesStableTransitionWithDecoratedMilestoneTitle(): void
+    {
+        $repo = new InMemoryMilestoneRepository(
+            [new MilestoneInfo(150, '💚 Next Patch (35)', 'https://example.test/milestones/150')],
+        );
+        $service = $this->service($repo, '15.0.5', 35, 35);
+
+        $plan = $service->plan($this->config(), $this->prepared('15.0.5', ReleaseChannel::Final), true);
+
+        self::assertSame(150, $plan->releasedMilestoneNumber);
+        self::assertSame('Next Patch (35)', $plan->currentTitle);
+
+        $result = $service->apply($plan);
+
+        self::assertSame('15.0.5', $result->finalTitle);
+        self::assertSame('15.0.5', $repo->closed[0]->title);
+        self::assertSame('Next Patch (35)', $repo->open[0]->title);
+    }
+
     public function testFinalStableCanCloseWithoutFollowUp(): void
     {
         $repo = new InMemoryMilestoneRepository(
