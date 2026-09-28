@@ -47,52 +47,14 @@ runs:
     - id: validate
       name: Validate release identity
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
-        RELEASE_TAG: ${{ inputs.tag }}
-        RELEASE_WORKING_DIRECTORY: ${{ inputs.working-directory }}
-        RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
-        RELEASE_REF: ${{ inputs.ref }}
-        RELEASE_REQUIRE_TAG_EXISTS: ${{ inputs.require-tag-exists }}
-      run: |
-        set -euo pipefail
-
-        case "${RELEASE_REQUIRE_TAG_EXISTS}" in
-          true)
-            require_tag_exists='--require-tag-exists'
-            ;;
-          false)
-            require_tag_exists=''
-            ;;
-          *)
-            echo "::error::require-tag-exists must be either 'true' or 'false'."
-            exit 2
-            ;;
-        esac
-
-        cd "${RELEASE_WORKING_DIRECTORY}"
-        result="$(php "${RELEASE_TOOL_PATH}" release:validate-identity           --tag "${RELEASE_TAG}"           --config "${RELEASE_CONFIG_PATH}"           --ref "${RELEASE_REF}"           ${require_tag_exists}           --json)"
-
-        valid="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo ($d["valid"] ?? false) ? "true" : "false";' "${result}")"
-        if [ "${valid}" != "true" ]; then
-          error="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["error"] ?? "Release identity validation failed."; ' "${result}")"
-          echo "::error::${error}"
-          exit 2
-        fi
-
-        tag="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["tag"];' "${result}")"
-        version="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["version"];' "${result}")"
-        sha="$(php -r '$d=json_decode($argv[1],true,512,JSON_THROW_ON_ERROR); echo $d["sha"];' "${result}")"
-
-        echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-        echo "version=${version}" >> "${GITHUB_OUTPUT}"
-        echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
-
-        {
-          echo "## Release identity"
-          echo
-          printf -- '- Tag: `%s`\n' "${tag}"
-          printf -- '- App version: `%s`\n' "${version}"
-          printf -- '- Metadata SHA: `%s`\n' "${sha}"
-          echo "- Result: **valid**"
-        } >> "${GITHUB_STEP_SUMMARY}"
+      run: >-
+        php "${RELEASE_TOOL_PATH}" release:validate-identity
+        --tag "${{ inputs.tag }}"
+        --config "${{ inputs.config-path }}"
+        --ref "${{ inputs.ref }}"
+        --require-tag-exists "${{ inputs.require-tag-exists }}"
+        --github-output "${GITHUB_OUTPUT}"
+        --github-step-summary "${GITHUB_STEP_SUMMARY}"
