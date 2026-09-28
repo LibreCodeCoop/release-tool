@@ -8,16 +8,24 @@ use InvalidArgumentException;
 use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReader;
 use PharData;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 final class PharArchiveReaderTest extends TestCase
 {
     /** @var list<string> */
     private array $paths = [];
 
+    /** @var list<string> */
+    private array $directories = [];
+
     protected function tearDown(): void
     {
         foreach ($this->paths as $path) {
             @unlink($path);
+        }
+
+        foreach (array_reverse($this->directories) as $directory) {
+            $this->removeDirectory($directory);
         }
     }
 
@@ -35,6 +43,33 @@ final class PharArchiveReaderTest extends TestCase
             $reader->paths(),
         );
         self::assertSame('# Changelog', $reader->read('libresign/CHANGELOG.md'));
+    }
+
+    public function testReadsGnuTarArchiveWithLongNameEntry(): void
+    {
+        $path = $this->path('.tar.gz');
+        $source = $this->directory();
+        $relative = 'libresign/3rdparty/composer/libresign/pdf-signature-validator/src/Model/DocumentModificationState.php';
+        $file = $source . '/' . $relative;
+
+        mkdir(dirname($file), 0777, true);
+        file_put_contents($file, 'document-modification-state');
+
+        $process = new Process([
+            'tar',
+            '--format=gnu',
+            '-czf',
+            $path,
+            '-C',
+            $source,
+            'libresign',
+        ]);
+        $process->mustRun();
+
+        $reader = new PharArchiveReader($path);
+
+        self::assertContains($relative, $reader->paths());
+        self::assertSame('document-modification-state', $reader->read($relative));
     }
 
     public function testAcceptsSafeDirectoryEntriesWithTrailingSlash(): void
@@ -82,6 +117,37 @@ final class PharArchiveReaderTest extends TestCase
         $this->expectExceptionMessage('Unsupported archive format');
 
         new PharArchiveReader($path);
+    }
+
+    private function directory(): string
+    {
+        $path = sys_get_temp_dir() . '/release-tool-' . bin2hex(random_bytes(8));
+        mkdir($path, 0777, true);
+        $this->directories[] = $path;
+
+        return $path;
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($iterator as $entry) {
+            if ($entry->isDir()) {
+                @rmdir($entry->getPathname());
+            } else {
+                @unlink($entry->getPathname());
+            }
+        }
+
+        @rmdir($directory);
     }
 
     private function path(string $suffix): string

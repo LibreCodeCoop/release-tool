@@ -6,14 +6,10 @@ namespace LibreCode\ReleaseTool\Infrastructure\Archive;
 
 use InvalidArgumentException;
 use LibreCode\ReleaseTool\Application\Artifact\Port\ArchiveReader;
-use PharData;
-use RecursiveIteratorIterator;
 use RuntimeException;
 
 final class PharArchiveReader implements ArchiveReader
 {
-    private PharData $archive;
-
     /** @var array<string, true> */
     private array $entries = [];
 
@@ -24,41 +20,7 @@ final class PharArchiveReader implements ArchiveReader
         }
 
         $this->assertSupportedTarArchive();
-        $this->assertTarPathsSafe();
-
-        try {
-            $this->archive = new PharData($path);
-        } catch (\Throwable $exception) {
-            throw new InvalidArgumentException('Unsupported or malformed archive: ' . $exception->getMessage(), 0, $exception);
-        }
-
-        $iterator = new RecursiveIteratorIterator($this->archive, RecursiveIteratorIterator::SELF_FIRST);
-        foreach ($iterator as $entry) {
-            if ($entry->isDir()) {
-                continue;
-            }
-
-            $relative = str_replace('\\', '/', $entry->getPathName());
-            $marker = '/' . basename($path) . '/';
-            $position = strpos($relative, $marker);
-            if ($position !== false) {
-                $relative = substr($relative, $position + strlen($marker));
-            } elseif (str_starts_with($relative, 'phar://')) {
-                $relative = substr($relative, strlen('phar://'));
-                $archivePosition = strpos($relative, basename($path) . '/');
-                if ($archivePosition !== false) {
-                    $relative = substr($relative, $archivePosition + strlen(basename($path)) + 1);
-                }
-            }
-
-            $relative = ltrim($relative, '/');
-            $this->assertSafePath($relative);
-            if (isset($this->entries[$relative])) {
-                throw new InvalidArgumentException(sprintf('Archive contains duplicate path: %s', $relative));
-            }
-            $this->entries[$relative] = true;
-        }
-
+        $this->scanArchive();
         if ($this->entries === []) {
             throw new InvalidArgumentException('Archive contains no files.');
         }
@@ -77,10 +39,9 @@ final class PharArchiveReader implements ArchiveReader
             throw new InvalidArgumentException(sprintf('Archive path not found: %s', $path));
         }
 
-        try {
-            $content = $this->archive[$path]->getContent();
-        } catch (\Throwable $exception) {
-            throw new RuntimeException(sprintf('Could not read archive path %s: %s', $path, $exception->getMessage()), 0, $exception);
+        $content = $this->scanArchive($path);
+        if ($content === null) {
+            throw new RuntimeException(sprintf('Could not read archive path %s', $path));
         }
 
         return $content;
@@ -98,10 +59,11 @@ final class PharArchiveReader implements ArchiveReader
         }
     }
 
-    private function assertTarPathsSafe(): void
+    private function scanArchive(?string $wantedPath = null): ?string
     {
         $handle = $this->openTarStream();
         $pendingLongName = null;
+        $pendingPaxPath = null;
 
         try {
             while (true) {
@@ -141,25 +103,88 @@ final class PharArchiveReader implements ArchiveReader
                     continue;
                 }
 
-                if ($type === 'x' || $type === 'g') {
-                    foreach (preg_split('/\n/', $payload) ?: [] as $line) {
-                        if (preg_match('/^\d+ path=(.+)$/', $line, $matches) === 1) {
-                            $this->assertSafePath($matches[1]);
-                        }
+                if ($type === 'x') {
+                    $pendingPaxPath = $this->readPaxPath($payload);
+                    if ($pendingPaxPath !== null) {
+                        $this->assertSafePath($pendingPaxPath);
                     }
                     continue;
                 }
 
-                $effectivePath = $pendingLongName ?? $path;
-                $pendingLongName = null;
-                if ($type === '5') {
-                    $effectivePath = rtrim($effectivePath, '/');
+                if ($type === 'g') {
+                    $globalPaxPath = $this->readPaxPath($payload);
+                    if ($globalPaxPath !== null) {
+                        $this->assertSafePath($globalPaxPath);
+                    }
+                    continue;
                 }
+
+                $effectivePath = $pendingPaxPath ?? $pendingLongName ?? $path;
+                $pendingPaxPath = null;
+                $pendingLongName = null;
+
+                if ($type === '5') {
+                    $this->assertSafePath(rtrim($effectivePath, '/'));
+                    continue;
+                }
+
                 $this->assertSafePath($effectivePath);
+                if ($type !== '' && $type !== "\0" && $type !== '0') {
+                    continue;
+                }
+
+                if ($wantedPath !== null) {
+                    if ($effectivePath === $wantedPath) {
+                        return $payload;
+                    }
+                    continue;
+                }
+
+                if (isset($this->entries[$effectivePath])) {
+                    throw new InvalidArgumentException(sprintf('Archive contains duplicate path: %s', $effectivePath));
+                }
+                $this->entries[$effectivePath] = true;
             }
         } finally {
             fclose($handle);
         }
+
+        return null;
+    }
+
+    private function readPaxPath(string $payload): ?string
+    {
+        $offset = 0;
+        $payloadLength = strlen($payload);
+        $path = null;
+
+        while ($offset < $payloadLength) {
+            $space = strpos($payload, ' ', $offset);
+            if ($space === false) {
+                throw new InvalidArgumentException('Malformed TAR archive: invalid PAX record.');
+            }
+
+            $lengthField = substr($payload, $offset, $space - $offset);
+            if ($lengthField === '' || preg_match('/^[0-9]+$/', $lengthField) !== 1) {
+                throw new InvalidArgumentException('Malformed TAR archive: invalid PAX record length.');
+            }
+
+            $recordLength = (int) $lengthField;
+            if ($recordLength <= 0 || $offset + $recordLength > $payloadLength) {
+                throw new InvalidArgumentException('Malformed TAR archive: truncated PAX record.');
+            }
+
+            $record = substr($payload, $space + 1, $recordLength - ($space - $offset) - 1);
+            $record = rtrim($record, "\n");
+            $separator = strpos($record, '=');
+            if ($separator !== false && substr($record, 0, $separator) === 'path') {
+                $path = substr($record, $separator + 1);
+            }
+
+            $offset += $recordLength;
+        }
+
+        return $path;
     }
 
     /** @return resource */
