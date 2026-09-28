@@ -159,7 +159,7 @@ YAML);
             '--tag', 'v1.0.0',
             '--config', $root . '/.nextcloud-release.yml',
             '--ref', 'v1.0.0',
-            '--require-tag-exists',
+            '--require-tag-exists', 'true',
             '--json',
         ],
         $root,
