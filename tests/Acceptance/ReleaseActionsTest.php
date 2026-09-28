@@ -61,15 +61,33 @@ final class ReleaseActionsTest extends TestCase
     public function testPrepareDelegatesAuthorizationAndPlanningToPhp(): void
     {
         $content = $this->action('prepare');
+        $action = Yaml::parse($content);
+        self::assertIsArray($action);
 
-        self::assertStringContainsString('release:plan', $content);
+        $steps = $action['runs']['steps'] ?? [];
+        self::assertIsArray($steps);
+
+        $planStep = null;
+        foreach ($steps as $step) {
+            if (is_array($step) && ($step['id'] ?? null) === 'plan') {
+                $planStep = $step;
+                break;
+            }
+        }
+        self::assertIsArray($planStep);
+
+        $planRun = $planStep['run'] ?? null;
+        self::assertIsString($planRun);
+
+        self::assertStringContainsString('release:plan', $planRun);
+        self::assertStringContainsString('--github-annotations', $planRun);
+        self::assertStringContainsString('--github-step-summary', $planRun);
+        self::assertStringNotContainsString('Release plan is not ready', $planRun);
+        self::assertStringNotContainsString('Open backport blocker', $planRun);
+        self::assertStringNotContainsString('json_decode(', $planRun);
+
         self::assertStringContainsString('release:authorization', $content);
         self::assertStringContainsString('release:prepare', $content);
-        self::assertStringContainsString('--github-annotations', $content);
-        self::assertStringContainsString('--github-step-summary', $content);
-        self::assertStringNotContainsString('Release plan is not ready', $content);
-        self::assertStringNotContainsString('Open backport blocker', $content);
-        self::assertStringNotContainsString('json_decode(file_get_contents($argv[1])', $content);
     }
 
     public function testPostMergeDelegatesRestoreAuthorizationAndFinalizationToPhp(): void
