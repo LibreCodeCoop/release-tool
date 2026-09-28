@@ -89,12 +89,19 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $milestoneTitle = $this->milestoneNaming->title($config, $input->channel, $nextcloudMajor, $appMajor, $proposed);
         $milestone = null;
         foreach ($this->github->openMilestones($repository) as $candidate) {
-            if ($candidate->title === $milestoneTitle) {
+            if ($this->milestoneNaming->matches($milestoneTitle, $candidate->title)) {
                 $milestone = [
                     'number' => $candidate->number,
                     'title' => $candidate->title,
                     'url' => $candidate->url,
                 ];
+                if ($candidate->title !== $milestoneTitle) {
+                    $warnings[] = sprintf(
+                        'Matched decorated milestone title "%s" to configured milestone "%s".',
+                        $candidate->title,
+                        $milestoneTitle,
+                    );
+                }
                 break;
             }
         }
