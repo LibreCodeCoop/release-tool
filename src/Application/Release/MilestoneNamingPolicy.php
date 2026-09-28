@@ -24,4 +24,21 @@ final class MilestoneNamingPolicy
             '{version}' => (string) $version,
         ]);
     }
+
+    public function matches(string $expected, string $actual): bool
+    {
+        if ($expected === $actual) {
+            return true;
+        }
+
+        return $this->normalize($expected) === $this->normalize($actual);
+    }
+
+    private function normalize(string $title): string
+    {
+        $title = trim($title);
+        $title = preg_replace('/^[\\p{So}\\p{Sk}\\p{Cf}\\s]+|[\\p{So}\\p{Sk}\\p{Cf}\\s]+$/u', '', $title) ?? $title;
+
+        return trim(preg_replace('/\\s+/u', ' ', $title) ?? $title);
+    }
 }
