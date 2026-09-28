@@ -17,6 +17,7 @@ use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 use LibreCode\ReleaseTool\Tests\Fixtures\Release\InMemoryMilestoneRepository;
 use LibreCode\ReleaseTool\Tests\Fixtures\Release\StaticMetadataReader;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class MilestoneTransitionerTest extends TestCase
@@ -51,23 +52,63 @@ final class MilestoneTransitionerTest extends TestCase
         self::assertSame('Next Patch (35)', $repo->open[0]->title);
     }
 
-    public function testPlansAndAppliesStableTransitionWithDecoratedMilestoneTitle(): void
-    {
+    #[DataProvider('decoratedMilestoneTransitionProvider')]
+    public function testPlansAndAppliesTransitionWithEquivalentMilestoneTitle(
+        string $actualTitle,
+        string $version,
+        ReleaseChannel $channel,
+        string $expectedConfiguredTitle,
+    ): void {
         $repo = new InMemoryMilestoneRepository(
-            [new MilestoneInfo(150, '💚 Next Patch (35)', 'https://example.test/milestones/150')],
+            [new MilestoneInfo(150, $actualTitle, 'https://example.test/milestones/150')],
         );
-        $service = $this->service($repo, '15.0.5', 35, 35);
+        $service = $this->service($repo, $version, 35, 35);
 
-        $plan = $service->plan($this->config(), $this->prepared('15.0.5', ReleaseChannel::Final), true);
+        $plan = $service->plan($this->config(), $this->prepared($version, $channel), true);
 
         self::assertSame(150, $plan->releasedMilestoneNumber);
-        self::assertSame('Next Patch (35)', $plan->currentTitle);
+        self::assertSame($expectedConfiguredTitle, $plan->currentTitle);
 
         $result = $service->apply($plan);
 
-        self::assertSame('15.0.5', $result->finalTitle);
-        self::assertSame('15.0.5', $repo->closed[0]->title);
-        self::assertSame('Next Patch (35)', $repo->open[0]->title);
+        self::assertSame($version, $result->finalTitle);
+        self::assertSame($version, $repo->closed[0]->title);
+        self::assertSame($expectedConfiguredTitle, $repo->open[0]->title);
+    }
+
+    /** @return iterable<string, array{string,string,ReleaseChannel,string}> */
+    public static function decoratedMilestoneTransitionProvider(): iterable
+    {
+        yield 'exact stable milestone' => [
+            'Next Patch (35)',
+            '15.0.5',
+            ReleaseChannel::Final,
+            'Next Patch (35)',
+        ];
+        yield 'leading emoji on stable milestone' => [
+            '💚 Next Patch (35)',
+            '15.0.5',
+            ReleaseChannel::Final,
+            'Next Patch (35)',
+        ];
+        yield 'trailing emoji on stable milestone' => [
+            'Next Patch (35) 💚',
+            '15.0.5',
+            ReleaseChannel::Final,
+            'Next Patch (35)',
+        ];
+        yield 'emoji on both sides of stable milestone' => [
+            '🚀 Next Patch (35) 💚',
+            '15.0.5',
+            ReleaseChannel::Final,
+            'Next Patch (35)',
+        ];
+        yield 'leading emoji on rc milestone' => [
+            '🚀 Next RC (35)',
+            '15.0.5-rc.1',
+            ReleaseChannel::Rc,
+            'Next RC (35)',
+        ];
     }
 
     public function testFinalStableCanCloseWithoutFollowUp(): void
