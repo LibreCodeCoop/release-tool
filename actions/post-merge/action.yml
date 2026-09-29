@@ -228,7 +228,14 @@ runs:
         if [[ "${create_follow_up}" == "true" ]]; then
           args+=(--create-follow-up)
         fi
+        set +e
         php "${RELEASE_TOOL_PATH}" "${args[@]}" > "${RELEASE_STATE_DIR}/milestone-transition.json"
+        status=$?
+        set -e
+        if [[ "${status}" -ne 0 ]]; then
+          cat "${RELEASE_STATE_DIR}/milestone-transition.json" || true
+          exit "${status}"
+        fi
 
     - id: draft-token
       name: Create release draft token
