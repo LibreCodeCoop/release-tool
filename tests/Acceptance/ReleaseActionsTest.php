@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'stable-select'];
+    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'resume-context', 'stable-select'];
 
     public function testPublicActionSurfaceIsExplicit(): void
     {
@@ -234,6 +234,11 @@ final class ReleaseActionsTest extends TestCase
             'release-preflight',
             ['version', 'stable-branch', 'current-ref', 'repository', 'appinfo', 'changelog', 'milestone', 'blocker-queries-json', 'github-token'],
             ['result-file'],
+        ];
+        yield 'resume-context' => [
+            'resume-context',
+            ['pull-request-number', 'github-token'],
+            ['base-ref', 'merger'],
         ];
         yield 'stable-select' => [
             'stable-select',

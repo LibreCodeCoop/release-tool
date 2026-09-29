@@ -14,6 +14,9 @@ final readonly class FinalizedPullRequest
         public bool $merged,
         public ?string $mergeCommitSha,
         public array $changedFiles,
+        public ?string $headBranch = null,
+        public ?string $body = null,
+        public ?string $mergedBy = null,
     ) {
     }
 }
