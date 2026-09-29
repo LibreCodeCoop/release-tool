@@ -86,7 +86,7 @@ final class GitHubReleaseDraftRepositoryTest extends TestCase
         $repository->createDraft(
             'LibreSign/libresign',
             'v15.0.5',
-            self::SHA,
+            str_repeat('a', 40),
             '15.0.5',
             'body',
             false,
