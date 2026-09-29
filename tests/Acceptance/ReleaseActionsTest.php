@@ -100,6 +100,7 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('milestone:transition', $content);
         self::assertStringContainsString('cat "${RELEASE_STATE_DIR}/milestone-transition.json" || true', $content);
         self::assertStringContainsString('release:draft', $content);
+        self::assertStringContainsString('permission-workflows: write', $content);
         self::assertStringContainsString('use-caller-token-for-draft', $content);
         self::assertStringContainsString("inputs.use-caller-token-for-draft == 'true'", $content);
     }
