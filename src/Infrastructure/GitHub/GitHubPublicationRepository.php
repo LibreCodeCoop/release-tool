@@ -107,7 +107,7 @@ final readonly class GitHubPublicationRepository implements PublicationRepositor
         $response = $this->client->request(
             'GET',
             sprintf('/repos/%s/actions/workflows/%s/runs', $repository, rawurlencode($workflow)),
-            ['query' => ['event' => 'release', 'status' => 'completed', 'head_sha' => $headSha, 'per_page' => 100]],
+            ['query' => ['event' => 'release', 'head_sha' => $headSha, 'per_page' => 100]],
         );
         $this->assertSuccess($response->getStatusCode(), 'read publisher workflow runs');
         $data = $response->toArray(false);
