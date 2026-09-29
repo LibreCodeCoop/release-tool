@@ -98,6 +98,7 @@ The permissions below match what the current shared actions actually request whe
 | --- | --- | --- |
 | **Contents** | **Read and write** | Create generated branches/commits and create/update GitHub Release drafts. |
 | **Pull requests** | **Read and write** | Create or reuse release preparation/history synchronization pull requests. |
+| **Workflows** | **Read and write** | Required by GitHub when creating or updating a Release whose target commit changes files under `.github/workflows/` relative to the default branch. |
 | **Metadata** | Read-only | Implicit GitHub App repository metadata access |
 
 All other repository permissions should remain **No access** unless your own integration adds another requirement.
@@ -109,7 +110,6 @@ In particular, the shared release actions do **not** currently require GitHub Ap
 - Checks;
 - Deployments;
 - Issues;
-- Workflows;
 - Secrets;
 - Environments.
 
@@ -252,6 +252,8 @@ A correctly configured App should allow the workflow to:
 
 A `403` from GitHub usually means one of:
 
+- the Release target commit changes `.github/workflows/` relative to the default branch but the App installation has not approved **Workflows: Read and write**;
+
 - the App is not installed on the repository;
 - the installation does not include that repository;
 - the App permission is too restrictive;
@@ -275,7 +277,7 @@ Before the first real release, confirm all of the following:
 - the App is owned by the intended organization/account;
 - Webhooks are disabled because this integration does not use them;
 - User authorization and Device Flow are disabled;
-- Repository permissions are only **Contents: Read and write** and **Pull requests: Read and write**;
+- Repository permissions are **Contents: Read and write**, **Pull requests: Read and write**, and **Workflows: Read and write**;
 - Organization/account permissions are **No access**;
 - the App is installed on the consumer repository;
 - installation scope is **Only select repositories** unless broader access is intentional;
