@@ -21,6 +21,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\PublicationVerifyCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseDraftCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseFinalizeCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleaseNotesCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\ReleasePipelineVerifyCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePreflightCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePrepareCommand;
@@ -36,6 +37,7 @@ use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\ReleaseDrafter;
 use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleaseIdentityValidator;
+use LibreCode\ReleaseTool\Application\Release\ReleasePipelinePinVerifier;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
@@ -115,6 +117,12 @@ final class ApplicationFactory
             $application->add(new PublicationVerifyCommand(
                 $publicationVerifier,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
+            ));
+        }
+
+        if ($gitRepository !== null) {
+            $application->add(new ReleasePipelineVerifyCommand(
+                new ReleasePipelinePinVerifier($gitRepository),
             ));
         }
 
