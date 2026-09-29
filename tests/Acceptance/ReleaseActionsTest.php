@@ -98,6 +98,7 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('release:authorization', $content);
         self::assertStringContainsString('release:finalize', $content);
         self::assertStringContainsString('milestone:transition', $content);
+        self::assertStringContainsString('cat "${RELEASE_STATE_DIR}/milestone-transition.json" || true', $content);
         self::assertStringContainsString('release:draft', $content);
     }
 
