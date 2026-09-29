@@ -98,7 +98,6 @@ The permissions below match what the current shared actions actually request whe
 | --- | --- | --- |
 | **Contents** | **Read and write** | Create generated branches/commits and create/update GitHub Release drafts. |
 | **Pull requests** | **Read and write** | Create or reuse release preparation/history synchronization pull requests. |
-| **Workflows** | **Read and write** | Required by GitHub when creating or updating a Release whose target commit changes files under `.github/workflows/` relative to the default branch. |
 | **Metadata** | Read-only | Implicit GitHub App repository metadata access |
 
 All other repository permissions should remain **No access** unless your own integration adds another requirement.
@@ -268,6 +267,8 @@ If you add permissions after installations already exist, GitHub requires the in
 
 Keep the permission set minimal and review changes as part of release-tool upgrades.
 
+If GitHub returns `Resource not accessible by integration` while creating or updating a Release, first compare the successful and failing release contexts before expanding App permissions. LibreSign 13.4.4 and 14.2.4 successfully created Releases with Contents/Pull requests only, so Workflows permission is not a general prerequisite for Release creation.
+
 ## Recommended final checklist
 
 Before the first real release, confirm all of the following:
@@ -275,7 +276,7 @@ Before the first real release, confirm all of the following:
 - the App is owned by the intended organization/account;
 - Webhooks are disabled because this integration does not use them;
 - User authorization and Device Flow are disabled;
-- Repository permissions are **Contents: Read and write**, **Pull requests: Read and write**, and **Workflows: Read and write**;
+- Repository permissions are only **Contents: Read and write** and **Pull requests: Read and write**;
 - Organization/account permissions are **No access**;
 - the App is installed on the consumer repository;
 - installation scope is **Only select repositories** unless broader access is intentional;
