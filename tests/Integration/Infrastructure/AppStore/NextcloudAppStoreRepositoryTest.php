@@ -50,10 +50,17 @@ final class NextcloudAppStoreRepositoryTest extends TestCase
 </rss>
 XML;
 
-        $client = new MockHttpClient(new MockResponse($payload, [
-            'http_code' => 200,
-            'response_headers' => ['content-type: application/rss+xml; charset=utf-8'],
-        ]));
+        $responses = [
+            new MockResponse($payload, [
+                'http_code' => 200,
+                'response_headers' => ['content-type: application/rss+xml; charset=utf-8'],
+            ]),
+            new MockResponse($payload, [
+                'http_code' => 200,
+                'response_headers' => ['content-type: application/rss+xml; charset=utf-8'],
+            ]),
+        ];
+        $client = new MockHttpClient($responses);
         $repository = new NextcloudAppStoreRepository($client);
 
         self::assertTrue($repository->hasRelease(
