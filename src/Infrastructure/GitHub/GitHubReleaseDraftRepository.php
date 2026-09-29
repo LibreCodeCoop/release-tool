@@ -294,6 +294,7 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
             $response->getStatusCode(),
             $method . ' ' . $path,
             $response->getContent(false),
+            $response->getHeaders(false),
         );
         $data = $response->toArray(false);
         if (array_is_list($data)) {
@@ -302,8 +303,14 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
         return $data;
     }
 
-    private function assertSuccess(int $status, string $operation, ?string $responseBody = null): void
-    {
+    /** @param array<string, list<string>> $headers */
+    private function assertSuccess(
+        int $status,
+        string $operation,
+        ?string $responseBody = null,
+        array $headers = [],
+    ): void {
+
         if ($status < 200 || $status >= 300) {
             $message = null;
             if (is_string($responseBody) && $responseBody !== '') {
@@ -313,11 +320,20 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
                 }
             }
 
+            $details = [];
+            foreach (['x-accepted-github-permissions', 'x-github-request-id'] as $header) {
+                $value = $headers[$header][0] ?? null;
+                if (is_string($value) && $value !== '') {
+                    $details[] = $header . '=' . $value;
+                }
+            }
+
             throw new DomainException(sprintf(
-                'GitHub API failed to %s (%d)%s.',
+                'GitHub API failed to %s (%d)%s%s.',
                 $operation,
                 $status,
                 $message === null ? '' : ': ' . $message,
+                $details === [] ? '' : ' [' . implode('; ', $details) . ']',
             ));
         }
     }
