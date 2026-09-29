@@ -34,7 +34,7 @@ final class AppStorePublicationWaitCommand extends Command
         try {
             $app = trim((string) $input->getOption('app-name'));
             $version = ltrim(trim((string) $input->getOption('version')), 'v');
-            $platform = $this->normalizePlatform((string) $input->getOption('platform'));
+            $this->normalizePlatform((string) $input->getOption('platform'));
             $attempts = $this->integerOption($input, 'attempts');
             $delay = $this->integerOption($input, 'delay-seconds');
             if ($app === '' || $version === '') {
