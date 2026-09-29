@@ -96,6 +96,34 @@ MD);
         self::assertTrue($draft->prerelease);
     }
 
+    public function testMatchingExistingDraftIsReusedWithoutMutation(): void
+    {
+        $prepared = $this->prepared();
+        $body = "## 15.0.4\n\n- Fixed release."
+            . "\n\nMilestone: [v15.0.4](https://example.test/milestones/7?closed=1)"
+            . "\n\n**Full Changelog**: https://github.com/LibreSign/libresign/compare/v15.0.3...v15.0.4";
+        $existing = new ReleaseDraftInfo(
+            101,
+            'https://example.test/releases/101',
+            'v15.0.4',
+            self::SHA,
+            $body,
+            true,
+            false,
+        );
+        $github = new InMemoryReleaseDraftRepository(['stable35' => self::SHA], release: $existing);
+
+        $draft = (new ReleaseDrafter($this->git($prepared), $github))->prepare(
+            $this->config(),
+            $prepared,
+            $this->milestone(),
+        );
+
+        self::assertSame(0, $github->createCalls);
+        self::assertSame(0, $github->updateCalls);
+        self::assertSame(101, $draft->releaseId);
+    }
+
     public function testExistingDraftIsUpdatedIdempotently(): void
     {
         $prepared = $this->prepared();
