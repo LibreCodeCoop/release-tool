@@ -17,6 +17,7 @@ final class ReleaseResumeContextResolverTest extends TestCase
     {
         $resolver = new ReleaseResumeContextResolver(new InMemoryReleaseFinalizationRepository(
             $this->pullRequest(),
+            ['stable35' => str_repeat('b', 40)],
         ));
 
         $context = $resolver->resolve('LibreSign/libresign', 8815);
@@ -29,7 +30,10 @@ final class ReleaseResumeContextResolverTest extends TestCase
     #[DataProvider('invalidContextProvider')]
     public function testRejectsInvalidResumeContext(FinalizedPullRequest $pullRequest, string $message): void
     {
-        $resolver = new ReleaseResumeContextResolver(new InMemoryReleaseFinalizationRepository($pullRequest));
+        $resolver = new ReleaseResumeContextResolver(new InMemoryReleaseFinalizationRepository(
+            $pullRequest,
+            ['stable35' => str_repeat('b', 40)],
+        ));
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage($message);
