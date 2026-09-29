@@ -88,7 +88,6 @@ final readonly class ReleaseDrafter
 
         if (
             $existing !== null
-            && $existing->draft
             && $existing->tagName === $prepared->tagName
             && $existing->targetCommitish === $prepared->finalSha
             && $existing->prerelease === $prerelease
