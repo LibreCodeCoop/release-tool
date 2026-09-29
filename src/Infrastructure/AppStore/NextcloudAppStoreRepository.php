@@ -35,6 +35,11 @@ final readonly class NextcloudAppStoreRepository implements AppStoreRepository
         if ($status < 200 || $status >= 300) {
             throw new DomainException(sprintf('Nextcloud App Store API request failed (%d).', $status));
         }
+        $contentType = strtolower($response->getHeaders(false)['content-type'][0] ?? '');
+        if (str_contains($contentType, 'xml') || str_contains($apiUrl, '/feeds/releases.')) {
+            return $this->rssHasRelease($response->getContent(false), $appId, $version);
+        }
+
         $payload = $response->toArray(false);
         $apps = isset($payload['data']) && is_array($payload['data'])
             ? $payload['data']
@@ -54,6 +59,30 @@ final readonly class NextcloudAppStoreRepository implements AppStoreRepository
                 }
             }
             return false;
+        }
+
+        return false;
+    }
+
+    private function rssHasRelease(string $xml, string $appId, string $version): bool
+    {
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $feed = simplexml_load_string($xml);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if ($feed === false) {
+            throw new DomainException('Nextcloud App Store release feed returned invalid XML.');
+        }
+
+        $expectedGuid = sprintf('%s-%s', $appId, $version);
+        foreach ($feed->channel->item ?? [] as $item) {
+            if ((string) ($item->guid ?? '') === $expectedGuid) {
+                return true;
+            }
         }
 
         return false;
