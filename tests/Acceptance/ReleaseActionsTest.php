@@ -183,6 +183,7 @@ final class ReleaseActionsTest extends TestCase
                 'github-token',
                 'app-slug',
                 'app-private-key',
+                'pipeline-reference-ref',
             ],
             [
                 'preparation-id',
