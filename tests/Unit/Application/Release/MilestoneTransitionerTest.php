@@ -141,6 +141,37 @@ final class MilestoneTransitionerTest extends TestCase
         self::assertSame('Next RC (35)', $plan->followUpTitle);
     }
 
+    public function testRerunRecoversPartiallyAppliedTransition(): void
+    {
+        $repo = new InMemoryMilestoneRepository(
+            [
+                new MilestoneInfo(150, '15.0.5', 'https://example.test/milestones/150'),
+                new MilestoneInfo(157, 'Next Patch (35)', 'https://example.test/milestones/157'),
+            ],
+            [],
+            [150 => [
+                new MilestoneWorkItem(10, false, 'https://example.test/issues/10'),
+            ]],
+        );
+        $service = $this->service($repo, '15.0.5', 35, 35);
+
+        $plan = $service->plan($this->config(), $this->prepared('15.0.5', ReleaseChannel::Final), true);
+
+        self::assertFalse($plan->alreadyApplied);
+        self::assertSame(150, $plan->releasedMilestoneNumber);
+        self::assertSame(['move_issue','close_milestone'], array_map(
+            static fn ($operation): string => $operation->type,
+            $plan->operations,
+        ));
+
+        $result = $service->apply($plan);
+
+        self::assertSame(1, $result->movedIssues);
+        self::assertSame(157, $result->followUpMilestoneNumber);
+        self::assertSame('15.0.5', $repo->closed[0]->title);
+        self::assertSame('Next Patch (35)', $repo->open[0]->title);
+    }
+
     public function testRerunRecognizesCompletedTransition(): void
     {
         $repo = new InMemoryMilestoneRepository(
