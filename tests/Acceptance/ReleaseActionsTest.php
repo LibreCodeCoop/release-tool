@@ -132,6 +132,8 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('publication:verify', $content);
         self::assertStringContainsString('workflow_dispatch', $content);
         self::assertStringContainsString('resume-workflow-path', $content);
+        self::assertStringContainsString('--allowed-origin', $content);
+        self::assertStringNotContainsString('normal_status=', $content);
     }
 
     public function testInternalBootstrapUsesExactVersionAndVerifiedChecksum(): void
