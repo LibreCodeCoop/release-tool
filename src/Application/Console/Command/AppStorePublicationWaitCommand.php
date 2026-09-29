@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'publication:wait-appstore', description: 'Wait until a release is visible in the Nextcloud App Store API.')]
+#[AsCommand(name: 'publication:wait-appstore', description: 'Wait until a release is visible in the Nextcloud App Store release feed.')]
 final class AppStorePublicationWaitCommand extends Command
 {
     public function __construct(private readonly AppStorePublicationWaiter $waiter)
@@ -41,8 +41,8 @@ final class AppStorePublicationWaitCommand extends Command
                 throw new \DomainException('--app-name and --version are required.');
             }
 
-            $apiUrl = sprintf('https://apps.nextcloud.com/api/v1/platform/%s/apps.json', $platform);
-            $this->waiter->wait($apiUrl, $app, $version, $attempts, $delay);
+            $feedUrl = sprintf('https://apps.nextcloud.com/feeds/releases.rss?app=%s', rawurlencode($app));
+            $this->waiter->wait($feedUrl, $app, $version, $attempts, $delay);
             $output->writeln(sprintf('Verified %s %s in the Nextcloud App Store.', $app, $version));
             return Command::SUCCESS;
         } catch (\Throwable $exception) {
