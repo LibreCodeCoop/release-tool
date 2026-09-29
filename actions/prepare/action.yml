@@ -45,6 +45,10 @@ inputs:
   app-private-key:
     description: GitHub App private key used for the short-lived mutation token.
     required: true
+  pipeline-reference-ref:
+    description: Optional trusted Git ref whose release pipeline pins must match the selected release state.
+    required: false
+    default: ''
 
 outputs:
   preparation-id:
@@ -86,6 +90,24 @@ runs:
       name: Setup release-tool
       shell: bash
       run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - name: Verify release pipeline pins
+      if: inputs.pipeline-reference-ref != ''
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_PIPELINE_REFERENCE_REF: ${{ inputs.pipeline-reference-ref }}
+      run: |
+        set -euo pipefail
+        php "${RELEASE_TOOL_PATH}" release:pipeline-verify \
+          --candidate-ref HEAD \
+          --reference-ref "${RELEASE_PIPELINE_REFERENCE_REF}" \
+          --file .github/workflows/prepare-release.yml \
+          --file .github/workflows/release-metadata.yml \
+          --file .github/workflows/nightly-release.yml \
+          --file .github/workflows/appstore-build-publish.yml \
+          --action-prefix LibreCodeCoop/release-tool/actions/ \
+          --action-prefix LibreCodeCoop/.github/actions/nextcloud-appstore-publish
 
     - id: plan
       name: Build release plan
