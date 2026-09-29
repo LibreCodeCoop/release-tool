@@ -32,6 +32,60 @@ final class NextcloudAppStoreRepositoryTest extends TestCase
         ));
     }
 
+    public function testFindsExactReleaseInAppSpecificRssFeed(): void
+    {
+        $payload = <<<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title>LibreSign (14.2.4)</title>
+      <guid>libresign-14.2.4</guid>
+    </item>
+    <item>
+      <title>LibreSign (14.2.3)</title>
+      <guid>libresign-14.2.3</guid>
+    </item>
+  </channel>
+</rss>
+XML;
+
+        $client = new MockHttpClient(new MockResponse($payload, [
+            'http_code' => 200,
+            'response_headers' => ['content-type: application/rss+xml; charset=utf-8'],
+        ]));
+        $repository = new NextcloudAppStoreRepository($client);
+
+        self::assertTrue($repository->hasRelease(
+            'https://apps.example.test/feeds/releases.rss?app=libresign',
+            'libresign',
+            '14.2.4',
+        ));
+        self::assertFalse($repository->hasRelease(
+            'https://apps.example.test/feeds/releases.rss?app=libresign',
+            'libresign',
+            '14.2.5',
+        ));
+    }
+
+    public function testRejectsInvalidRssFeed(): void
+    {
+        $client = new MockHttpClient(new MockResponse('<rss><broken>', [
+            'http_code' => 200,
+            'response_headers' => ['content-type: application/rss+xml'],
+        ]));
+        $repository = new NextcloudAppStoreRepository($client);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('invalid XML');
+
+        $repository->hasRelease(
+            'https://apps.example.test/feeds/releases.rss?app=libresign',
+            'libresign',
+            '14.2.4',
+        );
+    }
+
     public function testFindsExactNonNightlyRelease(): void
     {
         $payload = json_encode([
