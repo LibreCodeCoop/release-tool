@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactRestorer;
+use LibreCode\ReleaseTool\Application\Artifact\ArtifactWorkflowOrigin;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,7 +29,8 @@ final class ArtifactRestoreCommand extends Command
             ->addOption('expected-head-sha', null, InputOption::VALUE_REQUIRED, default: '')
             ->addOption('destination', null, InputOption::VALUE_REQUIRED)
             ->addOption('expected-event', null, InputOption::VALUE_REQUIRED, default: '')
-            ->addOption('expected-workflow-path', null, InputOption::VALUE_REQUIRED, default: '');
+            ->addOption('expected-workflow-path', null, InputOption::VALUE_REQUIRED, default: '')
+            ->addOption('allowed-origin', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,6 +51,7 @@ final class ArtifactRestoreCommand extends Command
                 $this->optional($input->getOption('expected-head-sha')),
                 $this->optional($input->getOption('expected-event')),
                 $this->optional($input->getOption('expected-workflow-path')),
+                $this->allowedOrigins($input->getOption('allowed-origin')),
             );
         } catch (\Throwable $exception) {
             $this->error($output, $exception->getMessage());
@@ -60,6 +63,34 @@ final class ArtifactRestoreCommand extends Command
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES,
         ));
         return Command::SUCCESS;
+    }
+
+    /** @return list<ArtifactWorkflowOrigin> */
+    private function allowedOrigins(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $origins = [];
+        foreach ($value as $origin) {
+            if (!is_string($origin) || !str_contains($origin, ':')) {
+                throw new \InvalidArgumentException(
+                    "--allowed-origin must use '<event>:<workflow-path>' format.",
+                );
+            }
+            [$event, $workflowPath] = explode(':', $origin, 2);
+            $event = trim($event);
+            $workflowPath = trim($workflowPath);
+            if ($event === '' || $workflowPath === '') {
+                throw new \InvalidArgumentException(
+                    "--allowed-origin must use '<event>:<workflow-path>' format.",
+                );
+            }
+            $origins[] = new ArtifactWorkflowOrigin($event, $workflowPath);
+        }
+
+        return $origins;
     }
 
     private function optional(mixed $value): ?string
