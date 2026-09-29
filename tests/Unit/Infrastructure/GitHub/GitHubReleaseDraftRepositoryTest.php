@@ -62,6 +62,30 @@ final class GitHubReleaseDraftRepositoryTest extends TestCase
         self::assertSame(str_repeat('a', 40), $captured['target_commitish']);
     }
 
+
+    public function testCreateDraftSurfacesGitHubErrorMessage(): void
+    {
+        $client = new MockHttpClient([
+            $this->json(['message' => 'Resource not accessible by integration'], 403),
+        ], 'https://api.github.test');
+
+        $repo = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage(
+            'GitHub API failed to POST /repos/LibreSign/libresign/releases (403): Resource not accessible by integration.',
+        );
+
+        $repo->createDraft(
+            'LibreSign/libresign',
+            'v15.0.5',
+            str_repeat('a', 40),
+            '15.0.5',
+            'Release body',
+            false,
+        );
+    }
+
     public function testReadsMergerAndPermission(): void
     {
         $client = new MockHttpClient([
