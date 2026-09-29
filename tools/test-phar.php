@@ -36,6 +36,7 @@ foreach ([
     ['release:plan', '--help'],
     ['release:prepare', '--help'],
     ['release:resume-context', '--help'],
+    ['release:pipeline-verify', '--help'],
     ['release:finalize', '--help'],
     ['milestone:transition', '--help'],
     ['release:draft', '--help'],
