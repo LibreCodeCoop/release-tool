@@ -16,6 +16,7 @@ final readonly class ArtifactRestorer
     ) {
     }
 
+    /** @param list<ArtifactWorkflowOrigin> $allowedOrigins */
     public function restore(
         string $repository,
         string $name,
@@ -48,13 +49,14 @@ final readonly class ArtifactRestorer
                 throw new RuntimeException('GitHub returned an artifact without workflow run identity');
             }
             $run = $this->artifacts->workflowRun($repository, $artifact->workflowRunId);
+            $trusted = false;
             foreach ($allowedOrigins as $origin) {
                 if ($origin->matches($run)) {
-                    $allowedOrigins = [];
+                    $trusted = true;
                     break;
                 }
             }
-            if ($allowedOrigins !== []) {
+            if (!$trusted) {
                 throw new RuntimeException(sprintf(
                     "artifact workflow origin '%s:%s' is not trusted",
                     $run->event,
