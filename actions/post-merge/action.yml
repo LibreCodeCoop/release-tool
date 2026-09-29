@@ -252,7 +252,6 @@ runs:
         repositories: ${{ steps.repository.outputs.name }}
         permission-contents: write
         permission-pull-requests: read
-        permission-workflows: write
 
     - id: draft
       name: Create or update GitHub Release draft
