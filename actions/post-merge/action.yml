@@ -29,6 +29,10 @@ inputs:
   app-private-key:
     description: GitHub App private key used for short-lived mutation tokens.
     required: true
+  use-caller-token-for-draft:
+    description: Use github-token instead of a GitHub App token to create/update the release draft.
+    required: false
+    default: 'false'
 
 outputs:
   prepared-release-id:
@@ -239,6 +243,7 @@ runs:
 
     - id: draft-token
       name: Create release draft token
+      if: inputs.use-caller-token-for-draft != 'true'
       uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
       with:
         client-id: ${{ steps.app-identity.outputs.client-id }}
@@ -252,7 +257,7 @@ runs:
       name: Create or update GitHub Release draft
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ steps.draft-token.outputs.token }}
+        GITHUB_TOKEN: ${{ inputs.use-caller-token-for-draft == 'true' && inputs.github-token || steps.draft-token.outputs.token }}
         RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
         RELEASE_CONFIG_PATH: ${{ inputs.config-path }}
         RELEASE_STATE_DIR: ${{ runner.temp }}/release-post-merge-state
