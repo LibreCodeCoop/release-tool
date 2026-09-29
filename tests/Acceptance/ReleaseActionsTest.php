@@ -130,6 +130,8 @@ final class ReleaseActionsTest extends TestCase
 
         self::assertStringContainsString('artifact:restore', $content);
         self::assertStringContainsString('publication:verify', $content);
+        self::assertStringContainsString('workflow_dispatch', $content);
+        self::assertStringContainsString('resume-workflow-path', $content);
     }
 
     public function testInternalBootstrapUsesExactVersionAndVerifiedChecksum(): void
@@ -215,6 +217,7 @@ final class ReleaseActionsTest extends TestCase
                 'config-path',
                 'post-merge-workflow-path',
                 'post-merge-event',
+                'resume-workflow-path',
                 'attempts',
                 'delay-seconds',
                 'github-token',
