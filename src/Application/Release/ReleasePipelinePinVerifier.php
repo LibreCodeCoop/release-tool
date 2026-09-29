@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Release;
 
-use DomainException;
 use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 
 final readonly class ReleasePipelinePinVerifier
