@@ -86,24 +86,35 @@ final readonly class ReleaseDrafter
             ));
         }
 
-        $draft = $existing === null
-            ? $this->github->createDraft(
-                $prepared->repository,
-                $prepared->tagName,
-                $prepared->finalSha,
-                $prepared->version,
-                $body,
-                $prerelease,
-            )
-            : $this->github->updateDraft(
-                $prepared->repository,
-                $existing->id,
-                $prepared->tagName,
-                $prepared->finalSha,
-                $prepared->version,
-                $body,
-                $prerelease,
-            );
+        if (
+            $existing !== null
+            && $existing->draft
+            && $existing->tagName === $prepared->tagName
+            && $existing->targetCommitish === $prepared->finalSha
+            && $existing->prerelease === $prerelease
+            && $existing->body === $body
+        ) {
+            $draft = $existing;
+        } else {
+            $draft = $existing === null
+                ? $this->github->createDraft(
+                    $prepared->repository,
+                    $prepared->tagName,
+                    $prepared->finalSha,
+                    $prepared->version,
+                    $body,
+                    $prerelease,
+                )
+                : $this->github->updateDraft(
+                    $prepared->repository,
+                    $existing->id,
+                    $prepared->tagName,
+                    $prepared->finalSha,
+                    $prepared->version,
+                    $body,
+                    $prerelease,
+                );
+        }
 
         if (!$draft->draft) {
             throw new DomainException('GitHub returned a non-draft release from draft preparation.');
