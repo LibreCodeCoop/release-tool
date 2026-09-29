@@ -198,6 +198,7 @@ final class ReleaseActionsTest extends TestCase
                 'github-token',
                 'app-slug',
                 'app-private-key',
+                'use-caller-token-for-draft',
             ],
             [
                 'prepared-release-id',
