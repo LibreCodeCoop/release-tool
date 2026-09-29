@@ -63,6 +63,36 @@ final class GitHubReleaseDraftRepositoryTest extends TestCase
     }
 
 
+    public function testCreateDraftSurfacesGitHubPermissionHeaders(): void
+    {
+        $client = new MockHttpClient([
+            new MockResponse(
+                json_encode(['message' => 'Resource not accessible by integration'], JSON_THROW_ON_ERROR),
+                [
+                    'http_code' => 403,
+                    'response_headers' => [
+                        'x-accepted-github-permissions: contents=write',
+                        'x-github-request-id: TEST:1234',
+                    ],
+                ],
+            ),
+        ]);
+        $repository = new GitHubReleaseDraftRepository(client: $client);
+
+        $this->expectExceptionMessage(
+            'Resource not accessible by integration [x-accepted-github-permissions=contents=write; x-github-request-id=TEST:1234]',
+        );
+
+        $repository->createDraft(
+            'LibreSign/libresign',
+            'v15.0.5',
+            self::SHA,
+            '15.0.5',
+            'body',
+            false,
+        );
+    }
+
     public function testCreateDraftSurfacesGitHubErrorMessage(): void
     {
         $client = new MockHttpClient([
