@@ -200,11 +200,9 @@ final class ReleasePlanCommandContractTest extends TestCase
         );
 
         return new CommandTester(new ReleasePlanCommand(
-            new ReleasePlanUseCase(
-                $planner,
-                new ConsumerConfigLoader(),
-                new NoopConsumerConfigContextValidator(),
-            ),
+            $planner,
+            new ConsumerConfigLoader(),
+            new NoopConsumerConfigContextValidator(),
         ));
     }
 
