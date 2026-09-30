@@ -4,47 +4,7 @@ app:
   id: libresign
   main_branch: main
 branches:
-  stable_pattern: '^stable(?<nextcloud>\d+)
-version:
-  source: appinfo/info.xml
-  mirrors:
-    - package.json
-    - package-lock.json
-  tag_prefix: v
-history:
-  previous_release: reachable-tag
-changelog:
-  strategy: per-major
-  path: 'docs/changelogs/changelog-{major}.md'
-  package_root: CHANGELOG.md
-milestones:
-  patch: 'Next Patch ({nextcloud})'
-  rc: 'Next RC ({nextcloud})'
-authorization:
-  prepare_min_permission: maintain
-  merge_min_permission: maintain
-package:
-  command:
-    - make
-    - appstore
-    - verify-appstore-package
-  required_paths:
-    - appinfo
-    - lib
-    - css
-    - js
-    - vendor
-    - 3rdparty
-  forbidden_paths:
-    - .git
-    - node_modules
-    - tests
-
-publication:
-  publisher_workflow: appstore-build-publish.yml
-  asset_name: '{app}-{tag}.tar.gz'
-  appstore_api: https://apps.nextcloud.com/api/v1/platform/{nextcloud}.0.0/apps.json
-
+  stable_pattern: '^stable(?<nextcloud>\d+)$'
 version:
   source: appinfo/info.xml
   mirrors:
