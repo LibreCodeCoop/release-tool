@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
-use InvalidArgumentException;
+use LibreCode\ReleaseTool\Application\Release\Exception\InvalidReleasePlanRequest;
 use LibreCode\ReleaseTool\Application\Release\PlanReleaseInput;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
@@ -43,7 +43,7 @@ final readonly class ReleasePlanCommandRequest
     {
         $value = self::optionalString($input->getOption($name));
         if ($value === null) {
-            throw new InvalidArgumentException(sprintf('--%s is required.', $name));
+            throw new InvalidReleasePlanRequest(sprintf('--%s is required.', $name));
         }
 
         return $value;
@@ -63,7 +63,7 @@ final readonly class ReleasePlanCommandRequest
         $value = (string) $input->getOption($name);
         $resolved = $enum::tryFrom($value);
         if ($resolved === null) {
-            throw new InvalidArgumentException(sprintf('Invalid --%s; expected %s.', $name, $expected));
+            throw new InvalidReleasePlanRequest(sprintf('Invalid --%s; expected %s.', $name, $expected));
         }
 
         return $resolved;
