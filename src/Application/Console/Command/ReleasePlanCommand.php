@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
+use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
+use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
+use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanFailure;
+use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -17,10 +21,15 @@ final class ReleasePlanCommand extends Command
 {
     public const int EXIT_NOT_READY = 3;
 
+    private readonly ReleasePlanUseCase $useCase;
+
     public function __construct(
-        private readonly ReleasePlanUseCase $useCase,
+        ReleasePlanning $planner,
+        ConsumerConfigLoader $configLoader = new ConsumerConfigLoader(),
+        ConsumerConfigContextValidator $contextValidator = new NoopConsumerConfigContextValidator(),
         private readonly ReleasePlanOutputPublisher $publisher = new ReleasePlanOutputPublisher(),
     ) {
+        $this->useCase = new ReleasePlanUseCase($planner, $configLoader, $contextValidator);
         parent::__construct();
     }
 
