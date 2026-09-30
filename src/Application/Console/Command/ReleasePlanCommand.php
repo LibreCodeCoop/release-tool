@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Console\Command;
 
-use DomainException;
-use InvalidArgumentException;
-use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
-use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
-use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
-use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
+use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanFailure;
+use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,9 +18,7 @@ final class ReleasePlanCommand extends Command
     public const int EXIT_NOT_READY = 3;
 
     public function __construct(
-        private readonly ReleasePlanning $planner,
-        private readonly ConsumerConfigLoader $configLoader = new ConsumerConfigLoader(),
-        private readonly ConsumerConfigContextValidator $contextValidator = new NoopConsumerConfigContextValidator(),
+        private readonly ReleasePlanUseCase $useCase,
         private readonly ReleasePlanOutputPublisher $publisher = new ReleasePlanOutputPublisher(),
     ) {
         parent::__construct();
@@ -55,11 +49,9 @@ final class ReleasePlanCommand extends Command
     {
         try {
             $request = ReleasePlanCommandRequest::fromInput($input);
-            $config = $this->configLoader->load($request->configPath);
-            $this->contextValidator->validate($config, $request->root);
-            $plan = $this->planner->plan($config, $request->planInput);
+            $plan = $this->useCase->execute($request->configPath, $request->root, $request->planInput);
             $this->publisher->publish($plan, $request->output, $output);
-        } catch (InvalidArgumentException|DomainException $exception) {
+        } catch (ReleasePlanFailure $exception) {
             return $this->error($output, $input, $exception->getMessage());
         }
 
