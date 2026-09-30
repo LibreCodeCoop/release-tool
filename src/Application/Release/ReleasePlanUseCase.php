@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanConfigurationFailure;
-use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommandRequest;
 use LibreCode\ReleaseTool\Domain\Release\ReleasePlan;
 
 final readonly class ReleasePlanUseCase
@@ -20,15 +19,15 @@ final readonly class ReleasePlanUseCase
     ) {
     }
 
-    public function execute(ReleasePlanCommandRequest $request): ReleasePlan
+    public function execute(string $configPath, string $root, PlanReleaseInput $input): ReleasePlan
     {
         try {
-            $config = $this->configLoader->load($request->configPath);
-            $this->contextValidator->validate($config, $request->root);
+            $config = $this->configLoader->load($configPath);
+            $this->contextValidator->validate($config, $root);
         } catch (InvalidArgumentException $exception) {
             throw new ReleasePlanConfigurationFailure($exception->getMessage(), 0, $exception);
         }
 
-        return $this->planner->plan($config, $request->planInput);
+        return $this->planner->plan($config, $input);
     }
 }
