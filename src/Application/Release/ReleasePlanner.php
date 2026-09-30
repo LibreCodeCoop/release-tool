@@ -379,8 +379,12 @@ final readonly class ReleasePlanner implements ReleasePlanning
             $value = substr($value, strlen($config->tagPrefix));
         }
 
-        $override = Version::parse($value);
-        $this->versionTransitions->validateOverride($current, $override, $input->channel);
+        try {
+            $override = Version::parse($value);
+            $this->versionTransitions->validateOverride($current, $override, $input->channel);
+        } catch (\InvalidArgumentException $exception) {
+            throw new ReleasePlanRuleViolation($exception->getMessage(), 0, $exception);
+        }
 
         return $override;
     }
