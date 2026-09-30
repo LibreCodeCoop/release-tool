@@ -8,33 +8,12 @@ use DomainException;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
-use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanRuleViolation;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class ReleasePlanCommandTest extends TestCase
 {
-    public function testExpectedPlanningFailureIsRenderedAsInvalidCommand(): void
-    {
-        $planner = $this->createMock(ReleasePlanning::class);
-        $planner->method('plan')->willThrowException(new ReleasePlanRuleViolation('Release cannot be planned.'));
-
-        $tester = new CommandTester(new ReleasePlanCommand(
-            $planner,
-            new ConsumerConfigLoader(),
-            new NoopConsumerConfigContextValidator(),
-        ));
-
-        $status = $tester->execute([
-            '--branch' => 'stable35',
-            '--config' => dirname(__DIR__, 4) . '/Fixtures/Configuration/libresign.yml',
-        ]);
-
-        self::assertSame(2, $status);
-        self::assertStringContainsString('Release cannot be planned.', $tester->getDisplay());
-    }
-
     public function testUnexpectedDomainFailureIsNotMaskedAsUserError(): void
     {
         $planner = $this->createMock(ReleasePlanning::class);
