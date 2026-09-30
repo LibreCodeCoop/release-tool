@@ -63,6 +63,11 @@ final class InMemoryGitRepository implements GitRepository
         return in_array($tag, $this->tags, true);
     }
 
+    public function fileExists(string $sha, string $path): bool
+    {
+        return isset($this->files[$sha . ':' . $path]);
+    }
+
     public function readFile(string $sha, string $path): string
     {
         $key = $sha . ':' . $path;
