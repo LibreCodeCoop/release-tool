@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Unit\Application\Console\Command;
 
-use DomainException;
-use InvalidArgumentException;
+use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommandRequest;
+use LibreCode\ReleaseTool\Application\Release\Exception\InvalidReleasePlanRequest;
+use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanRuleViolation;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
+use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\InputInterface;
@@ -44,7 +46,7 @@ final class ReleasePlanCommandTest extends TestCase
             static fn (string $name): mixed => $values[$name] ?? null,
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidReleasePlanRequest::class);
         $this->expectExceptionMessage($message);
 
         ReleasePlanCommandRequest::fromInput($input);
@@ -70,11 +72,14 @@ final class ReleasePlanCommandTest extends TestCase
     public function testExpectedDomainFailureIsRenderedAsInvalidCommand(): void
     {
         $planner = $this->createMock(ReleasePlanning::class);
-        $planner->method('plan')->willThrowException(new DomainException('Release cannot be planned.'));
+        $planner->method('plan')->willThrowException(new ReleasePlanRuleViolation('Release cannot be planned.'));
 
         $tester = new CommandTester(new ReleasePlanCommand(
-            $planner,
-            contextValidator: new NoopConsumerConfigContextValidator(),
+            new ReleasePlanUseCase(
+                $planner,
+                new ConsumerConfigLoader(),
+                new NoopConsumerConfigContextValidator(),
+            ),
         ));
 
         $status = $tester->execute([
@@ -92,8 +97,11 @@ final class ReleasePlanCommandTest extends TestCase
         $planner->method('plan')->willThrowException(new \RuntimeException('Unexpected infrastructure failure.'));
 
         $tester = new CommandTester(new ReleasePlanCommand(
-            $planner,
-            contextValidator: new NoopConsumerConfigContextValidator(),
+            new ReleasePlanUseCase(
+                $planner,
+                new ConsumerConfigLoader(),
+                new NoopConsumerConfigContextValidator(),
+            ),
         ));
 
         $this->expectException(\RuntimeException::class);
