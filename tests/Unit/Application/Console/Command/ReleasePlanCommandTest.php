@@ -10,7 +10,6 @@ use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextVal
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
 use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanRuleViolation;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
-use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -22,11 +21,9 @@ final class ReleasePlanCommandTest extends TestCase
         $planner->method('plan')->willThrowException(new ReleasePlanRuleViolation('Release cannot be planned.'));
 
         $tester = new CommandTester(new ReleasePlanCommand(
-            new ReleasePlanUseCase(
-                $planner,
-                new ConsumerConfigLoader(),
-                new NoopConsumerConfigContextValidator(),
-            ),
+            $planner,
+            new ConsumerConfigLoader(),
+            new NoopConsumerConfigContextValidator(),
         ));
 
         $status = $tester->execute([
@@ -44,11 +41,9 @@ final class ReleasePlanCommandTest extends TestCase
         $planner->method('plan')->willThrowException(new DomainException('Unexpected Git failure.'));
 
         $tester = new CommandTester(new ReleasePlanCommand(
-            new ReleasePlanUseCase(
-                $planner,
-                new ConsumerConfigLoader(),
-                new NoopConsumerConfigContextValidator(),
-            ),
+            $planner,
+            new ConsumerConfigLoader(),
+            new NoopConsumerConfigContextValidator(),
         ));
 
         $this->expectException(DomainException::class);
