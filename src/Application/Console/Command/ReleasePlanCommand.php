@@ -60,7 +60,7 @@ final class ReleasePlanCommand extends Command
             $request = ReleasePlanCommandRequest::fromInput($input);
             $plan = $this->useCase->execute($request->configPath, $request->root, $request->planInput);
             $this->publisher->publish($plan, $request->output, $output);
-        } catch (ReleasePlanFailure $exception) {
+        } catch (InvalidReleasePlanRequest|ReleasePlanConfigurationFailure|ReleasePlanRuleViolation $exception) {
             return $this->error($output, $input, $exception->getMessage());
         }
 
