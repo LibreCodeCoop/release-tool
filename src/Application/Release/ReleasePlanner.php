@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Release;
 
-use DomainException;
+use LibreCode\ReleaseTool\Application\Release\Exception\ReleasePlanRuleViolation;
 use LibreCode\ReleaseTool\Application\Release\Port\GitHubRepository;
 use LibreCode\ReleaseTool\Application\Release\Port\GitRepository;
 use LibreCode\ReleaseTool\Application\Release\Port\ReleaseMetadataReader;
@@ -42,7 +42,7 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $branchHead = $this->git->branchHead($input->branch);
         $baseSha = $input->ref !== null ? $this->git->resolve($input->ref) : $branchHead;
         if (!$this->git->isAncestor($baseSha, $branchHead)) {
-            throw new DomainException('Planning ref must be equal to or an ancestor of the selected branch head.');
+            throw new ReleasePlanRuleViolation('Planning ref must be equal to or an ancestor of the selected branch head.');
         }
 
         $repository = $this->repositoryIdentity($config);
@@ -52,7 +52,7 @@ final readonly class ReleasePlanner implements ReleasePlanning
 
         $previous = $this->git->previousRelease($baseSha, $config->tagPrefix, $config->initialRef);
         if (!$this->git->isAncestor($previous->sha, $baseSha)) {
-            throw new DomainException('Previous release baseline is not an ancestor of the planning base.');
+            throw new ReleasePlanRuleViolation('Previous release baseline is not an ancestor of the planning base.');
         }
 
         [$activity, $activityData, $warnings] = $this->releaseActivity(
@@ -62,27 +62,23 @@ final readonly class ReleasePlanner implements ReleasePlanning
             $baseSha,
         );
         if (!$activity->hasReleasableActivity()) {
-            throw new DomainException('No releasable activity exists after the previous release.');
+            throw new ReleasePlanRuleViolation('No releasable activity exists after the previous release.');
         }
 
         $proposed = $this->proposedVersion($config, $metadata->version, $activity, $input);
         if ($proposed->major !== $appMajor) {
-            throw new DomainException('A release plan cannot change the app major implicitly.');
+            throw new ReleasePlanRuleViolation('A release plan cannot change the app major implicitly.');
         }
 
         $targetTag = $config->tagPrefix . (string) $proposed;
         if ($this->git->tagExists($targetTag) || $this->github->releaseExists($repository, $targetTag)) {
-            throw new DomainException(sprintf('Target tag or release already exists: %s', $targetTag));
+            throw new ReleasePlanRuleViolation(sprintf('Target tag or release already exists: %s', $targetTag));
         }
 
         $changelogTarget = str_replace('{major}', (string) $appMajor, $config->changelogPath);
-        try {
-            $this->git->readFile($baseSha, $changelogTarget);
-        } catch (\Throwable $exception) {
-            throw new DomainException(
+        if (!$this->git->fileExists($baseSha, $changelogTarget)) {
+            throw new ReleasePlanRuleViolation(
                 sprintf('Configured changelog target does not exist at planning base: %s', $changelogTarget),
-                0,
-                $exception,
             );
         }
 
@@ -181,12 +177,12 @@ final readonly class ReleasePlanner implements ReleasePlanning
         $repository = $config->repository ?? $gitRepository ?? $environmentRepository;
 
         if ($repository === null) {
-            throw new DomainException('Repository identity is unavailable; configure repository explicitly.');
+            throw new ReleasePlanRuleViolation('Repository identity is unavailable; configure repository explicitly.');
         }
 
         foreach ([$gitRepository, $environmentRepository] as $candidate) {
             if ($candidate !== null && strcasecmp($repository, $candidate) !== 0) {
-                throw new DomainException(sprintf(
+                throw new ReleasePlanRuleViolation(sprintf(
                     'Repository identity mismatch: configured %s, observed %s.',
                     $repository,
                     $candidate,
@@ -383,8 +379,12 @@ final readonly class ReleasePlanner implements ReleasePlanning
             $value = substr($value, strlen($config->tagPrefix));
         }
 
-        $override = Version::parse($value);
-        $this->versionTransitions->validateOverride($current, $override, $input->channel);
+        try {
+            $override = Version::parse($value);
+            $this->versionTransitions->validateOverride($current, $override, $input->channel);
+        } catch (\InvalidArgumentException $exception) {
+            throw new ReleasePlanRuleViolation($exception->getMessage(), 0, $exception);
+        }
 
         return $override;
     }

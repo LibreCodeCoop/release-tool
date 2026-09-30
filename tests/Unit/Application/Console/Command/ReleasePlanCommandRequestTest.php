@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Unit\Application\Console\Command;
 
-use InvalidArgumentException;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommandRequest;
+use LibreCode\ReleaseTool\Application\Release\Exception\InvalidReleasePlanRequest;
 use LibreCode\ReleaseTool\Domain\Security\ReleaseMode;
 use LibreCode\ReleaseTool\Domain\Version\ReleaseChannel;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -54,7 +54,7 @@ final class ReleasePlanCommandRequestTest extends TestCase
     #[DataProvider('invalidOptionProvider')]
     public function testRejectsInvalidOptions(array $options, string $message): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidReleasePlanRequest::class);
         $this->expectExceptionMessage($message);
 
         ReleasePlanCommandRequest::fromInput($this->input($options));

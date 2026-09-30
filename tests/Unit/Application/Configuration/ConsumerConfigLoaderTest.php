@@ -16,7 +16,7 @@ final class ConsumerConfigLoaderTest extends TestCase
         $config = (new ConsumerConfigLoader())->load($this->fixture('libresign.yml'));
 
         self::assertSame('libresign', $config->appId);
-        self::assertSame('/^stable(?<nextcloud>\d+)$/', $config->stablePattern);
+        self::assertSame('^stable(?<nextcloud>\\d+)$', $config->stablePattern);
         self::assertSame('appinfo/info.xml', $config->versionSource);
         self::assertSame(['package.json', 'package-lock.json'], $config->versionMirrors);
         self::assertSame('docs/changelogs/changelog-{major}.md', $config->changelogPath);

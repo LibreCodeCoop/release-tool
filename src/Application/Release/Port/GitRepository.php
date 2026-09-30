@@ -19,6 +19,8 @@ interface GitRepository
 
     public function tagExists(string $tag): bool;
 
+    public function fileExists(string $sha, string $path): bool;
+
     public function readFile(string $sha, string $path): string;
 
     public function commitDate(string $sha): string;
