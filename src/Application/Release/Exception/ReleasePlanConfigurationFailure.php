@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Application\Release\Exception;
 
-final class ReleasePlanConfigurationFailure extends ReleasePlanFailure
+final class ReleasePlanConfigurationFailure extends \InvalidArgumentException implements ReleasePlanFailure
 {
 }
