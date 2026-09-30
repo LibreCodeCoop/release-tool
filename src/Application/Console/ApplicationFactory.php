@@ -8,7 +8,6 @@ use LibreCode\ReleaseTool\Application\Artifact\ArtifactRestorer;
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Artifact\NextcloudPackageValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
-use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\AppStorePublicationWaitCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactRestoreCommand;
@@ -40,7 +39,6 @@ use LibreCode\ReleaseTool\Application\Release\ReleaseFinalizer;
 use LibreCode\ReleaseTool\Application\Release\ReleaseIdentityValidator;
 use LibreCode\ReleaseTool\Application\Release\ReleasePipelinePinVerifier;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanning;
-use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreflight;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparationPublishing;
 use LibreCode\ReleaseTool\Application\Release\ReleasePreparer;
@@ -174,11 +172,8 @@ final class ApplicationFactory
 
         if ($planner !== null) {
             $application->add(new ReleasePlanCommand(
-                new ReleasePlanUseCase(
-                    $planner,
-                    new ConsumerConfigLoader(),
-                    $configValidator ?? new NoopConsumerConfigContextValidator(),
-                ),
+                $planner,
+                contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
