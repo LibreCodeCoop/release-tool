@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LibreCode\ReleaseTool\Tests\Acceptance;
 
+use InvalidArgumentException;
+use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigLoader;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\ReleasePlanCommand;
@@ -12,7 +14,7 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\PreviousRelease;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\PullRequestInfo;
 use LibreCode\ReleaseTool\Application\Release\ReadModel\ReleaseMetadata;
 use LibreCode\ReleaseTool\Application\Release\ReleasePlanner;
-use LibreCode\ReleaseTool\Application\Release\ReleasePlanUseCase;
+use LibreCode\ReleaseTool\Domain\Configuration\ConsumerConfig;
 use LibreCode\ReleaseTool\Domain\Version\Version;
 use LibreCode\ReleaseTool\Tests\Fixtures\Release\InMemoryGitHubRepository;
 use LibreCode\ReleaseTool\Tests\Fixtures\Release\InMemoryGitRepository;
@@ -144,6 +146,25 @@ final class ReleasePlanCommandContractTest extends TestCase
         self::assertStringContainsString('Configuration file not found', $error['error']);
     }
 
+    public function testRepositoryContextFailureKeepsJsonErrorContract(): void
+    {
+        $validator = new class implements ConsumerConfigContextValidator {
+            public function validate(ConsumerConfig $config, string $root): void
+            {
+                throw new InvalidArgumentException('Repository identity mismatch.');
+            }
+        };
+        $tester = $this->tester(contextValidator: $validator);
+
+        $status = $tester->execute($this->arguments());
+
+        self::assertSame(2, $status);
+
+        $error = $this->json($tester);
+        self::assertSame(1, $error['schema']);
+        self::assertSame('Repository identity mismatch.', $error['error']);
+    }
+
     /**
      * @param list<PullRequestInfo>|null $closed
      * @param list<PullRequestInfo> $open
@@ -153,6 +174,7 @@ final class ReleasePlanCommandContractTest extends TestCase
         ?array $closed = null,
         array $open = [],
         ?array $milestones = null,
+        ?ConsumerConfigContextValidator $contextValidator = null,
     ): CommandTester {
         $git = new InMemoryGitRepository(
             'LibreSign/libresign',
@@ -202,7 +224,7 @@ final class ReleasePlanCommandContractTest extends TestCase
         return new CommandTester(new ReleasePlanCommand(
             $planner,
             new ConsumerConfigLoader(),
-            new NoopConsumerConfigContextValidator(),
+            $contextValidator ?? new NoopConsumerConfigContextValidator(),
         ));
     }
 
