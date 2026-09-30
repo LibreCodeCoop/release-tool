@@ -109,7 +109,6 @@ In particular, the shared release actions do **not** currently require GitHub Ap
 - Checks;
 - Deployments;
 - Issues;
-- Workflows;
 - Secrets;
 - Environments.
 
@@ -267,6 +266,8 @@ GitHub App permissions can be changed under:
 If you add permissions after installations already exist, GitHub requires the installed account to approve the new permissions before they become effective.
 
 Keep the permission set minimal and review changes as part of release-tool upgrades.
+
+If GitHub returns `Resource not accessible by integration` while creating or updating a Release, first compare the successful and failing release contexts before expanding App permissions. LibreSign 13.4.4 and 14.2.4 successfully created Releases with Contents/Pull requests only, so Workflows permission is not a general prerequisite for Release creation.
 
 ## Recommended final checklist
 

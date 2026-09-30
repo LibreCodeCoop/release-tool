@@ -17,9 +17,13 @@ inputs:
     required: false
     default: .github/workflows/prepare-release.yml
   post-merge-event:
-    description: Workflow event that produced the finalized release-state artifact.
+    description: Workflow event that produced the finalized release-state artifact on the normal path.
     required: false
-    default: pull_request
+    default: pull_request_target
+  resume-workflow-path:
+    description: Trusted consumer workflow path allowed to produce finalized release state during manual recovery.
+    required: false
+    default: .github/workflows/resume-release.yml
   attempts:
     description: Maximum PublicationVerification attempts while publisher and App Store state converge.
     required: false
@@ -57,9 +61,16 @@ runs:
         RELEASE_ID: ${{ inputs.github-release-id }}
         RELEASE_POST_MERGE_EVENT: ${{ inputs.post-merge-event }}
         RELEASE_POST_MERGE_WORKFLOW_PATH: ${{ inputs.post-merge-workflow-path }}
+        RELEASE_RESUME_WORKFLOW_PATH: ${{ inputs.resume-workflow-path }}
       run: |
         set -euo pipefail
-        php "${RELEASE_TOOL_PATH}" artifact:restore           --repository "${RELEASE_REPOSITORY}"           --name "release-state-${RELEASE_ID}"           --destination "${RUNNER_TEMP}/release-publication-state"           --expected-event "${RELEASE_POST_MERGE_EVENT}"           --expected-workflow-path "${RELEASE_POST_MERGE_WORKFLOW_PATH}"           > "${RUNNER_TEMP}/release-publication-restore.json"
+        php "${RELEASE_TOOL_PATH}" artifact:restore \
+          --repository "${RELEASE_REPOSITORY}" \
+          --name "release-state-${RELEASE_ID}" \
+          --destination "${RUNNER_TEMP}/release-publication-state" \
+          --allowed-origin "${RELEASE_POST_MERGE_EVENT}:${RELEASE_POST_MERGE_WORKFLOW_PATH}" \
+          --allowed-origin "workflow_dispatch:${RELEASE_RESUME_WORKFLOW_PATH}" \
+          > "${RUNNER_TEMP}/release-publication-restore.json"
 
     - id: verify
       name: Wait for publication verification

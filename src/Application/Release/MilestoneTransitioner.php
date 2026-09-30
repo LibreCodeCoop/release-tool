@@ -78,16 +78,58 @@ final readonly class MilestoneTransitioner
         }
 
         $open = $this->milestones->openMilestones($prepared->repository);
-        $source = $this->findByTitle($open, $currentTitle);
+        $current = $this->findByTitle($open, $currentTitle);
+        $partialFinal = $this->findByTitle($open, $finalTitle);
+
+        if ($partialFinal !== null) {
+            // A previous apply may already have renamed the release milestone and
+            // created the follow-up before failing. Resume from the renamed
+            // milestone instead of treating this recoverable state as ambiguous.
+            if ($createFollowUp && $current === null) {
+                throw new DomainException(sprintf(
+                    'Release milestone %s is already renamed, but expected follow-up milestone %s is missing.',
+                    $finalTitle,
+                    $currentTitle,
+                ));
+            }
+            $source = $partialFinal;
+            $items = $this->milestones->openItems($prepared->repository, $source->number);
+            $operations = [];
+
+            if ($createFollowUp) {
+                foreach ($items as $item) {
+                    $operations[] = new MilestoneTransitionOperation(
+                        $item->pullRequest ? 'move_pull_request' : 'move_issue',
+                        [
+                            'number' => $item->number,
+                            'url' => $item->url,
+                            'to' => $currentTitle,
+                        ],
+                    );
+                }
+            }
+
+            $operations[] = new MilestoneTransitionOperation('close_milestone', [
+                'number' => $source->number,
+                'title' => $finalTitle,
+            ]);
+
+            return new MilestoneTransitionPlan(
+                $this->planId($prepared, $source->number, $finalTitle, $createFollowUp, $operations),
+                $prepared->id,
+                $prepared->repository,
+                $source->number,
+                $source->url,
+                $finalTitle,
+                $finalTitle,
+                $createFollowUp ? $currentTitle : null,
+                $operations,
+            );
+        }
+
+        $source = $current;
         if ($source === null) {
             throw new DomainException(sprintf('Expected open milestone not found: %s', $currentTitle));
-        }
-        if ($this->findByTitle($open, $finalTitle) !== null) {
-            throw new DomainException(sprintf(
-                'Milestone transition is ambiguous: both %s and %s are open.',
-                $currentTitle,
-                $finalTitle,
-            ));
         }
 
         $items = $this->milestones->openItems($prepared->repository, $source->number);
@@ -143,15 +185,17 @@ final readonly class MilestoneTransitioner
 
         $open = $this->milestones->openMilestones($plan->repository);
         $source = $this->findByNumber($open, $plan->releasedMilestoneNumber);
-        if ($source === null || $source->title !== $plan->currentTitle) {
+        if ($source === null || !$this->naming->matches($plan->currentTitle, $source->title)) {
             throw new DomainException('Milestone state changed after planning; rerun dry-run before applying.');
         }
 
-        $this->milestones->renameMilestone(
-            $plan->repository,
-            $plan->releasedMilestoneNumber,
-            $plan->finalTitle,
-        );
+        if (!$this->naming->matches($plan->finalTitle, $source->title)) {
+            $this->milestones->renameMilestone(
+                $plan->repository,
+                $plan->releasedMilestoneNumber,
+                $plan->finalTitle,
+            );
+        }
 
         $followUp = null;
         $movedIssues = 0;
@@ -190,7 +234,7 @@ final readonly class MilestoneTransitioner
     private function findByTitle(array $milestones, string $title): ?\LibreCode\ReleaseTool\Application\Release\ReadModel\MilestoneInfo
     {
         foreach ($milestones as $milestone) {
-            if ($milestone->title === $title) {
+            if ($this->naming->matches($title, $milestone->title)) {
                 return $milestone;
             }
         }

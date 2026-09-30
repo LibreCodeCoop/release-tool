@@ -95,6 +95,40 @@ final class GitHubPublicationRepositoryTest extends TestCase
         self::assertSame('success', $run->conclusion);
     }
 
+    public function testReturnsInProgressPublisherRun(): void
+    {
+        $client = new MockHttpClient(function (string $method, string $url, array $options): MockResponse {
+            if (str_contains($url, '/actions/workflows/')) {
+                self::assertStringNotContainsString('status=completed', $url);
+                return new MockResponse(json_encode([
+                    'workflow_runs' => [[
+                        'id' => 204,
+                        'html_url' => 'https://example.test/actions/runs/204',
+                        'head_sha' => self::SHA,
+                        'event' => 'release',
+                        'status' => 'in_progress',
+                        'conclusion' => null,
+                        'created_at' => '2026-09-21T18:00:01Z',
+                    ]],
+                ], JSON_THROW_ON_ERROR), ['http_code' => 200]);
+            }
+
+            return new MockResponse('not found', ['http_code' => 404]);
+        });
+
+        $repository = new GitHubPublicationRepository(client: $client, apiUrl: 'https://api.example.test');
+        $run = $repository->publisherRun(
+            'LibreSign/libresign',
+            'appstore-build-publish.yml',
+            self::SHA,
+            '2026-09-21T18:00:00Z',
+        );
+
+        self::assertNotNull($run);
+        self::assertSame('in_progress', $run->status);
+        self::assertNull($run->conclusion);
+    }
+
     public function testDownloadsExactReleaseAsset(): void
     {
         $client = new MockHttpClient(new MockResponse('archive-bytes', ['http_code' => 200]));

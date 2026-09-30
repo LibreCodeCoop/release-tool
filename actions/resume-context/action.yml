@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Resolve release resume context
+description: Validate a merged release preparation pull request and expose the context needed to resume post-merge finalization.
+
+inputs:
+  pull-request-number:
+    description: Merged release preparation pull request number.
+    required: true
+  github-token:
+    description: Token with read access to pull requests.
+    required: true
+
+outputs:
+  base-ref:
+    description: Base branch of the merged release preparation pull request.
+    value: ${{ steps.resolve.outputs.base-ref }}
+  merger:
+    description: GitHub login that merged the release preparation pull request.
+    value: ${{ steps.resolve.outputs.merger }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Setup release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: resolve
+      name: Validate and resolve resume context
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        RELEASE_REPOSITORY: ${{ github.repository }}
+        RELEASE_PR_NUMBER: ${{ inputs.pull-request-number }}
+      run: |
+        set -euo pipefail
+        php "${RELEASE_TOOL_PATH}" release:resume-context \
+          --repository "${RELEASE_REPOSITORY}" \
+          --pull-request-number "${RELEASE_PR_NUMBER}" \
+          --github-output "${GITHUB_OUTPUT}"

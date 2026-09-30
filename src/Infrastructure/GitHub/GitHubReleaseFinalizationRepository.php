@@ -68,6 +68,9 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         $mergeCommitSha = $pullRequest['merge_commit_sha'] ?? null;
         $baseBranch = $pullRequest['base']['ref'] ?? null;
         $url = $pullRequest['html_url'] ?? null;
+        $headBranch = $pullRequest['head']['ref'] ?? null;
+        $body = $pullRequest['body'] ?? null;
+        $mergedBy = $pullRequest['merged_by']['login'] ?? null;
         if (!is_string($baseBranch) || !is_string($url)) {
             throw new DomainException('GitHub returned invalid release pull request metadata.');
         }
@@ -79,6 +82,9 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
             is_string($mergedAt) && $mergedAt !== '',
             is_string($mergeCommitSha) && $mergeCommitSha !== '' ? $mergeCommitSha : null,
             $changedFiles,
+            is_string($headBranch) && $headBranch !== '' ? $headBranch : null,
+            is_string($body) ? $body : null,
+            is_string($mergedBy) && $mergedBy !== '' ? $mergedBy : null,
         );
     }
 

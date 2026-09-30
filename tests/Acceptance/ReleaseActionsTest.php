@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'stable-select'];
+    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'resume-context', 'stable-select'];
 
     public function testPublicActionSurfaceIsExplicit(): void
     {
@@ -98,7 +98,10 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('release:authorization', $content);
         self::assertStringContainsString('release:finalize', $content);
         self::assertStringContainsString('milestone:transition', $content);
+        self::assertStringContainsString('cat "${RELEASE_STATE_DIR}/milestone-transition.json" || true', $content);
         self::assertStringContainsString('release:draft', $content);
+        self::assertStringContainsString('use-caller-token-for-draft', $content);
+        self::assertStringContainsString("inputs.use-caller-token-for-draft == 'true'", $content);
     }
 
     public function testReleaseIdentityDelegatesValidationToPhp(): void
@@ -110,12 +113,27 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringNotContainsString('git ls-remote', $content);
     }
 
+    public function testPublicationDefaultsToPullRequestTargetPostMergeEvent(): void
+    {
+        $action = Yaml::parseFile($this->root() . '/actions/publication/action.yml');
+        self::assertIsArray($action);
+
+        self::assertSame(
+            'pull_request_target',
+            $action['inputs']['post-merge-event']['default'] ?? null,
+        );
+    }
+
     public function testPublicationDelegatesRestoreAndVerificationToPhp(): void
     {
         $content = $this->action('publication');
 
         self::assertStringContainsString('artifact:restore', $content);
         self::assertStringContainsString('publication:verify', $content);
+        self::assertStringContainsString('workflow_dispatch', $content);
+        self::assertStringContainsString('resume-workflow-path', $content);
+        self::assertStringContainsString('--allowed-origin', $content);
+        self::assertStringNotContainsString('normal_status=', $content);
     }
 
     public function testInternalBootstrapUsesExactVersionAndVerifiedChecksum(): void
@@ -165,6 +183,7 @@ final class ReleaseActionsTest extends TestCase
                 'github-token',
                 'app-slug',
                 'app-private-key',
+                'pipeline-reference-ref',
             ],
             [
                 'preparation-id',
@@ -184,6 +203,7 @@ final class ReleaseActionsTest extends TestCase
                 'github-token',
                 'app-slug',
                 'app-private-key',
+                'use-caller-token-for-draft',
             ],
             [
                 'prepared-release-id',
@@ -200,6 +220,7 @@ final class ReleaseActionsTest extends TestCase
                 'config-path',
                 'post-merge-workflow-path',
                 'post-merge-event',
+                'resume-workflow-path',
                 'attempts',
                 'delay-seconds',
                 'github-token',
@@ -223,6 +244,11 @@ final class ReleaseActionsTest extends TestCase
             'release-preflight',
             ['version', 'stable-branch', 'current-ref', 'repository', 'appinfo', 'changelog', 'milestone', 'blocker-queries-json', 'github-token'],
             ['result-file'],
+        ];
+        yield 'resume-context' => [
+            'resume-context',
+            ['pull-request-number', 'github-token'],
+            ['base-ref', 'merger'],
         ];
         yield 'stable-select' => [
             'stable-select',

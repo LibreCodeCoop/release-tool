@@ -290,7 +290,12 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
             $path,
             $json === null ? [] : ['json' => $json],
         );
-        $this->assertSuccess($response->getStatusCode(), $method . ' ' . $path);
+        $this->assertSuccess(
+            $response->getStatusCode(),
+            $method . ' ' . $path,
+            $response->getContent(false),
+            $response->getHeaders(false),
+        );
         $data = $response->toArray(false);
         if (array_is_list($data)) {
             throw new DomainException('GitHub returned an unexpected list response.');
@@ -298,10 +303,38 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
         return $data;
     }
 
-    private function assertSuccess(int $status, string $operation): void
-    {
+    /** @param array<string, list<string>> $headers */
+    private function assertSuccess(
+        int $status,
+        string $operation,
+        ?string $responseBody = null,
+        array $headers = [],
+    ): void {
+
         if ($status < 200 || $status >= 300) {
-            throw new DomainException(sprintf('GitHub API failed to %s (%d).', $operation, $status));
+            $message = null;
+            if (is_string($responseBody) && $responseBody !== '') {
+                $decoded = json_decode($responseBody, true);
+                if (is_array($decoded) && is_string($decoded['message'] ?? null) && $decoded['message'] !== '') {
+                    $message = $decoded['message'];
+                }
+            }
+
+            $details = [];
+            foreach (['x-accepted-github-permissions', 'x-github-request-id'] as $header) {
+                $value = $headers[$header][0] ?? null;
+                if (is_string($value) && $value !== '') {
+                    $details[] = $header . '=' . $value;
+                }
+            }
+
+            throw new DomainException(sprintf(
+                'GitHub API failed to %s (%d)%s%s.',
+                $operation,
+                $status,
+                $message === null ? '' : ': ' . $message,
+                $details === [] ? '' : ' [' . implode('; ', $details) . ']',
+            ));
         }
     }
 
