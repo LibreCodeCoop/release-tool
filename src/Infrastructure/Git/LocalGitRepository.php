@@ -83,6 +83,20 @@ final readonly class LocalGitRepository implements GitRepository
         return $process->getExitCode() === 0;
     }
 
+    public function fileExists(string $sha, string $path): bool
+    {
+        $process = new Process(['git', 'ls-tree', '--name-only', $sha, '--', $path], $this->root);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new DomainException(
+                trim($process->getErrorOutput()) ?: sprintf('Unable to inspect file %s at %s.', $path, $sha),
+            );
+        }
+
+        return trim($process->getOutput()) !== '';
+    }
+
     public function readFile(string $sha, string $path): string
     {
         return $this->run(['git', 'show', $sha . ':' . $path]);
