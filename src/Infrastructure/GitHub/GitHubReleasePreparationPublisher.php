@@ -284,6 +284,21 @@ final readonly class GitHubReleasePreparationPublisher implements ReleasePrepara
             '',
             'This pull request was generated from a deterministic ReleasePreparation v1.',
             'Review the exact file diff before merging.',
+            '',
+            '## What happens after merge',
+            '',
+            'Merging this pull request automatically starts the **Finalize release** workflow.',
+            '',
+            'During finalization, the release process will:',
+            '',
+            '- validate the merged release state;',
+            '- update the release milestone;',
+            '- create any required **Synchronize release** pull requests for newer history branches;',
+            '- create or update the GitHub Release draft automatically.',
+            '',
+            'Merge every generated **Synchronize release** pull request, then review the generated GitHub Release draft and publish it manually.',
+            '',
+            'Do not create the GitHub Release draft manually.',
         ]);
     }
 }
