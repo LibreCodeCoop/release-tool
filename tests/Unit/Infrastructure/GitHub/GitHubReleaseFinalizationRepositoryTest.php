@@ -38,6 +38,32 @@ final class GitHubReleaseFinalizationRepositoryTest extends TestCase
         self::assertSame(['appinfo/info.xml', 'package.json'], $result->changedFiles);
     }
 
+    public function testChecksAncestryThroughGitHubCompareApi(): void
+    {
+        $descendant = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $client = new MockHttpClient([
+            $this->json(['status' => 'ahead']),
+        ], 'https://api.github.test');
+
+        $result = (new GitHubReleaseFinalizationRepository('token', $client, 'https://api.github.test'))
+            ->isAncestor('LibreSign/libresign', self::SHA, $descendant);
+
+        self::assertTrue($result);
+    }
+
+    public function testRejectsDivergedHistoryThroughGitHubCompareApi(): void
+    {
+        $descendant = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $client = new MockHttpClient([
+            $this->json(['status' => 'diverged']),
+        ], 'https://api.github.test');
+
+        $result = (new GitHubReleaseFinalizationRepository('token', $client, 'https://api.github.test'))
+            ->isAncestor('LibreSign/libresign', self::SHA, $descendant);
+
+        self::assertFalse($result);
+    }
+
     public function testReadsFileAtExactCommitThroughGitHubContentsApi(): void
     {
         $content = "# Changelog\n\n## 13.4.2 - 2026-09-21\n";

@@ -173,6 +173,7 @@ final class ReleaseFinalizerTest extends TestCase
                 array_map(static fn (FileChange $change): string => $change->path, $this->preparation()->fileChanges),
             ),
             ['stable35' => $advanced, 'main' => self::MAIN],
+            ancestors: [$advanced => [self::FINAL]],
         );
 
         $prepared = (new ReleaseFinalizer(

@@ -18,6 +18,8 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
         private readonly ?HistorySynchronization $publishedHistory = null,
         /** @var array<string, string> */
         private readonly array $files = [],
+        /** @var array<string, list<string>> */
+        private readonly array $ancestors = [],
     ) {
     }
 
@@ -34,6 +36,12 @@ final class InMemoryReleaseFinalizationRepository implements ReleaseFinalization
     public function branchHead(string $repository, string $branch): string
     {
         return $this->branchHeads[$branch];
+    }
+
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool
+    {
+        return $ancestorSha === $descendantSha
+            || in_array($ancestorSha, $this->ancestors[$descendantSha] ?? [], true);
     }
 
     /** @return list<string> */

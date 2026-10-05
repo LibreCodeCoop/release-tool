@@ -101,6 +101,26 @@ final readonly class GitHubReleaseFinalizationRepository implements ReleaseFinal
         return $sha;
     }
 
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool
+    {
+        if ($ancestorSha === $descendantSha) {
+            return true;
+        }
+
+        $data = $this->request(
+            'GET',
+            sprintf(
+                '/repos/%s/compare/%s...%s',
+                $repository,
+                rawurlencode($ancestorSha),
+                rawurlencode($descendantSha),
+            ),
+        );
+        $status = $data['status'] ?? null;
+
+        return $status === 'ahead' || $status === 'identical';
+    }
+
     /** @return list<string> */
     public function branches(string $repository): array
     {

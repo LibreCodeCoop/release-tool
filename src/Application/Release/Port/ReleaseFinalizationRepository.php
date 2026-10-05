@@ -14,6 +14,8 @@ interface ReleaseFinalizationRepository
 
     public function branchHead(string $repository, string $branch): string;
 
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool;
+
     /** @return list<string> */
     public function branches(string $repository): array;
 
