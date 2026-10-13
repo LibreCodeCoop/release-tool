@@ -15,7 +15,7 @@
     "friendsofphp/php-cs-fixer": "^3.70",
     "humbug/box": "^4.6",
     "infection/infection": "^0.35",
-    "phpmd/phpmd": "^2.15",
+    "phpmd/phpmd": "^3.0",
     "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^11.5",
     "rector/rector": "^2.0",
