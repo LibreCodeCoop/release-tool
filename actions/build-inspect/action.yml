@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Inspect application build metadata
+description: Read Nextcloud compatibility and optional Node/npm engines using release-tool.
+
+inputs:
+  root:
+    description: Checked-out application directory.
+    required: false
+    default: .
+
+outputs:
+  version:
+    description: Version from appinfo/info.xml.
+    value: ${{ steps.inspect.outputs.version }}
+  nextcloud-min-version:
+    description: Minimum supported Nextcloud major.
+    value: ${{ steps.inspect.outputs.nextcloud-min-version }}
+  node-version:
+    description: Node engine, or ^24 when package.json exists without a Node engine.
+    value: ${{ steps.inspect.outputs.node-version }}
+  npm-version:
+    description: npm engine, or ^11.3 when package.json exists without an npm engine.
+    value: ${{ steps.inspect.outputs.npm-version }}
+  has-package-json:
+    description: Whether the consumer has package.json.
+    value: ${{ steps.inspect.outputs.has-package-json }}
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Set up release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - id: inspect
+      name: Inspect application build metadata
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        APPLICATION_ROOT: ${{ inputs.root }}
+      run: |
+        set -euo pipefail
+        php "${RELEASE_TOOL_PATH}" build:inspect \
+          --root "${APPLICATION_ROOT}" \
+          --github-output "${GITHUB_OUTPUT}" \
+          --json

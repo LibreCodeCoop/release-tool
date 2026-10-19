@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ReleaseActionsTest extends TestCase
 {
-    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'resume-context', 'stable-select'];
+    private const array PUBLIC_ACTIONS = ['appstore-publication-wait', 'artifact-validate', 'authorization-check', 'build-inspect', 'metadata-inspect', 'post-merge', 'prepare', 'publication', 'release-identity', 'release-notes', 'release-preflight', 'resume-context', 'stable-select'];
 
     public function testPublicActionSurfaceIsExplicit(): void
     {
@@ -163,6 +163,16 @@ final class ReleaseActionsTest extends TestCase
             'artifact-validate',
             ['artifact', 'app-name', 'version'],
             [],
+        ];
+        yield 'authorization-check' => [
+            'authorization-check',
+            ['repository', 'actor', 'minimum', 'github-token'],
+            [],
+        ];
+        yield 'build-inspect' => [
+            'build-inspect',
+            ['root'],
+            ['version', 'nextcloud-min-version', 'node-version', 'npm-version', 'has-package-json'],
         ];
         yield 'metadata-inspect' => [
             'metadata-inspect',

@@ -7,6 +7,7 @@ namespace LibreCode\ReleaseTool\Application\Console;
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactRestorer;
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Artifact\NextcloudPackageValidator;
+use LibreCode\ReleaseTool\Application\Build\BuildMetadataInspector;
 use LibreCode\ReleaseTool\Application\Configuration\ConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Configuration\NoopConsumerConfigContextValidator;
 use LibreCode\ReleaseTool\Application\Console\Command\AppStorePublicationWaitCommand;
@@ -14,6 +15,7 @@ use LibreCode\ReleaseTool\Application\Console\Command\ArtifactRestoreCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ArtifactValidatePackageCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\AuthorizationCheckCommand;
+use LibreCode\ReleaseTool\Application\Console\Command\BuildInspectCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\ConfigValidateCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MetadataInspectCommand;
 use LibreCode\ReleaseTool\Application\Console\Command\MilestoneTransitionCommand;
@@ -74,6 +76,7 @@ final class ApplicationFactory
         ?ReleasePreflight $releasePreflight = null,
         ?ReleaseIdentityValidator $releaseIdentityValidator = null,
         ?ReleaseResumeContextResolver $releaseResumeContextResolver = null,
+        ?BuildMetadataInspector $buildMetadataInspector = null,
     ): Application
     {
         $application = new Application('release-tool', self::version());
@@ -81,6 +84,10 @@ final class ApplicationFactory
         $application->add(new ConfigValidateCommand(
             contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
         ));
+
+        if ($buildMetadataInspector !== null) {
+            $application->add(new BuildInspectCommand($buildMetadataInspector));
+        }
 
         if ($authorizationChecker !== null) {
             $application->add(new AuthorizationCheckCommand($authorizationChecker));

@@ -6,6 +6,7 @@ declare(strict_types=1);
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactRestorer;
 use LibreCode\ReleaseTool\Application\Artifact\ArtifactValidator;
 use LibreCode\ReleaseTool\Application\Artifact\NextcloudPackageValidator;
+use LibreCode\ReleaseTool\Application\Build\BuildMetadataInspector;
 use LibreCode\ReleaseTool\Application\Console\ApplicationFactory;
 use LibreCode\ReleaseTool\Application\Publication\AppStorePublicationWaiter;
 use LibreCode\ReleaseTool\Application\Publication\PublicationVerifier;
@@ -22,6 +23,7 @@ use LibreCode\ReleaseTool\Application\Release\StableBranchSelector;
 use LibreCode\ReleaseTool\Application\ReleaseNotes\ReleaseNotesGenerator;
 use LibreCode\ReleaseTool\Application\Security\RepositoryAuthorizationChecker;
 use LibreCode\ReleaseTool\Infrastructure\AppStore\NextcloudAppStoreRepository;
+use LibreCode\ReleaseTool\Infrastructure\Build\LocalBuildFileReader;
 use LibreCode\ReleaseTool\Infrastructure\Archive\PharArchiveReaderFactory;
 use LibreCode\ReleaseTool\Infrastructure\Archive\SafeZipExtractor;
 use LibreCode\ReleaseTool\Infrastructure\Configuration\LocalConsumerConfigContextValidator;
@@ -90,4 +92,5 @@ exit(ApplicationFactory::create(
     new ReleasePreflight(GitHubReleasePreflightRepository::fromEnvironment()),
     new ReleaseIdentityValidator($git, new GitReleaseMetadataReader($git)),
     new ReleaseResumeContextResolver($finalizationRepository),
+    new BuildMetadataInspector(new LocalBuildFileReader()),
 )->run());
