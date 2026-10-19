@@ -93,3 +93,10 @@ These properties are part of the reference integration and should not be weakene
 ## Reference
 
 `LibreCodeCoop/release-tool` is the source of truth for release behavior and its public release Actions. `LibreCodeCoop/.github` owns LibreCode's managed workflow templates that orchestrate those Actions. LibreSign's `.github/workflows/prepare-release.yml` is the reference consumer and should be materialized from that catalog rather than becoming a second implementation.
+
+Build consumers can use the `actions/build-inspect` adapter for validated appinfo
+version, Nextcloud minimum major, and optional Node/npm engines. When a
+package.json is absent, the Action reports `has-package-json=false` and empty
+engine values; when present without engine declarations, it reports defaults
+Node `^24` and npm `^11.3`. The `actions/authorization-check` adapter
+reuses the tested PHP permission policy instead of separate GitHub API calls.

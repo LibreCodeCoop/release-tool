@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Check repository actor authorization
+description: Validate repository permission using the release-tool CLI.
+
+inputs:
+  repository:
+    description: Repository in owner/name form.
+    required: true
+  actor:
+    description: GitHub actor to authorize.
+    required: true
+  minimum:
+    description: Minimum repository permission.
+    required: false
+    default: write
+  github-token:
+    description: Token for GitHub permission lookup.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: setup
+      name: Set up release-tool
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../_internal/setup.sh"
+
+    - name: Check authorization
+      shell: bash
+      env:
+        RELEASE_TOOL_PATH: ${{ steps.setup.outputs.path }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RELEASE_REPOSITORY: ${{ inputs.repository }}
+        RELEASE_ACTOR: ${{ inputs.actor }}
+        RELEASE_MINIMUM: ${{ inputs.minimum }}
+      run: |
+        set -euo pipefail
+        php "${RELEASE_TOOL_PATH}" release:authorization \
+          --repository "${RELEASE_REPOSITORY}" \
+          --actor "${RELEASE_ACTOR}" \
+          --minimum "${RELEASE_MINIMUM}"
