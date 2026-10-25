@@ -71,7 +71,10 @@ final class MilestoneTransitionCodec
         return $data[$key];
     }
 
-    /** @param array<string, mixed> $data @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function object(array $data, string $key): array
     {
         if (!isset($data[$key]) || !is_array($data[$key]) || array_is_list($data[$key])) {

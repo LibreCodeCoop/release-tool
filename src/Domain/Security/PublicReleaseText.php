@@ -18,6 +18,7 @@ final readonly class PublicReleaseText implements JsonSerializable
         }
     }
 
+    /** @return array{text: string, explicit: bool} */
     public function jsonSerialize(): array
     {
         return [

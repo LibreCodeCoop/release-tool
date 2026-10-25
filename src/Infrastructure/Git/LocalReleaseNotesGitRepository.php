@@ -14,6 +14,7 @@ final readonly class LocalReleaseNotesGitRepository implements ReleaseNotesGitRe
     {
     }
 
+    /** @return list<string> */
     public function commits(string $fromRef, string $toRef, int $fallbackLimit): array
     {
         $arguments = ['git', 'rev-list', '--reverse'];
@@ -37,7 +38,10 @@ final readonly class LocalReleaseNotesGitRepository implements ReleaseNotesGitRe
         return $lines[0];
     }
 
-    /** @param list<string> $arguments @return list<string> */
+    /**
+     * @param list<string> $arguments
+     * @return list<string>
+     */
     private function lines(array $arguments): array
     {
         $process = new Process($arguments, $this->workingDirectory);

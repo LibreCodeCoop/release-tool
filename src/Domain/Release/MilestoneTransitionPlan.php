@@ -23,6 +23,7 @@ final readonly class MilestoneTransitionPlan implements JsonSerializable
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return [

@@ -18,6 +18,7 @@ final readonly class LocalReleaseMetadata implements JsonSerializable
     ) {
     }
 
+    /** @return array{schema: int, version: string, major: int, development: bool, changelog_path: string, release_section_required: bool, release_section_present: bool} */
     public function jsonSerialize(): array
     {
         return [

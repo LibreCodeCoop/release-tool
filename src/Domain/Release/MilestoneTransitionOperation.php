@@ -15,6 +15,7 @@ final readonly class MilestoneTransitionOperation implements JsonSerializable
     ) {
     }
 
+    /** @return array{type: string, details: array<string, scalar|null>} */
     public function jsonSerialize(): array
     {
         return ['type' => $this->type, 'details' => $this->details];

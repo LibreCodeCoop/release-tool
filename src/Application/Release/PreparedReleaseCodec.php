@@ -45,8 +45,8 @@ final class PreparedReleaseCodec
             }
         }
         $files = $this->object($data, 'release_files');
-        foreach ($files as $path => $digest) {
-            if (!is_string($path) || !is_string($digest)) {
+        foreach ($files as $digest) {
+            if (!is_string($digest)) {
                 throw new InvalidArgumentException('PreparedRelease release_files must map paths to digests.');
             }
         }
@@ -117,11 +117,19 @@ final class PreparedReleaseCodec
         return $data[$key];
     }
 
-    /** @param array<string, mixed> $data @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function object(array $data, string $key): array
     {
         if (!isset($data[$key]) || !is_array($data[$key]) || array_is_list($data[$key])) {
             throw new InvalidArgumentException(sprintf('%s must be an object.', $key));
+        }
+        foreach (array_keys($data[$key]) as $field) {
+            if (!is_string($field)) {
+                throw new InvalidArgumentException(sprintf('%s must have string keys.', $key));
+            }
         }
         return $data[$key];
     }

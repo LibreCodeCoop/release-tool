@@ -97,6 +97,21 @@ final class PharArchiveReaderTest extends TestCase
         new PharArchiveReader($path);
     }
 
+    public function testRejectsTruncatedTarPayloadWithLargeDeclaredSize(): void
+    {
+        $path = $this->path('.tar');
+        $header = str_repeat("\0", 512);
+        $header = substr_replace($header, 'libresign/large.bin', 0, strlen('libresign/large.bin'));
+        $header = substr_replace($header, '777777777777', 124, 12);
+        $header = substr_replace($header, '0', 156, 1);
+        file_put_contents($path, $header);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('truncated entry payload');
+
+        new PharArchiveReader($path);
+    }
+
     public function testRejectsMalformedArchive(): void
     {
         $path = $this->path('.tar');

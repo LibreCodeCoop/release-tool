@@ -86,6 +86,9 @@ final class PharArchiveReader implements ArchiveReader
                     throw new InvalidArgumentException('Malformed TAR archive: invalid entry size.');
                 }
                 $size = octdec($sizeField);
+                if (!is_int($size)) {
+                    throw new InvalidArgumentException('Malformed TAR archive: invalid entry size.');
+                }
                 $type = substr($header, 156, 1);
 
                 $payload = $size > 0 ? $this->readExact($handle, $size) : '';
@@ -236,12 +239,19 @@ final class PharArchiveReader implements ArchiveReader
         return $stream;
     }
 
-    /** @param resource $handle */
+    /**
+     * @param resource $handle
+     * @param positive-int $length
+     */
     private function readExact($handle, int $length): string
     {
         $buffer = '';
-        while (strlen($buffer) < $length && !feof($handle)) {
-            $chunk = fread($handle, $length - strlen($buffer));
+        while (!feof($handle)) {
+            $remaining = $length - strlen($buffer);
+            if ($remaining <= 0) {
+                break;
+            }
+            $chunk = fread($handle, min($remaining, 1024 * 1024));
             if ($chunk === false) {
                 throw new InvalidArgumentException('Could not read TAR archive.');
             }

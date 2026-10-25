@@ -16,6 +16,7 @@ final readonly class PublicReleaseContext implements JsonSerializable
     ) {
     }
 
+    /** @return array{mode: string, public_text: PublicReleaseText} */
     public function jsonSerialize(): array
     {
         return [
