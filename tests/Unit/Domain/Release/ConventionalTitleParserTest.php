@@ -32,6 +32,9 @@ final class ConventionalTitleParserTest extends TestCase
         yield 'breaking marker only warns' => ['feat(api)!: change response', 'feat', 'api', 'change response', true];
         yield 'stable wrapper' => ['[stable35] fix: avoid regression', 'fix', null, 'avoid regression', false];
         yield 'backport wrapper' => ['backport: feat: add policy', 'feat', null, 'add policy', false];
+        yield 'legacy stable npm audit has no conventional type' => ['[stable35] Fix npm audit', null, null, 'Fix npm audit', false];
+        yield 'main npm audit dependency fix' => ['fix(deps): resolve npm audit vulnerabilities', 'fix', 'deps', 'resolve npm audit vulnerabilities', false];
+        yield 'stable npm audit dependency fix' => ['[stable35] fix(deps): resolve npm audit vulnerabilities', 'fix', 'deps', 'resolve npm audit vulnerabilities', false];
         yield 'legacy title remains activity' => ['Update translations', null, null, 'Update translations', false];
     }
 }
