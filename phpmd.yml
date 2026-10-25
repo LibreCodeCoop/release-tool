@@ -1,0 +1,8 @@
+# PHPMD 3 configuration (migrated from phpmd.xml)
+name: 'LibreCode Release Tool'
+description: 'Objective maintainability checks that complement PHPStan and Psalm.'
+paths:
+  - src/
+format: text
+rules:
+  - ref: rulesets/unusedcode.xml

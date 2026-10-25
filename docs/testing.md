@@ -16,6 +16,12 @@ Use named PHPUnit data providers for matrices of one business rule, such as vers
 
 Coverage is diagnostic and supports mutation testing. Infection is a quality gate for meaningful domain/application behavior; tests must not be added only to kill mutants.
 
+PHPMD 3 uses the auto-detected `phpmd.yml` configuration and analyzes `src/`
+against the same unused-code rules as the previous XML ruleset. Run it with
+`composer phpmd`. The Rector quality gate first runs `rector validate-config`
+to reject deprecated/invalid configuration, then checks source with
+`rector process --dry-run`.
+
 Mocks are reserved for interaction boundaries where the interaction itself matters. Prefer real domain objects, fakes, temporary filesystems and temporary Git repositories.
 
 The Behat prototype required by the release roadmap must compare readability and maintenance cost against PHPUnit acceptance tests before adoption. Do not duplicate scenarios in both tools.

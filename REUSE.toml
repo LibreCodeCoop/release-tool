@@ -17,7 +17,7 @@ path = [
     "phpunit.xml.dist",
     "phpstan.neon",
     "psalm.xml",
-    "phpmd.xml",
+    "phpmd.yml",
     "phpcs.xml",
     "deptrac.yaml",
     "infection.json5",

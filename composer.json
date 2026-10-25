@@ -42,11 +42,11 @@
     "infection": "infection --threads=max --min-msi=75 --min-covered-msi=75",
     "phpstan": "phpstan analyse --no-progress",
     "psalm": "psalm --no-cache",
-    "phpmd": "phpmd analyze --format text --ruleset phpmd.xml src/",
+    "phpmd": "phpmd analyze",
     "phpcs": "phpcs",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
     "cs:fix": "php-cs-fixer fix",
-    "rector:check": "rector process --dry-run",
+    "rector:check": "rector validate-config && rector process --dry-run",
     "deptrac": "deptrac analyse --no-progress",
     "qa": [
       "@test",
