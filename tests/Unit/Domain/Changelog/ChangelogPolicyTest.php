@@ -70,6 +70,40 @@ final class ChangelogPolicyTest extends TestCase
         self::assertStringContainsString('## 15.1.0', $result->content);
     }
 
+    public function testConsolidatesNpmAuditFixWithOtherDependencyUpdates(): void
+    {
+        $activity = new ReleaseActivity([
+            new ReleaseItem(
+                'dependency',
+                '[stable35] fix(deps): resolve npm audit vulnerabilities',
+                9224,
+                'fix',
+                conventionalScope: 'deps',
+                backport: true,
+            ),
+            new ReleaseItem(
+                'dependency',
+                'chore(deps): bump another dependency',
+                9228,
+                'chore',
+                conventionalScope: 'deps',
+            ),
+        ]);
+
+        $result = (new ChangelogPolicy())->prepare(
+            Version::parse('15.0.10'),
+            $activity,
+            'docs/changelogs/changelog-{major}.md',
+            "# Changelog\n",
+            '2026-10-25',
+        );
+
+        self::assertSame(1, substr_count($result->releaseSection, '- Update dependencies'));
+        self::assertStringNotContainsString('Fix npm audit', $result->releaseSection);
+        self::assertStringNotContainsString('resolve npm audit vulnerabilities', $result->releaseSection);
+        self::assertStringNotContainsString('#9224', $result->releaseSection);
+    }
+
     public function testRejectsDuplicateVersion(): void
     {
         $this->expectException(DomainException::class);

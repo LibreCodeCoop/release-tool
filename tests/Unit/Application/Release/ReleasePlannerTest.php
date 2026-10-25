@@ -32,6 +32,38 @@ final class ReleasePlannerTest extends TestCase
         putenv('GITHUB_REPOSITORY');
     }
 
+    public function testConventionalNpmAuditPullRequestIsDependencyAndOnlyBumpsPatch(): void
+    {
+        $planner = $this->planner(
+            closed: [
+                new PullRequestInfo(
+                    9224,
+                    '[stable35] fix(deps): resolve npm audit vulnerabilities',
+                    '',
+                    'stable35',
+                    self::MERGE,
+                    '2026-10-25T00:00:00Z',
+                    'https://example.test/9224',
+                    ['dependencies'],
+                    'automation',
+                ),
+            ],
+            milestones: [new MilestoneInfo(7, 'Next Patch (35)', 'https://example.test/m7')],
+        );
+
+        $plan = $planner->plan($this->config(), $this->input());
+
+        self::assertSame('15.0.4', $plan->proposedVersion);
+        self::assertSame('releasable-activity', $plan->bumpReason);
+        self::assertCount(1, $plan->activity);
+        self::assertSame('dependency', $plan->activity[0]['kind']);
+        self::assertSame('fix', $plan->activity[0]['type']);
+        self::assertSame('deps', $plan->activity[0]['scope']);
+        self::assertSame('resolve npm audit vulnerabilities', $plan->activity[0]['subject']);
+        self::assertTrue($plan->activity[0]['backport']);
+        self::assertNotContains('PR #9224 title is not Conventional Commit formatted.', $plan->warnings);
+    }
+
     public function testFeaturePullRequestProducesMinorPlanAndRealBackportBlocks(): void
     {
         $planner = $this->planner(
