@@ -83,7 +83,10 @@ final class ReleasePreparationCodec
         return $data[$key];
     }
 
-    /** @param array<string, mixed> $data @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function object(array $data, string $key): array
     {
         if (!isset($data[$key]) || !is_array($data[$key]) || array_is_list($data[$key])) {
@@ -92,7 +95,10 @@ final class ReleasePreparationCodec
         return $data[$key];
     }
 
-    /** @param array<string, mixed> $data @return list<mixed> */
+    /**
+     * @param array<string, mixed> $data
+     * @return list<mixed>
+     */
     private function list(array $data, string $key): array
     {
         if (!isset($data[$key]) || !is_array($data[$key]) || !array_is_list($data[$key])) {

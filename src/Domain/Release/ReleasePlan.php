@@ -13,6 +13,7 @@ final readonly class ReleasePlan implements JsonSerializable
 {
     /**
      * @param list<array<string, mixed>> $activity
+     * @param array<string, mixed>|null $milestone
      * @param list<BackportBlocker> $backportBlockers
      * @param list<string> $warnings
      */
@@ -45,6 +46,7 @@ final readonly class ReleasePlan implements JsonSerializable
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return [

@@ -155,7 +155,10 @@ final class ConsumerConfigLoader
         );
     }
 
-    /** @param array<string, mixed> $data @param list<string> $allowed */
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $allowed
+     */
     private function assertKnownKeys(array $data, array $allowed, string $path): void
     {
         foreach (array_keys($data) as $key) {
@@ -165,7 +168,11 @@ final class ConsumerConfigLoader
         }
     }
 
-    /** @param array<string, mixed> $data @param list<string> $allowed @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $allowed
+     * @return array<string, mixed>
+     */
     private function mapping(array $data, string $key, array $allowed): array
     {
         $value = $data[$key] ?? null;

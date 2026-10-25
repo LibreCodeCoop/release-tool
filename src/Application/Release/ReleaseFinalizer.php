@@ -135,7 +135,7 @@ final readonly class ReleaseFinalizer
         );
     }
 
-    /** @return list<HistorySynchronization> */
+    /** @return non-empty-list<HistorySynchronization> */
     private function historySynchronizations(
         ConsumerConfig $config,
         ReleasePreparation $preparation,
@@ -211,7 +211,7 @@ final readonly class ReleaseFinalizer
         return $results;
     }
 
-    /** @return list<string> */
+    /** @return non-empty-list<string> */
     private function historyTargets(ConsumerConfig $config, string $repository, string $sourceBranch): array
     {
         if (preg_match($this->stablePattern($config), $sourceBranch, $sourceMatch) !== 1) {

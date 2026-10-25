@@ -16,6 +16,7 @@ final readonly class FileChange implements JsonSerializable
     ) {
     }
 
+    /** @return array{path: string, before_sha256: string, after_sha256: string} */
     public function jsonSerialize(): array
     {
         return [
