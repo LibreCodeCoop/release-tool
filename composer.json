@@ -42,7 +42,7 @@
     "infection": "infection --threads=max --min-msi=75 --min-covered-msi=75",
     "phpstan": "phpstan analyse --no-progress",
     "psalm": "psalm --no-cache",
-    "phpmd": "phpmd src text phpmd.xml",
+    "phpmd": "phpmd analyze --format text --ruleset phpmd.xml src/",
     "phpcs": "phpcs",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
     "cs:fix": "php-cs-fixer fix",
