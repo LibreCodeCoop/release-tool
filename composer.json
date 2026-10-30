@@ -7,7 +7,7 @@
     "php": "^8.3",
     "symfony/console": "^7.4",
     "symfony/yaml": "^7.4",
-    "symfony/http-client": "^7.4",
+    "symfony/http-client": "^8.1",
     "symfony/process": "^7.4",
     "ext-simplexml": "*"
   },
