@@ -9,7 +9,11 @@ use LibreCode\ReleaseTool\Application\Release\ReadModel\ReleaseDraftInfo;
 
 final class InMemoryReleaseDraftRepository implements ReleaseDraftRepository
 {
-    /** @param array<string, string> $branchHeads @param array<string, string> $permissions */
+    /**
+     * @param array<string, string> $branchHeads
+     * @param array<string, string> $permissions
+     * @param array<string, list<string>> $ancestors
+     */
     public function __construct(
         private readonly array $branchHeads,
         private readonly string $merger = 'maintainer',
@@ -17,6 +21,7 @@ final class InMemoryReleaseDraftRepository implements ReleaseDraftRepository
         private readonly ?string $tagTarget = null,
         private readonly array $pullRequestContributors = [],
         public ?ReleaseDraftInfo $release = null,
+        private readonly array $ancestors = [],
     ) {
     }
 
@@ -26,6 +31,11 @@ final class InMemoryReleaseDraftRepository implements ReleaseDraftRepository
     public function branchHead(string $repository, string $branch): string
     {
         return $this->branchHeads[$branch];
+    }
+
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool
+    {
+        return $ancestorSha === $descendantSha || in_array($ancestorSha, $this->ancestors[$descendantSha] ?? [], true);
     }
 
     public function tagTarget(string $repository, string $tag): ?string

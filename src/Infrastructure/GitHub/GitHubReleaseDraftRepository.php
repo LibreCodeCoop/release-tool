@@ -55,6 +55,29 @@ final readonly class GitHubReleaseDraftRepository implements ReleaseDraftReposit
         return $sha;
     }
 
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool
+    {
+        if ($ancestorSha === $descendantSha) {
+            return true;
+        }
+
+        $data = $this->request(
+            'GET',
+            sprintf(
+                '/repos/%s/compare/%s...%s',
+                $repository,
+                rawurlencode($ancestorSha),
+                rawurlencode($descendantSha),
+            ),
+        );
+        $status = $data['status'] ?? null;
+        if (!in_array($status, ['ahead', 'behind', 'diverged', 'identical'], true)) {
+            throw new DomainException('GitHub returned an invalid commit comparison status.');
+        }
+
+        return $status === 'ahead' || $status === 'identical';
+    }
+
     public function tagTarget(string $repository, string $tag): ?string
     {
         $response = $this->client->request('GET', sprintf(

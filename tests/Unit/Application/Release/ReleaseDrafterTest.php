@@ -181,14 +181,16 @@ MD);
         (new ReleaseDrafter($this->git($prepared), $github))->prepare($this->config(), $prepared, $this->milestone());
     }
 
-    public function testAllowsBranchAdvanceWhenFinalizedReleaseRemainsAncestor(): void
+    public function testAllowsBranchAdvanceNotFetchedIntoLocalCheckout(): void
     {
         $prepared = $this->prepared();
         $advanced = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
         $github = new InMemoryReleaseDraftRepository(
             ['stable35' => $advanced],
+            ancestors: [$advanced => [self::SHA]],
         );
-        $draft = (new ReleaseDrafter($this->git($prepared, $advanced), $github))->prepare(
+        // The checkout does not know the new head, but GitHub can verify its ancestry.
+        $draft = (new ReleaseDrafter($this->git($prepared), $github))->prepare(
             $this->config(),
             $prepared,
             $this->milestone(),
