@@ -28,6 +28,59 @@ final class GitHubReleaseDraftRepositoryTest extends TestCase
         self::assertNull($repo->tagTarget('LibreSign/libresign', 'v15.0.4'));
     }
 
+    public function testBranchAdvanceChecksGitHubAncestry(): void
+    {
+        $requestedUrl = null;
+        $client = new MockHttpClient(
+            function (string $method, string $url) use (&$requestedUrl): MockResponse {
+                $requestedUrl = $url;
+                self::assertSame('GET', $method);
+
+                return $this->json(['status' => 'ahead']);
+            },
+            'https://api.github.test',
+        );
+        $repository = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+        $from = str_repeat('a', 40);
+        $to = str_repeat('b', 40);
+
+        self::assertTrue($repository->isAncestor('LibreSign/libresign', $from, $to));
+        self::assertSame(
+            'https://api.github.test/repos/LibreSign/libresign/compare/' . $from . '...' . $to,
+            $requestedUrl,
+        );
+    }
+
+    public function testDivergedBranchDoesNotPassAncestryCheck(): void
+    {
+        $client = new MockHttpClient([$this->json(['status' => 'diverged'])], 'https://api.github.test');
+        $repository = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        self::assertFalse($repository->isAncestor('LibreSign/libresign', str_repeat('a', 40), str_repeat('b', 40)));
+    }
+
+    public function testUnavailableComparisonFailsClosed(): void
+    {
+        $client = new MockHttpClient([$this->json(['message' => 'Not Found'], 404)], 'https://api.github.test');
+        $repository = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('GitHub API failed to GET');
+
+        $repository->isAncestor('LibreSign/libresign', str_repeat('a', 40), str_repeat('b', 40));
+    }
+
+    public function testUnexpectedComparisonStatusFailsClosed(): void
+    {
+        $client = new MockHttpClient([$this->json(['status' => 'unknown'])], 'https://api.github.test');
+        $repository = new GitHubReleaseDraftRepository('token', $client, 'https://api.github.test');
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('invalid commit comparison status');
+
+        $repository->isAncestor('LibreSign/libresign', str_repeat('a', 40), str_repeat('b', 40));
+    }
+
     public function testCreateDraftNeverPublishesOrGeneratesNotes(): void
     {
         $captured = null;

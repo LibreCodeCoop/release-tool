@@ -10,6 +10,8 @@ interface ReleaseDraftRepository
 {
     public function branchHead(string $repository, string $branch): string;
 
+    public function isAncestor(string $repository, string $ancestorSha, string $descendantSha): bool;
+
     public function tagTarget(string $repository, string $tag): ?string;
 
     public function releaseByTag(string $repository, string $tag): ?ReleaseDraftInfo;
