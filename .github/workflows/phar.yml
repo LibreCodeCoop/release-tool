@@ -22,10 +22,11 @@ jobs:
           persist-credentials: false
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: vendor/bin/box validate
+      - run: composer install --working-dir=tools/box --no-interaction --no-progress --prefer-dist
+      - run: tools/box/vendor/bin/box validate
       - name: Build first PHAR
         run: composer build:phar && cp build/release-tool.phar build/release-tool.first.phar
       - name: Build second PHAR

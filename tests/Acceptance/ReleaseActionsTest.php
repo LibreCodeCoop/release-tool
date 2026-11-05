@@ -42,6 +42,32 @@ final class ReleaseActionsTest extends TestCase
         self::assertStringContainsString('../_internal/setup.sh', $content);
     }
 
+    #[DataProvider('publicActions')]
+    public function testEveryPublicActionProvidesItsOwnPhp85Runtime(string $name): void
+    {
+        $action = Yaml::parseFile($this->root() . '/actions/' . $name . '/action.yml');
+        self::assertIsArray($action);
+
+        $steps = $action['runs']['steps'] ?? [];
+        self::assertIsArray($steps);
+
+        $setupIndex = null;
+        foreach ($steps as $index => $step) {
+            if (is_array($step) && ($step['id'] ?? null) === 'setup') {
+                $setupIndex = $index;
+                break;
+            }
+        }
+        self::assertIsInt($setupIndex);
+        self::assertGreaterThan(0, $setupIndex);
+
+        $phpSetup = $steps[$setupIndex - 1];
+        self::assertIsArray($phpSetup);
+        self::assertSame('8.5', $phpSetup['with']['php-version'] ?? null);
+        self::assertStringStartsWith('shivammathur/setup-php@', $phpSetup['uses'] ?? '');
+        self::assertSame('none', $phpSetup['with']['coverage'] ?? null);
+    }
+
     #[DataProvider('publicActionContracts')]
     public function testPublicActionContractsAreExplicit(
         string $name,
