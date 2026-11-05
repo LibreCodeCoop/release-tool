@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-phpunit-tooling",
+  "description": "Isolated phpunit tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
