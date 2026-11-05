@@ -7,6 +7,6 @@
 /.psalm-cache/
 composer.phar
 
-# Isolated PHAR build dependencies
-/tools/box/vendor/
+# Isolated development and PHAR build dependencies
+/vendor-bin/**/vendor/
 /.deptrac.cache
