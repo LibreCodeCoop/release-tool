@@ -81,60 +81,60 @@ final class ApplicationFactory
     {
         $application = new Application('release-tool', self::version());
         $application->setAutoExit(false);
-        $application->add(new ConfigValidateCommand(
+        $application->addCommand(new ConfigValidateCommand(
             contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
         ));
 
         if ($buildMetadataInspector !== null) {
-            $application->add(new BuildInspectCommand($buildMetadataInspector));
+            $application->addCommand(new BuildInspectCommand($buildMetadataInspector));
         }
 
         if ($authorizationChecker !== null) {
-            $application->add(new AuthorizationCheckCommand($authorizationChecker));
+            $application->addCommand(new AuthorizationCheckCommand($authorizationChecker));
         }
 
         if ($stableBranchSelector !== null && $actionEnvironment !== null) {
-            $application->add(new StableSelectCommand($stableBranchSelector, $actionEnvironment));
+            $application->addCommand(new StableSelectCommand($stableBranchSelector, $actionEnvironment));
         }
 
         if ($artifactRestorer !== null) {
-            $application->add(new ArtifactRestoreCommand($artifactRestorer));
+            $application->addCommand(new ArtifactRestoreCommand($artifactRestorer));
         }
 
         if ($packageValidator !== null) {
-            $application->add(new ArtifactValidatePackageCommand($packageValidator));
+            $application->addCommand(new ArtifactValidatePackageCommand($packageValidator));
         }
 
         if ($releaseNotesGenerator !== null && $actionEnvironment !== null) {
-            $application->add(new ReleaseNotesCommand($releaseNotesGenerator, $actionEnvironment));
+            $application->addCommand(new ReleaseNotesCommand($releaseNotesGenerator, $actionEnvironment));
         }
 
         if ($artifactValidator !== null) {
-            $application->add(new ArtifactValidateCommand(
+            $application->addCommand(new ArtifactValidateCommand(
                 $artifactValidator,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($appStorePublicationWaiter !== null) {
-            $application->add(new AppStorePublicationWaitCommand($appStorePublicationWaiter));
+            $application->addCommand(new AppStorePublicationWaitCommand($appStorePublicationWaiter));
         }
 
         if ($publicationVerifier !== null) {
-            $application->add(new PublicationVerifyCommand(
+            $application->addCommand(new PublicationVerifyCommand(
                 $publicationVerifier,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($gitRepository !== null) {
-            $application->add(new ReleasePipelineVerifyCommand(
+            $application->addCommand(new ReleasePipelineVerifyCommand(
                 new ReleasePipelinePinVerifier($gitRepository),
             ));
         }
 
         if ($gitRepository !== null && $metadataInspector !== null) {
-            $application->add(new MetadataInspectCommand(
+            $application->addCommand(new MetadataInspectCommand(
                 $gitRepository,
                 $metadataInspector,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
@@ -142,50 +142,50 @@ final class ApplicationFactory
         }
 
         if ($finalizer !== null) {
-            $application->add(new ReleaseFinalizeCommand(
+            $application->addCommand(new ReleaseFinalizeCommand(
                 $finalizer,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($milestoneTransitioner !== null) {
-            $application->add(new MilestoneTransitionCommand(
+            $application->addCommand(new MilestoneTransitionCommand(
                 $milestoneTransitioner,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($releaseDrafter !== null) {
-            $application->add(new ReleaseDraftCommand(
+            $application->addCommand(new ReleaseDraftCommand(
                 $releaseDrafter,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($releasePreflight !== null) {
-            $application->add(new ReleasePreflightCommand($releasePreflight));
+            $application->addCommand(new ReleasePreflightCommand($releasePreflight));
         }
 
         if ($releaseResumeContextResolver !== null) {
-            $application->add(new ReleaseResumeContextCommand($releaseResumeContextResolver));
+            $application->addCommand(new ReleaseResumeContextCommand($releaseResumeContextResolver));
         }
 
         if ($releaseIdentityValidator !== null) {
-            $application->add(new ReleaseValidateIdentityCommand(
+            $application->addCommand(new ReleaseValidateIdentityCommand(
                 $releaseIdentityValidator,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($planner !== null) {
-            $application->add(new ReleasePlanCommand(
+            $application->addCommand(new ReleasePlanCommand(
                 $planner,
                 contextValidator: $configValidator ?? new NoopConsumerConfigContextValidator(),
             ));
         }
 
         if ($preparer !== null) {
-            $application->add(new ReleasePrepareCommand(
+            $application->addCommand(new ReleasePrepareCommand(
                 $preparer,
                 $configValidator ?? new NoopConsumerConfigContextValidator(),
                 $preparationPublisher,

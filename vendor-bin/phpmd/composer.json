@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-phpmd-tooling",
+  "description": "Isolated phpmd tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "phpmd/phpmd": "^3.0"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

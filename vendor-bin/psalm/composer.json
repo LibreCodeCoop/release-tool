@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-psalm-tooling",
+  "description": "Isolated psalm tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "vimeo/psalm": "^6.0"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

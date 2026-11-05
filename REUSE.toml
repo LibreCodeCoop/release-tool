@@ -31,7 +31,8 @@ path = [
     "resources/**",
     "src/**",
     "tests/**",
-    "tools/**"
+    "tools/**",
+    "vendor-bin/**"
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 LibreCode coop and contributors"
