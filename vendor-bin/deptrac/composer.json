@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-deptrac-tooling",
+  "description": "Isolated deptrac tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "deptrac/deptrac": "^4.7"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-phpcs-tooling",
+  "description": "Isolated phpcs tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^4.0"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
