@@ -23,7 +23,7 @@ to reject deprecated/invalid configuration, then checks source with
 `rector process --dry-run`.
 
 PHPStan 2.3 runs at level 8 to check iterable value types and boundary
-contracts without ignoring errors or weakening runtime PHP 8.3 support.
+contracts without ignoring errors or weakening runtime PHP 8.5 support.
 
 Mocks are reserved for interaction boundaries where the interaction itself matters. Prefer real domain objects, fakes, temporary filesystems and temporary Git repositories.
 

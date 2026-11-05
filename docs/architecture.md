@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Architecture
 
-The release tool is a PHP 8.3+ CLI and PHAR shared by local maintainers and GitHub Actions.
+The release tool is a PHP 8.5+ CLI and PHAR shared by local maintainers and GitHub Actions.
 
 ## Layers
 

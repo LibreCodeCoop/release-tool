@@ -48,6 +48,8 @@ For example, a project may continue to use its existing `make appstore`, signing
 
 ## Prerequisites
 
+The release-tool CLI/PHAR requires PHP 8.5 or newer; this requirement applies to the release automation runner, not to the PHP runtime supported by the Nextcloud application being packaged. Each public composite Action selects PHP 8.5 before loading the PHAR, and the packaging workflow can select the application's own PHP version separately.
+
 Before adoption, your repository should have:
 
 - predictable stable branch names;
