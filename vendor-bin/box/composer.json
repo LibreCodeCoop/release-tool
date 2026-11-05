@@ -1,0 +1,17 @@
+{
+  "name": "librecode/release-tool-box-tooling",
+  "description": "Isolated box tooling for release-tool",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "humbug/box": "^4.7"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
