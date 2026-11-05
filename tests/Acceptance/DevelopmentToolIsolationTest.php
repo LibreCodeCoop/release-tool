@@ -22,6 +22,18 @@ final class DevelopmentToolIsolationTest extends TestCase
         self::assertFalse($composer['extra']['bamarni-bin']['forward-command']);
     }
 
+    public function testDependabotIncludesIsolatedComposerToolManifests(): void
+    {
+        $configuration = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/.github/dependabot.yml',
+        );
+
+        self::assertStringContainsString(
+            "package-ecosystem: composer\n    directories:\n      - /\n      - /vendor-bin/*",
+            $configuration,
+        );
+    }
+
     #[DataProvider('isolatedToolPackages')]
     public function testEachToolIsLockedSeparatelyAndInvokedFromItsOwnNamespace(
         string $namespace,
