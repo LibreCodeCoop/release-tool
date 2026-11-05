@@ -4,16 +4,15 @@
   "type": "project",
   "license": "AGPL-3.0-or-later",
   "require": {
-    "php": "^8.3",
-    "symfony/console": "^7.4",
-    "symfony/yaml": "^7.4",
-    "symfony/http-client": "^7.4",
-    "symfony/process": "^7.4",
+    "php": "^8.5",
+    "symfony/console": "^8.1",
+    "symfony/yaml": "^8.1",
+    "symfony/http-client": "^8.1",
+    "symfony/process": "^8.1",
     "ext-simplexml": "*"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.70",
-    "humbug/box": "^4.6",
     "infection/infection": "^0.35",
     "phpmd/phpmd": "^3.0",
     "phpstan/phpstan": "^2.1",
@@ -58,7 +57,7 @@
       "@rector:check",
       "@deptrac"
     ],
-    "build:phar": "box compile",
+    "build:phar": "php tools/box/vendor/bin/box compile",
     "test:phar": [
       "php tools/test-phar.php",
       "php tools/test-publication-phar.php"
