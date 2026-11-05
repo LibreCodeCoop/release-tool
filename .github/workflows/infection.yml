@@ -25,4 +25,6 @@ jobs:
           php-version: '8.5'
           coverage: xdebug
       - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer bin phpunit install --no-interaction --no-progress --prefer-dist
+      - run: composer bin infection install --no-interaction --no-progress --prefer-dist
       - run: composer infection

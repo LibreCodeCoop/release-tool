@@ -25,8 +25,8 @@ jobs:
           php-version: '8.5'
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: composer install --working-dir=tools/box --no-interaction --no-progress --prefer-dist
-      - run: tools/box/vendor/bin/box validate
+      - run: composer bin box install --no-interaction --no-progress --prefer-dist
+      - run: vendor-bin/box/vendor/bin/box validate
       - name: Build first PHAR
         run: composer build:phar && cp build/release-tool.phar build/release-tool.first.phar
       - name: Build second PHAR

@@ -27,6 +27,7 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer bin phpunit install --no-interaction --no-progress --prefer-dist
       - run: composer test
 
   runtime-php85:

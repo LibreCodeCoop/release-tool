@@ -29,9 +29,21 @@ jobs:
           php-version: '8.5'
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Install isolated quality tool
+        if: matrix.check != 'composer'
+        shell: bash
+        env:
+          QUALITY_CHECK: ${{ matrix.check }}
+        run: |
+          case "$QUALITY_CHECK" in
+            cs-check) namespace=php-cs-fixer ;;
+            rector-check) namespace=rector ;;
+            *) namespace="$QUALITY_CHECK" ;;
+          esac
+          composer bin "$namespace" install --no-interaction --no-progress --prefer-dist
       - name: Composer
         if: matrix.check == 'composer'
-        run: composer validate --strict && composer audit --locked
+        run: composer validate --strict && composer audit --locked && composer bin all validate --strict && composer bin all audit --locked
       - name: PHPStan
         if: matrix.check == 'phpstan'
         run: composer phpstan

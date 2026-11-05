@@ -99,11 +99,11 @@ jobs:
 
       - name: Install isolated PHAR builder dependencies
         if: steps.release.outputs.published != 'true'
-        run: composer install --working-dir=tools/box --no-interaction --no-progress --prefer-dist
+        run: composer bin box install --no-interaction --no-progress --prefer-dist
 
       - name: Validate PHAR configuration
         if: steps.release.outputs.published != 'true'
-        run: tools/box/vendor/bin/box validate
+        run: vendor-bin/box/vendor/bin/box validate
 
       - name: Build PHAR
         if: steps.release.outputs.published != 'true'
