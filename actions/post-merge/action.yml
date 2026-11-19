@@ -66,7 +66,7 @@ runs:
           exit 1
         fi
         if [[ -z "${RELEASE_APP_PRIVATE_KEY}" ]]; then
-          echo "::error::GitHub App private key is empty. Configure LIBRECODE_WORKFLOW_APP_PRIVATE_KEY as an Actions secret in the consumer repository or organization."
+          echo "::error::GitHub App private key is empty. Pass the app-private-key input from an Actions secret configured in the consumer repository or organization."
           exit 1
         fi
 
