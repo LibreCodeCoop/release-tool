@@ -28,9 +28,24 @@ final readonly class ReleasePipelinePinVerifier
         $mismatches = [];
 
         foreach ($paths as $path) {
-            $candidate = $this->pins($this->git->readFile($candidateSha, $path), $actionPrefixes);
-            $reference = $this->pins($this->git->readFile($referenceSha, $path), $actionPrefixes);
-            if ($candidate !== $reference) {
+            $candidateExists = $this->git->fileExists($candidateSha, $path);
+            $referenceExists = $this->git->fileExists($referenceSha, $path);
+
+            // An optional workflow may be absent from both trusted revisions.
+            // Its absence does not weaken checks for existing release workflows.
+            if (!$candidateExists && !$referenceExists) {
+                continue;
+            }
+
+            $candidate = $candidateExists
+                ? $this->pins($this->git->readFile($candidateSha, $path), $actionPrefixes)
+                : [];
+            $reference = $referenceExists
+                ? $this->pins($this->git->readFile($referenceSha, $path), $actionPrefixes)
+                : [];
+
+            // Removing a workflow is a mismatch even if it has no relevant pins.
+            if ($candidateExists !== $referenceExists || $candidate !== $reference) {
                 $mismatches[$path] = [
                     'candidate' => $candidate,
                     'reference' => $reference,
